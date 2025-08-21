@@ -108,29 +108,29 @@ export default function SecurityDashboard() {
   const totalEntries = entries.length
 
   return (
-    <div className="min-h-screen bg-gray-50 p-3 sm:p-4 lg:p-6">
+    <div className="min-h-screen bg-gray-50 p-2 sm:p-4 lg:p-6">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-6 sm:mb-8">
-          <div className="flex flex-col sm:flex-row items-center gap-4 mb-4">
+        <div className="mb-4 sm:mb-6 lg:mb-8">
+          <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 mb-4">
             <div className="flex-shrink-0">
               <img
                 src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/2025%20LOGO-VKDxv7CBrndhNC53B0BNL6c6W1gbHS.jpeg"
                 alt="RCC - El Race Contracting Logo"
-                className="h-16 sm:h-20 lg:h-24 w-auto object-contain"
+                className="h-12 sm:h-16 md:h-20 lg:h-24 w-auto object-contain"
               />
             </div>
             <div className="text-center sm:text-left">
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-1 sm:mb-2">
+              <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-1 sm:mb-2">
                 Security Management System
               </h1>
-              <p className="text-sm sm:text-base text-gray-600">Visitor and Personnel Tracking Dashboard</p>
+              <p className="text-xs sm:text-sm md:text-base text-gray-600">Visitor and Personnel Tracking Dashboard</p>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
           {/* Main Content */}
-          <div className="xl:col-span-3 space-y-4 sm:space-y-6">
+          <div className="xl:col-span-3 space-y-3 sm:space-y-4 lg:space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
               {categories.map((category) => {
                 const IconComponent = category.icon
@@ -138,10 +138,10 @@ export default function SecurityDashboard() {
                   <Card key={category.id} className="hover:shadow-lg transition-shadow">
                     <CardHeader className="pb-2 sm:pb-3">
                       <div className="flex items-center justify-between">
-                        <CardTitle className="text-base sm:text-lg font-semibold text-gray-800">
+                        <CardTitle className="text-sm sm:text-base lg:text-lg font-semibold text-gray-800">
                           {category.name}
                         </CardTitle>
-                        <div className={`p-1.5 sm:p-2 rounded-lg ${category.color}`}>
+                        <div className={`p-2 sm:p-2.5 rounded-lg ${category.color}`}>
                           <IconComponent className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                         </div>
                       </div>
@@ -149,24 +149,24 @@ export default function SecurityDashboard() {
                     <CardContent className="space-y-3 sm:space-y-4">
                       <div className="flex items-center justify-between">
                         <span className="text-xs sm:text-sm text-gray-600">Current Count:</span>
-                        <Badge variant="secondary" className="text-sm sm:text-lg px-2 sm:px-3 py-1">
+                        <Badge variant="secondary" className="text-sm sm:text-base lg:text-lg px-2 sm:px-3 py-1">
                           {category.count}
                         </Badge>
                       </div>
 
-                      <div className="flex flex-col sm:flex-row gap-2">
+                      <div className="flex flex-col gap-2 sm:gap-3">
                         <Button
                           onClick={() => handleAddEntry(category.id)}
-                          className="flex-1 text-xs sm:text-sm"
-                          size="sm"
+                          className="w-full text-sm sm:text-base h-10 sm:h-11"
+                          size="default"
                         >
                           Add Entry
                         </Button>
                         <Button
                           onClick={() => handleViewRecords(category.id)}
                           variant="outline"
-                          className="flex-1 text-xs sm:text-sm"
-                          size="sm"
+                          className="w-full text-sm sm:text-base h-10 sm:h-11"
+                          size="default"
                         >
                           View Records
                         </Button>
@@ -177,23 +177,25 @@ export default function SecurityDashboard() {
               })}
             </div>
 
-            <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-              <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-3 sm:mb-4">Today's Summary</h2>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                <div className="text-center p-2 sm:p-0">
-                  <div className="text-xl sm:text-2xl font-bold text-blue-600">{totalEntries}</div>
+            <div className="bg-white rounded-lg shadow p-3 sm:p-4 lg:p-6">
+              <h2 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-800 mb-3 sm:mb-4">
+                Today's Summary
+              </h2>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
+                <div className="text-center p-3 sm:p-4 bg-gray-50 rounded-lg">
+                  <div className="text-lg sm:text-xl lg:text-2xl font-bold text-blue-600">{totalEntries}</div>
                   <div className="text-xs sm:text-sm text-gray-600">Total Entries</div>
                 </div>
-                <div className="text-center p-2 sm:p-0">
-                  <div className="text-xl sm:text-2xl font-bold text-green-600">{currentlyInside}</div>
+                <div className="text-center p-3 sm:p-4 bg-gray-50 rounded-lg">
+                  <div className="text-lg sm:text-xl lg:text-2xl font-bold text-green-600">{currentlyInside}</div>
                   <div className="text-xs sm:text-sm text-gray-600">Currently Inside</div>
                 </div>
-                <div className="text-center p-2 sm:p-0">
-                  <div className="text-xl sm:text-2xl font-bold text-orange-600">{checkedOut}</div>
+                <div className="text-center p-3 sm:p-4 bg-gray-50 rounded-lg">
+                  <div className="text-lg sm:text-xl lg:text-2xl font-bold text-orange-600">{checkedOut}</div>
                   <div className="text-xs sm:text-sm text-gray-600">Checked Out</div>
                 </div>
-                <div className="text-center p-2 sm:p-0">
-                  <div className="text-xl sm:text-2xl font-bold text-purple-600">0</div>
+                <div className="text-center p-3 sm:p-4 bg-gray-50 rounded-lg">
+                  <div className="text-lg sm:text-xl lg:text-2xl font-bold text-purple-600">0</div>
                   <div className="text-xs sm:text-sm text-gray-600">Pending Exit</div>
                 </div>
               </div>

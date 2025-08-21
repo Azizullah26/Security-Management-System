@@ -46,28 +46,29 @@ export function TimeTracker({ entries }: TimeTrackerProps) {
   const overtimeEntries = insideEntries.filter((entry) => calculateDuration(entry.entryTime).isOvertime)
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       {/* Current Time Display */}
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Clock className="h-5 w-5" />
-            Live Time Tracking
+        <CardHeader className="pb-2 sm:pb-3">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Clock className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span className="hidden sm:inline">Live Time Tracking</span>
+            <span className="sm:hidden">Live Time</span>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-mono font-bold text-center">
+        <CardContent className="pb-3 sm:pb-4">
+          <div className="text-lg sm:text-2xl font-mono font-bold text-center">
             {currentTime.toLocaleTimeString("en-US", {
               hour: "2-digit",
               minute: "2-digit",
               second: "2-digit",
             })}
           </div>
-          <div className="text-center text-sm text-gray-600 mt-1">
+          <div className="text-center text-xs sm:text-sm text-gray-600 mt-1">
             {currentTime.toLocaleDateString("en-US", {
-              weekday: "long",
+              weekday: "short", // Shortened weekday for mobile
               year: "numeric",
-              month: "long",
+              month: "short", // Shortened month for mobile
               day: "numeric",
             })}
           </div>
@@ -77,24 +78,27 @@ export function TimeTracker({ entries }: TimeTrackerProps) {
       {/* Overtime Alerts */}
       {overtimeEntries.length > 0 && (
         <Card className="border-orange-200 bg-orange-50">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg text-orange-800">
-              <AlertTriangle className="h-5 w-5" />
-              Overtime Alert
+          <CardHeader className="pb-2 sm:pb-3">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg text-orange-800">
+              <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span className="hidden sm:inline">Overtime Alert</span>
+              <span className="sm:hidden">Overtime</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-sm text-orange-700 mb-3">
+          <CardContent className="pb-3 sm:pb-4">
+            <p className="text-xs sm:text-sm text-orange-700 mb-2 sm:mb-3">
               {overtimeEntries.length} {overtimeEntries.length === 1 ? "person has" : "people have"} been inside for 8+
               hours
             </p>
-            <div className="space-y-2">
+            <div className="space-y-1.5 sm:space-y-2">
               {overtimeEntries.slice(0, 3).map((entry) => {
                 const duration = calculateDuration(entry.entryTime)
                 return (
-                  <div key={entry.id} className="flex items-center justify-between text-sm">
-                    <span className="font-medium">{entry.name}</span>
-                    <Badge variant="destructive">{formatDuration(duration.hours, duration.minutes)}</Badge>
+                  <div key={entry.id} className="flex items-center justify-between text-xs sm:text-sm">
+                    <span className="font-medium truncate pr-2">{entry.name}</span>
+                    <Badge variant="destructive" className="text-xs flex-shrink-0">
+                      {formatDuration(duration.hours, duration.minutes)}
+                    </Badge>
                   </div>
                 )
               })}
@@ -108,27 +112,30 @@ export function TimeTracker({ entries }: TimeTrackerProps) {
 
       {/* Currently Inside Summary */}
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Currently Inside ({insideEntries.length})</CardTitle>
+        <CardHeader className="pb-2 sm:pb-3">
+          <CardTitle className="text-base sm:text-lg">
+            <span className="hidden sm:inline">Currently Inside ({insideEntries.length})</span>
+            <span className="sm:hidden">Inside ({insideEntries.length})</span>
+          </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pb-3 sm:pb-4">
           {insideEntries.length === 0 ? (
-            <p className="text-gray-500 text-center py-4">No one currently inside</p>
+            <p className="text-gray-500 text-center py-3 sm:py-4 text-sm">No one currently inside</p>
           ) : (
-            <div className="space-y-3 max-h-64 overflow-y-auto">
+            <div className="space-y-2 sm:space-y-3 max-h-48 sm:max-h-64 overflow-y-auto">
               {insideEntries.map((entry) => {
                 const duration = calculateDuration(entry.entryTime)
                 return (
-                  <div key={entry.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                    <div>
-                      <div className="font-medium text-sm">{entry.name}</div>
-                      <div className="text-xs text-gray-600">{entry.company || entry.category}</div>
+                  <div key={entry.id} className="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-lg">
+                    <div className="min-w-0 flex-1 pr-2">
+                      <div className="font-medium text-xs sm:text-sm truncate">{entry.name}</div>
+                      <div className="text-xs text-gray-600 truncate">{entry.company || entry.category}</div>
                     </div>
-                    <div className="text-right">
-                      <Badge variant={duration.isOvertime ? "destructive" : "secondary"}>
+                    <div className="text-right flex-shrink-0">
+                      <Badge variant={duration.isOvertime ? "destructive" : "secondary"} className="text-xs mb-1">
                         {formatDuration(duration.hours, duration.minutes)}
                       </Badge>
-                      <div className="text-xs text-gray-500 mt-1">
+                      <div className="text-xs text-gray-500">
                         {new Date(entry.entryTime).toLocaleTimeString("en-US", {
                           hour: "2-digit",
                           minute: "2-digit",

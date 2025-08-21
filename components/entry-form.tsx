@@ -268,20 +268,22 @@ export function EntryForm({ isOpen, onClose, category, onSubmit }: EntryFormProp
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] max-w-md sm:max-w-lg max-h-[95vh] overflow-y-auto mx-2">
           <DialogHeader>
-            <DialogTitle>Add New {category} Entry</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-lg sm:text-xl">Add New {category} Entry</DialogTitle>
+            <DialogDescription className="text-sm sm:text-base">
               Fill out the form below to register a new {category.toLowerCase()} entry into the system.
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
             {category.toLowerCase() === "staff" && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="fileId">File ID *</Label>
-                  <div className="flex gap-2">
+                  <Label htmlFor="fileId" className="text-sm sm:text-base">
+                    File ID *
+                  </Label>
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <Input
                       id="fileId"
                       required
@@ -292,46 +294,49 @@ export function EntryForm({ isOpen, onClose, category, onSubmit }: EntryFormProp
                         setPersonDetails(null)
                       }}
                       placeholder="Enter file ID"
-                      className={`flex-1 ${fileIdError ? "border-red-500" : ""}`}
+                      className={`flex-1 h-11 text-base ${fileIdError ? "border-red-500" : ""}`}
                     />
-                    <Button
-                      type="button"
-                      onClick={startQrScanner}
-                      variant="outline"
-                      size="sm"
-                      className="px-3 bg-transparent"
-                    >
-                      <QrCode className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      onClick={handleCheckFileId}
-                      disabled={isChecking || !formData.fileId.trim()}
-                      size="sm"
-                      className="px-4"
-                    >
-                      {isChecking ? "Checking..." : "Check"}
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        onClick={startQrScanner}
+                        variant="outline"
+                        size="default"
+                        className="h-11 px-4 bg-transparent"
+                      >
+                        <QrCode className="h-5 w-5" />
+                        <span className="hidden sm:inline ml-2">QR</span>
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={handleCheckFileId}
+                        disabled={isChecking || !formData.fileId.trim()}
+                        size="default"
+                        className="h-11 px-4 sm:px-6"
+                      >
+                        {isChecking ? "Checking..." : "Check"}
+                      </Button>
+                    </div>
                   </div>
                   {fileIdError && <p className="text-sm text-red-500">{fileIdError}</p>}
                 </div>
 
                 {personDetails && (
                   <Card className="border-green-200 bg-green-50">
-                    <CardContent className="p-4">
+                    <CardContent className="p-4 sm:p-5">
                       <div className="flex items-center gap-2 mb-3">
                         <CheckCircle className="h-5 w-5 text-green-600" />
-                        <span className="font-semibold text-green-800">Person Found</span>
+                        <span className="font-semibold text-green-800 text-sm sm:text-base">Person Found</span>
                       </div>
                       <div className="flex flex-col items-center gap-4">
                         <div className="flex-shrink-0">
                           <img
                             src={personDetails.image || "/placeholder.svg"}
                             alt={personDetails.name}
-                            className="w-[122px] h-[122px] rounded-full object-cover border-2 border-white shadow-sm"
+                            className="w-[100px] h-[100px] sm:w-[122px] sm:h-[122px] rounded-full object-cover border-2 border-white shadow-sm"
                           />
                         </div>
-                        <div className="text-center space-y-1 text-sm">
+                        <div className="text-center space-y-2 text-sm sm:text-base">
                           <div>
                             <strong>Full Name:</strong> {personDetails.name}
                           </div>
@@ -357,53 +362,63 @@ export function EntryForm({ isOpen, onClose, category, onSubmit }: EntryFormProp
 
             {(category.toLowerCase() !== "staff" || (fileIdError && !personDetails)) && (
               <>
-                {/* Basic Information */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="name">Full Name *</Label>
+                    <Label htmlFor="name" className="text-sm sm:text-base">
+                      Full Name *
+                    </Label>
                     <Input
                       id="name"
                       required
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       placeholder="Enter full name"
+                      className="h-11 text-base"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="company">Company/Organization</Label>
+                    <Label htmlFor="company" className="text-sm sm:text-base">
+                      Company/Organization
+                    </Label>
                     <Input
                       id="company"
                       value={formData.company}
                       onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                       placeholder="Enter company"
+                      className="h-11 text-base"
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="contact">Contact Number</Label>
+                    <Label htmlFor="contact" className="text-sm sm:text-base">
+                      Contact Number
+                    </Label>
                     <Input
                       id="contact"
                       type="tel"
                       value={formData.contactNumber}
                       onChange={(e) => setFormData({ ...formData, contactNumber: e.target.value })}
                       placeholder="Enter phone number"
+                      className="h-11 text-base"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email" className="text-sm sm:text-base">
+                      Email
+                    </Label>
                     <Input
                       id="email"
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       placeholder="Enter email"
+                      className="h-11 text-base"
                     />
                   </div>
                 </div>
 
-                {/* Category-specific fields */}
                 {getCategorySpecificFields()}
               </>
             )}
@@ -412,26 +427,33 @@ export function EntryForm({ isOpen, onClose, category, onSubmit }: EntryFormProp
               <>
                 {personDetails && (
                   <div>
-                    <Label htmlFor="vehicle">Vehicle Number (Optional)</Label>
+                    <Label htmlFor="vehicle" className="text-sm sm:text-base">
+                      Vehicle Number (Optional)
+                    </Label>
                     <Input
                       id="vehicle"
                       value={formData.vehicleNumber}
                       onChange={(e) => setFormData({ ...formData, vehicleNumber: e.target.value })}
                       placeholder="Enter vehicle number"
+                      className="h-11 text-base"
                     />
                   </div>
                 )}
               </>
             )}
 
-            {/* Form Actions */}
-            <div className="flex gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={onClose} className="flex-1 bg-transparent">
+            <div className="flex flex-col sm:flex-row gap-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                className="flex-1 h-11 text-base bg-transparent"
+              >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                className="flex-1"
+                className="flex-1 h-11 text-base"
                 disabled={category.toLowerCase() === "staff" ? !personDetails && !fileIdError : false}
               >
                 Add Entry
@@ -442,21 +464,23 @@ export function EntryForm({ isOpen, onClose, category, onSubmit }: EntryFormProp
       </Dialog>
 
       <Dialog open={isQrScannerOpen} onOpenChange={stopQrScanner}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="w-[95vw] max-w-md mx-2">
           <DialogHeader>
-            <DialogTitle className="flex items-center justify-between">
+            <DialogTitle className="flex items-center justify-between text-lg">
               Scan QR Code
-              <Button variant="ghost" size="sm" onClick={stopQrScanner} className="h-6 w-6 p-0">
+              <Button variant="ghost" size="icon" onClick={stopQrScanner} className="h-8 w-8">
                 <X className="h-4 w-4" />
               </Button>
             </DialogTitle>
-            <DialogDescription>Position the QR code within the camera view to scan the File ID.</DialogDescription>
+            <DialogDescription className="text-sm">
+              Position the QR code within the camera view to scan the File ID.
+            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div className="relative bg-black rounded-lg overflow-hidden">
-              <video ref={qrVideoRef} className="w-full h-64 object-cover" playsInline muted />
-              <div className="absolute inset-0 border-2 border-white border-dashed m-8 rounded-lg pointer-events-none" />
+              <video ref={qrVideoRef} className="w-full h-48 sm:h-64 object-cover" playsInline muted />
+              <div className="absolute inset-0 border-2 border-white border-dashed m-6 sm:m-8 rounded-lg pointer-events-none" />
             </div>
             <p className="text-sm text-gray-600 text-center">Point your camera at a QR code containing the File ID</p>
             <canvas ref={qrCanvasRef} className="hidden" />
