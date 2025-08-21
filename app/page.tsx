@@ -29,36 +29,36 @@ export default function SecurityDashboard() {
       color: "bg-blue-500",
     },
     {
+      id: "clients",
+      name: "Client", // removed 's' to make singular
+      count: 0,
+      icon: Briefcase,
+      color: "bg-green-500",
+    },
+    {
       id: "contractors",
-      name: "Contractors",
+      name: "Consultant", // removed 's' to make singular
       count: 0,
       icon: HardHat,
       color: "bg-orange-500",
     },
     {
       id: "subcontractors",
-      name: "Subcontractors",
+      name: "Subcontractor", // removed 's' to make singular
       count: 0,
       icon: Wrench,
       color: "bg-purple-500",
     },
     {
-      id: "clients",
-      name: "Clients",
-      count: 0,
-      icon: Briefcase,
-      color: "bg-green-500",
-    },
-    {
       id: "suppliers",
-      name: "Suppliers",
+      name: "Supplier", // removed 's' to make singular
       count: 0,
       icon: Truck,
       color: "bg-yellow-500",
     },
     {
       id: "visitors",
-      name: "Visitors",
+      name: "Visitor", // removed 's' to make singular
       count: 0,
       icon: UserCheck,
       color: "bg-red-500",

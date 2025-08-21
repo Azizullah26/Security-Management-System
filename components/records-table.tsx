@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -92,6 +92,10 @@ export function RecordsTable({ isOpen, onClose, category, entries, onCheckOut }:
               {category} Records
               <Badge variant="outline">{filteredEntries.length} entries</Badge>
             </DialogTitle>
+            <DialogDescription>
+              View and manage all {category.toLowerCase()} entries. You can search, view details, and check out people
+              who are currently inside.
+            </DialogDescription>
           </DialogHeader>
 
           {/* Search Bar */}
@@ -135,7 +139,11 @@ export function RecordsTable({ isOpen, onClose, category, entries, onCheckOut }:
                     <TableRow key={entry.id}>
                       <TableCell>
                         <Avatar className="h-10 w-10">
-                          <AvatarImage src={entry.photo || "/placeholder.svg"} alt={entry.name} />
+                          <AvatarImage
+                            src={entry.photo || "/placeholder.svg?height=40&width=40"}
+                            alt={entry.name}
+                            className="object-cover"
+                          />
                           <AvatarFallback>{entry.name.charAt(0).toUpperCase()}</AvatarFallback>
                         </Avatar>
                       </TableCell>
@@ -198,6 +206,7 @@ export function RecordsTable({ isOpen, onClose, category, entries, onCheckOut }:
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Entry Details</DialogTitle>
+              <DialogDescription>Detailed information for {selectedEntry.name}'s entry record.</DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4">
@@ -207,7 +216,7 @@ export function RecordsTable({ isOpen, onClose, category, entries, onCheckOut }:
                   <img
                     src={selectedEntry.photo || "/placeholder.svg"}
                     alt={selectedEntry.name}
-                    className="w-24 h-24 object-cover rounded-lg"
+                    className="w-24 h-24 object-cover rounded-lg border-2 border-gray-200"
                   />
                 </div>
               )}

@@ -2,14 +2,15 @@
 
 import type React from "react"
 
-import { useState, useRef } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { useState } from "react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Camera, Upload, X } from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card"
+import { CheckCircle } from "lucide-react"
 
 interface EntryFormProps {
   isOpen: boolean
@@ -27,10 +28,31 @@ export interface EntryData {
   contactNumber: string
   email: string
   vehicleNumber?: string
-  photo?: string
+  fileId?: string
+  photo?: string // Added photo property to interface
   entryTime: string
   exitTime?: string
   status: "inside" | "exited"
+}
+
+interface PersonDetails {
+  name: string
+  email: string
+  phone: string
+  department: string
+  company: string
+  image: string
+}
+
+const demoPersonData: Record<string, PersonDetails> = {
+  "2897": {
+    name: "Aziz",
+    email: "aziz@elrace.com",
+    phone: "0509363002",
+    department: "IT",
+    company: "El Race Contracting",
+    image: "/images/aziz-profile.png",
+  },
 }
 
 export function EntryForm({ isOpen, onClose, category, onSubmit }: EntryFormProps) {
@@ -41,79 +63,52 @@ export function EntryForm({ isOpen, onClose, category, onSubmit }: EntryFormProp
     contactNumber: "",
     email: "",
     vehicleNumber: "",
+    fileId: "",
   })
-  const [photo, setPhoto] = useState<string | null>(null)
-  const [showCamera, setShowCamera] = useState(false)
-  const [stream, setStream] = useState<MediaStream | null>(null)
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
 
-  const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        setPhoto(e.target?.result as string)
+  const [personDetails, setPersonDetails] = useState<PersonDetails | null>(null)
+  const [isChecking, setIsChecking] = useState(false)
+  const [fileIdError, setFileIdError] = useState("")
+
+  const handleCheckFileId = async () => {
+    if (!formData.fileId.trim()) {
+      setFileIdError("Please enter a File ID")
+      return
+    }
+
+    setIsChecking(true)
+    setFileIdError("")
+
+    // Simulate API call delay
+    setTimeout(() => {
+      const person = demoPersonData[formData.fileId]
+      if (person) {
+        setPersonDetails(person)
+        // Pre-populate form fields with fetched data
+        setFormData((prev) => ({
+          ...prev,
+          name: person.name,
+          email: person.email,
+          contactNumber: person.phone,
+          company: person.company,
+          purpose: person.department,
+        }))
+      } else {
+        setFileIdError("File ID not found. Please check and try again.")
+        setPersonDetails(null)
       }
-      reader.readAsDataURL(file)
-    }
-  }
-
-  const startCamera = async () => {
-    try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user" },
-      })
-      setStream(mediaStream)
-      setShowCamera(true)
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream
-      }
-    } catch (error) {
-      console.error("Error accessing camera:", error)
-      alert("Unable to access camera. Please check permissions.")
-    }
-  }
-
-  const capturePhoto = () => {
-    if (videoRef.current && canvasRef.current) {
-      const canvas = canvasRef.current
-      const video = videoRef.current
-      const context = canvas.getContext("2d")
-
-      canvas.width = video.videoWidth
-      canvas.height = video.videoHeight
-
-      if (context) {
-        context.drawImage(video, 0, 0)
-        const photoData = canvas.toDataURL("image/jpeg", 0.8)
-        setPhoto(photoData)
-        stopCamera()
-      }
-    }
-  }
-
-  const stopCamera = () => {
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop())
-      setStream(null)
-    }
-    setShowCamera(false)
+      setIsChecking(false)
+    }, 1000)
   }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (stream) {
-      stopCamera()
-    }
-
     const entryData: EntryData = {
       id: Date.now().toString(),
       category,
       ...formData,
-      photo: photo || undefined,
+      photo: personDetails?.image || undefined,
       entryTime: new Date().toISOString(),
       status: "inside",
     }
@@ -127,8 +122,10 @@ export function EntryForm({ isOpen, onClose, category, onSubmit }: EntryFormProp
       contactNumber: "",
       email: "",
       vehicleNumber: "",
+      fileId: "",
     })
-    setPhoto(null)
+    setPersonDetails(null)
+    setFileIdError("")
     onClose()
   }
 
@@ -189,149 +186,151 @@ export function EntryForm({ isOpen, onClose, category, onSubmit }: EntryFormProp
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add New {category} Entry</DialogTitle>
+          <DialogDescription>
+            Fill out the form below to register a new {category.toLowerCase()} entry into the system.
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Photo Upload */}
-          <div className="space-y-2">
-            <Label>Photo</Label>
-            {showCamera ? (
+          {category.toLowerCase() === "staff" && (
+            <>
               <div className="space-y-2">
-                <div className="relative">
-                  <video ref={videoRef} autoPlay playsInline className="w-full h-48 object-cover rounded-lg bg-black" />
+                <Label htmlFor="fileId">File ID *</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="fileId"
+                    required
+                    value={formData.fileId}
+                    onChange={(e) => {
+                      setFormData({ ...formData, fileId: e.target.value })
+                      setFileIdError("")
+                      setPersonDetails(null)
+                    }}
+                    placeholder="Enter file ID (e.g., 2897)"
+                    className={fileIdError ? "border-red-500" : ""}
+                  />
                   <Button
                     type="button"
-                    variant="destructive"
-                    size="sm"
-                    className="absolute top-2 right-2"
-                    onClick={stopCamera}
+                    onClick={handleCheckFileId}
+                    disabled={isChecking || !formData.fileId.trim()}
+                    className="px-4"
                   >
-                    <X className="h-4 w-4" />
+                    {isChecking ? "Checking..." : "Check"}
                   </Button>
                 </div>
-                <div className="flex gap-2">
-                  <Button type="button" onClick={capturePhoto} className="flex-1">
-                    <Camera className="h-4 w-4 mr-2" />
-                    Capture Photo
-                  </Button>
-                </div>
-                <canvas ref={canvasRef} className="hidden" />
+                {fileIdError && <p className="text-sm text-red-500">{fileIdError}</p>}
               </div>
-            ) : (
-              <div className="flex items-center gap-4">
-                {photo ? (
-                  <div className="relative">
-                    <img
-                      src={photo || "/placeholder.svg"}
-                      alt="Preview"
-                      className="w-20 h-20 object-cover rounded-lg"
-                    />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
-                      onClick={() => setPhoto(null)}
-                    >
-                      ×
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="w-20 h-20 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
-                    <Camera className="h-8 w-8 text-gray-400" />
-                  </div>
-                )}
-                <div className="flex flex-col gap-2">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handlePhotoUpload}
-                    className="hidden"
-                    id="photo-upload"
+
+              {personDetails && (
+                <Card className="border-green-200 bg-green-50">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                      <span className="font-semibold text-green-800">Person Found</span>
+                    </div>
+                    <div className="flex items-start gap-4">
+                      <div className="flex-shrink-0">
+                        <img
+                          src={personDetails.image || "/placeholder.svg"}
+                          alt={personDetails.name}
+                          className="w-16 h-16 rounded-full object-cover border-2 border-white shadow-sm"
+                        />
+                      </div>
+                      <div className="flex-1 space-y-1 text-sm">
+                        <div>
+                          <strong>Name:</strong> {personDetails.name}
+                        </div>
+                        <div>
+                          <strong>Email:</strong> {personDetails.email}
+                        </div>
+                        <div>
+                          <strong>Phone:</strong> {personDetails.phone}
+                        </div>
+                        <div>
+                          <strong>Department:</strong> {personDetails.department}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </>
+          )}
+
+          {(category.toLowerCase() !== "staff" || personDetails || fileIdError) && (
+            <>
+              {/* Basic Information */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="name">Full Name *</Label>
+                  <Input
+                    id="name"
+                    required
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="Enter full name"
                   />
-                  <Label htmlFor="photo-upload" className="cursor-pointer">
-                    <Button type="button" variant="outline" size="sm" asChild>
-                      <span>
-                        <Upload className="h-4 w-4 mr-2" />
-                        Upload Photo
-                      </span>
-                    </Button>
-                  </Label>
-                  <Button type="button" variant="outline" size="sm" onClick={startCamera}>
-                    <Camera className="h-4 w-4 mr-2" />
-                    Take Photo
-                  </Button>
+                </div>
+                <div>
+                  <Label htmlFor="company">Company/Organization</Label>
+                  <Input
+                    id="company"
+                    value={formData.company}
+                    onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                    placeholder="Enter company"
+                  />
                 </div>
               </div>
-            )}
-          </div>
 
-          {/* Basic Information */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="name">Full Name *</Label>
-              <Input
-                id="name"
-                required
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Enter full name"
-              />
-            </div>
-            <div>
-              <Label htmlFor="company">Company/Organization</Label>
-              <Input
-                id="company"
-                value={formData.company}
-                onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                placeholder="Enter company"
-              />
-            </div>
-          </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="contact">Contact Number</Label>
+                  <Input
+                    id="contact"
+                    type="tel"
+                    value={formData.contactNumber}
+                    onChange={(e) => setFormData({ ...formData, contactNumber: e.target.value })}
+                    placeholder="Enter phone number"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="Enter email"
+                  />
+                </div>
+              </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="contact">Contact Number</Label>
-              <Input
-                id="contact"
-                type="tel"
-                value={formData.contactNumber}
-                onChange={(e) => setFormData({ ...formData, contactNumber: e.target.value })}
-                placeholder="Enter phone number"
-              />
-            </div>
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="Enter email"
-              />
-            </div>
-          </div>
+              {/* Category-specific fields */}
+              {getCategorySpecificFields()}
 
-          {/* Category-specific fields */}
-          {getCategorySpecificFields()}
-
-          {/* Vehicle Number (optional for all categories) */}
-          <div>
-            <Label htmlFor="vehicle">Vehicle Number (Optional)</Label>
-            <Input
-              id="vehicle"
-              value={formData.vehicleNumber}
-              onChange={(e) => setFormData({ ...formData, vehicleNumber: e.target.value })}
-              placeholder="Enter vehicle number"
-            />
-          </div>
+              {/* Vehicle Number (optional for all categories) */}
+              <div>
+                <Label htmlFor="vehicle">Vehicle Number (Optional)</Label>
+                <Input
+                  id="vehicle"
+                  value={formData.vehicleNumber}
+                  onChange={(e) => setFormData({ ...formData, vehicleNumber: e.target.value })}
+                  placeholder="Enter vehicle number"
+                />
+              </div>
+            </>
+          )}
 
           {/* Form Actions */}
           <div className="flex gap-2 pt-4">
             <Button type="button" variant="outline" onClick={onClose} className="flex-1 bg-transparent">
               Cancel
             </Button>
-            <Button type="submit" className="flex-1">
+            <Button
+              type="submit"
+              className="flex-1"
+              disabled={category.toLowerCase() === "staff" ? !personDetails && !fileIdError : false}
+            >
               Add Entry
             </Button>
           </div>
