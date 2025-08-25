@@ -1,0 +1,27 @@
+{
+  "env": {
+    "ODOO_URL": "@odoo-url",
+    "ODOO_DB": "@odoo-db",
+    "ODOO_USERNAME": "@odoo-username",
+    "ODOO_PASSWORD": "@odoo-password"
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "https://rccsecurity.vercel.app"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Authorization"
+        }
+      ]
+    }
+  ]
+}

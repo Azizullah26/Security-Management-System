@@ -84,10 +84,19 @@ export function EntryForm({ isOpen, onClose, category, onSubmit }: EntryFormProp
     setIsChecking(true)
     setFileIdError("")
 
-    // Simulate API call delay
-    setTimeout(() => {
-      const person = demoPersonData[formData.fileId]
-      if (person) {
+    try {
+      const response = await fetch("/api/odoo/staff", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ fileId: formData.fileId }),
+      })
+
+      const result = await response.json()
+
+      if (response.ok && result.success) {
+        const person = result.data
         setPersonDetails(person)
         // Pre-populate form fields with fetched data
         setFormData((prev) => ({
@@ -99,11 +108,16 @@ export function EntryForm({ isOpen, onClose, category, onSubmit }: EntryFormProp
           purpose: person.department,
         }))
       } else {
-        setFileIdError("File ID not found. Please check and try again.")
+        setFileIdError(result.error || "File ID not found. Please check and try again.")
         setPersonDetails(null)
       }
+    } catch (error) {
+      console.error("Error fetching staff data:", error)
+      setFileIdError("Error connecting to server. Please try again.")
+      setPersonDetails(null)
+    } finally {
       setIsChecking(false)
-    }, 1000)
+    }
   }
 
   const handleSubmit = (e: React.FormEvent) => {
