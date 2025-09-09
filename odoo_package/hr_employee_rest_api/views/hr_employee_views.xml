@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Add Employee ID field to HR Employee form view for RCC Security System -->
+        <record id="view_employee_form_inherit_rcc" model="ir.ui.view">
+            <field name="name">hr.employee.form.inherit.rcc</field>
+            <field name="model">hr.employee</field>
+            <field name="inherit_id" ref="hr.view_employee_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='name']" position="after">
+                    <field name="emp_id" string="Employee ID (Security System)" required="1"/>
+                </xpath>
+            </field>
+        </record>
+        
+        <!-- Add Employee ID field to HR Employee tree view -->
+        <record id="view_employee_tree_inherit_rcc" model="ir.ui.view">
+            <field name="name">hr.employee.tree.inherit.rcc</field>
+            <field name="model">hr.employee</field>
+            <field name="inherit_id" ref="hr.view_employee_tree"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='name']" position="after">
+                    <field name="emp_id" string="Employee ID"/>
+                </xpath>
+            </field>
+        </record>
+    </data>
+</odoo>

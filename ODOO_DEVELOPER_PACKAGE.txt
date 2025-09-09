@@ -1,0 +1,29 @@
+# COMPLETE ODOO MODULE PACKAGE FOR RCC SECURITY SYSTEM
+# ====================================================
+
+This package contains all files needed to integrate Odoo with the RCC Security Management System.
+
+## INSTALLATION INSTRUCTIONS:
+1. Copy the entire 'hr_employee_rest_api' folder to your Odoo addons directory
+2. Restart Odoo server
+3. Go to Apps menu and update the Apps List
+4. Search for "HR Employee REST API" and install it
+5. Configure employee IDs in HR Employee records
+
+## API ENDPOINTS CREATED:
+- POST /api/hr/employee/search - Search employee by employee ID
+- GET /api/hr/employee/<id> - Get employee by database ID
+
+## REQUIRED FIELDS IN HR EMPLOYEE:
+- emp_id: Employee ID (used for security system lookup)
+- name: Full name
+- work_email: Work email
+- mobile_phone: Phone number  
+- section_id: Department
+- default_unit_operating_id: Company/Organization
+- image_1920: Profile photo
+
+## CORS CONFIGURATION:
+Module is configured to allow requests from:
+- https://rccsecurity.vercel.app (production)
+- http://localhost:3000 (development)
