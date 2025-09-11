@@ -1,9 +1,7 @@
 "use client"
 
 import type React from "react"
-
 import type { ReactElement } from "react"
-
 import { useState, useRef, useEffect } from "react"
 import { ErrorBoundary } from "react-error-boundary"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
@@ -75,6 +73,7 @@ function ErrorFallback({ error, resetErrorBoundary }: { error: Error; resetError
 }
 
 export function EntryForm({ isOpen, onClose, category, onSubmit }: EntryFormProps): ReactElement {
+  const [isMounted, setIsMounted] = useState(false)
   const [reactError, setReactError] = useState<string | null>(null)
 
   const [formData, setFormData] = useState({
@@ -97,13 +96,26 @@ export function EntryForm({ isOpen, onClose, category, onSubmit }: EntryFormProp
   const qrVideoRef = useRef<HTMLVideoElement>(null)
   const qrCanvasRef = useRef<HTMLCanvasElement>(null)
 
+  useEffect(() => {
+    setIsMounted(true)
+    console.log("[v0] Component mounted on client side")
+  }, [])
+
   const handleCheckFileId = async () => {
     try {
+      if (!isMounted) {
+        console.log("[v0] Component not yet mounted, skipping File ID check")
+        return
+      }
+
       console.log("[v0] ===== REACT ERROR CHECK =====")
-      console.log("[v0] React version:", typeof window !== "undefined" ? window.React?.version || "unknown" : "unknown")
-      console.log("[v0] Component mounted:", !!qrVideoRef.current)
+      console.log(
+        "[v0] React version:",
+        typeof window !== "undefined" ? (window as any).React?.version || "unknown" : "unknown",
+      )
+      console.log("[v0] Component mounted:", isMounted)
       console.log("[v0] Window object:", typeof window)
-      console.log("[v0] Document ready state:", document.readyState)
+      console.log("[v0] Document ready state:", typeof document !== "undefined" ? document.readyState : "unknown")
 
       if (!formData.fileId.trim()) {
         setFileIdError("Please enter a File ID")
@@ -111,13 +123,15 @@ export function EntryForm({ isOpen, onClose, category, onSubmit }: EntryFormProp
       }
 
       console.log("[v0] ===== FILE ID CHECK START =====")
-      console.log("[v0] Environment:", {
-        url: window.location.href,
-        origin: window.location.origin,
-        hostname: window.location.hostname,
-        protocol: window.location.protocol,
-        userAgent: navigator.userAgent,
-      })
+      if (typeof window !== "undefined") {
+        console.log("[v0] Environment:", {
+          url: window.location.href,
+          origin: window.location.origin,
+          hostname: window.location.hostname,
+          protocol: window.location.protocol,
+          userAgent: navigator.userAgent,
+        })
+      }
       console.log("[v0] Starting File ID check for:", formData.fileId)
       console.log("[v0] Current timestamp:", new Date().toISOString())
 
@@ -290,6 +304,11 @@ export function EntryForm({ isOpen, onClose, category, onSubmit }: EntryFormProp
 
   const startQrScanner = async () => {
     try {
+      if (!isMounted || typeof navigator === "undefined") {
+        console.log("[v0] Cannot start QR scanner - not mounted or no navigator")
+        return
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "environment" },
       })
@@ -358,6 +377,21 @@ export function EntryForm({ isOpen, onClose, category, onSubmit }: EntryFormProp
       }
     }
   }, [qrStream])
+
+  if (!isMounted) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="w-[95vw] max-w-md sm:max-w-lg max-h-[95vh] overflow-y-auto mx-2">
+          <div className="flex items-center justify-center p-8">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+              <p>Loading...</p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    )
+  }
 
   return (
     <ErrorBoundary
