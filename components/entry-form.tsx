@@ -123,15 +123,17 @@ export function EntryForm({ isOpen, onClose, category, onSubmit }: EntryFormProp
       }
 
       console.log("[v0] ===== FILE ID CHECK START =====")
-      if (typeof window !== "undefined") {
-        console.log("[v0] Environment:", {
-          url: window.location.href,
-          origin: window.location.origin,
-          hostname: window.location.hostname,
-          protocol: window.location.protocol,
-          userAgent: navigator.userAgent,
-        })
-      }
+     
+if (typeof window !== "undefined") {
+  console.log("[v0] Environment:", {
+    url: "https://rccsecurity.vercel.app/",
+    origin: "https://rccsecurity.vercel.app",
+    hostname: "rccsecurity.vercel.app",
+    protocol: "https:",
+    userAgent: navigator.userAgent,
+  })
+}
+
       console.log("[v0] Starting File ID check for:", formData.fileId)
       console.log("[v0] Current timestamp:", new Date().toISOString())
 
