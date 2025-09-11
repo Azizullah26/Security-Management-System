@@ -83,12 +83,23 @@ export function EntryForm({ isOpen, onClose, category, onSubmit }: EntryFormProp
       return
     }
 
-    console.log("[v0] Starting File ID check for:", formData.fileId) // Added debug logging
+    console.log("[v0] ===== FILE ID CHECK START =====")
+    console.log("[v0] Environment:", {
+      url: window.location.href,
+      origin: window.location.origin,
+      hostname: window.location.hostname,
+      protocol: window.location.protocol,
+    })
+    console.log("[v0] Starting File ID check for:", formData.fileId)
+    console.log("[v0] Current timestamp:", new Date().toISOString())
+
     setIsChecking(true)
     setFileIdError("")
 
     try {
-      console.log("[v0] Making API request to /api/odoo/staff") // Added debug logging
+      console.log("[v0] Making API request to /api/odoo/staff")
+      console.log("[v0] Request payload:", { fileId: formData.fileId })
+
       const response = await fetch("/api/odoo/staff", {
         method: "POST",
         headers: {
@@ -97,13 +108,27 @@ export function EntryForm({ isOpen, onClose, category, onSubmit }: EntryFormProp
         body: JSON.stringify({ fileId: formData.fileId }),
       })
 
-      console.log("[v0] API response status:", response.status) // Added debug logging
+      console.log("[v0] API response received:")
+      console.log("[v0] - Status:", response.status)
+      console.log("[v0] - Status Text:", response.statusText)
+      console.log("[v0] - Headers:", Object.fromEntries(response.headers.entries()))
+
       const result = await response.json()
-      console.log("[v0] API response data:", result) // Added debug logging
+      console.log("[v0] API response data:", result)
+      console.log("[v0] Response success flag:", result.success)
 
       if (response.ok && result.success) {
         const person = result.data
-        console.log("[v0] Person data received:", person) // Added debug logging
+        console.log("[v0] ✅ SUCCESS: Person data received:", person)
+        console.log("[v0] Person fields:", {
+          name: person.name,
+          email: person.email,
+          phone: person.phone,
+          department: person.department,
+          company: person.company,
+          hasImage: !!person.image,
+        })
+
         setPersonDetails(person)
         // Pre-populate form fields with fetched data
         setFormData((prev) => ({
@@ -114,18 +139,30 @@ export function EntryForm({ isOpen, onClose, category, onSubmit }: EntryFormProp
           company: person.company,
           purpose: person.department,
         }))
-        console.log("[v0] Form data updated successfully") // Added debug logging
+        console.log("[v0] ✅ Form data updated successfully")
       } else {
-        console.log("[v0] API request failed:", result.error) // Added debug logging
-        setFileIdError(result.error || "File ID not found. Please check and try again.")
+        console.log("[v0] ❌ API request failed:")
+        console.log("[v0] - Response OK:", response.ok)
+        console.log("[v0] - Result success:", result.success)
+        console.log("[v0] - Error message:", result.error)
+
+        const errorMessage = result.error || "File ID not found. Please check and try again."
+        console.log("[v0] Setting error message:", errorMessage)
+        setFileIdError(errorMessage)
         setPersonDetails(null)
       }
     } catch (error) {
-      console.error("[v0] Error fetching staff data:", error) // Enhanced error logging
+      console.error("[v0] ❌ CATCH ERROR: Error fetching staff data:", error)
+      console.error("[v0] Error details:", {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+      })
       setFileIdError("Error connecting to server. Please try again.")
       setPersonDetails(null)
     } finally {
       setIsChecking(false)
+      console.log("[v0] ===== FILE ID CHECK END =====")
     }
   }
 

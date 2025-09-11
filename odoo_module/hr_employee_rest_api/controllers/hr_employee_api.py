@@ -10,8 +10,8 @@ class HrEmployeeAPI(http.Controller):
         """Set CORS headers for cross-origin requests"""
         allowed_origins = [
             'https://rccsecurity.vercel.app',
-            'http://localhost:3000',
-            'https://localhost:3000'
+            'http://rccsecurity.vercel.app',
+            'https://rccsecurity.vercel.app'
         ]
         
         if origin and origin in allowed_origins:
