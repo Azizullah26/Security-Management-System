@@ -83,10 +83,12 @@ export function EntryForm({ isOpen, onClose, category, onSubmit }: EntryFormProp
       return
     }
 
+    console.log("[v0] Starting File ID check for:", formData.fileId) // Added debug logging
     setIsChecking(true)
     setFileIdError("")
 
     try {
+      console.log("[v0] Making API request to /api/odoo/staff") // Added debug logging
       const response = await fetch("/api/odoo/staff", {
         method: "POST",
         headers: {
@@ -95,10 +97,13 @@ export function EntryForm({ isOpen, onClose, category, onSubmit }: EntryFormProp
         body: JSON.stringify({ fileId: formData.fileId }),
       })
 
+      console.log("[v0] API response status:", response.status) // Added debug logging
       const result = await response.json()
+      console.log("[v0] API response data:", result) // Added debug logging
 
       if (response.ok && result.success) {
         const person = result.data
+        console.log("[v0] Person data received:", person) // Added debug logging
         setPersonDetails(person)
         // Pre-populate form fields with fetched data
         setFormData((prev) => ({
@@ -109,12 +114,14 @@ export function EntryForm({ isOpen, onClose, category, onSubmit }: EntryFormProp
           company: person.company,
           purpose: person.department,
         }))
+        console.log("[v0] Form data updated successfully") // Added debug logging
       } else {
+        console.log("[v0] API request failed:", result.error) // Added debug logging
         setFileIdError(result.error || "File ID not found. Please check and try again.")
         setPersonDetails(null)
       }
     } catch (error) {
-      console.error("Error fetching staff data:", error)
+      console.error("[v0] Error fetching staff data:", error) // Enhanced error logging
       setFileIdError("Error connecting to server. Please try again.")
       setPersonDetails(null)
     } finally {
