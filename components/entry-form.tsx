@@ -27,6 +27,7 @@ export interface EntryData {
   purpose: string
   contactNumber: string
   email: string
+  numberOfPersons?: number // Added numberOfPersons field to interface
   vehicleNumber?: string
   fileId?: string
   photo?: string // Added photo property to interface
@@ -62,6 +63,7 @@ export function EntryForm({ isOpen, onClose, category, onSubmit }: EntryFormProp
     purpose: "",
     contactNumber: "",
     email: "",
+    numberOfPersons: 1, // Added numberOfPersons field with default value of 1
     vehicleNumber: "",
     fileId: "",
   })
@@ -140,6 +142,7 @@ export function EntryForm({ isOpen, onClose, category, onSubmit }: EntryFormProp
       purpose: "",
       contactNumber: "",
       email: "",
+      numberOfPersons: 1, // Reset numberOfPersons to default value
       vehicleNumber: "",
       fileId: "",
     })
@@ -431,6 +434,24 @@ export function EntryForm({ isOpen, onClose, category, onSubmit }: EntryFormProp
                       className="h-11 text-base"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="numberOfPersons" className="text-sm sm:text-base">
+                    Number of Persons
+                  </Label>
+                  <Input
+                    id="numberOfPersons"
+                    type="number"
+                    min="1"
+                    max="50"
+                    value={formData.numberOfPersons}
+                    onChange={(e) =>
+                      setFormData({ ...formData, numberOfPersons: Number.parseInt(e.target.value) || 1 })
+                    }
+                    placeholder="Enter number of persons"
+                    className="h-11 text-base"
+                  />
                 </div>
 
                 {getCategorySpecificFields()}
