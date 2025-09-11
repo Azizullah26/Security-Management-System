@@ -2,7 +2,10 @@
 
 import type React from "react"
 
+import type { ReactElement } from "react"
+
 import { useState, useRef, useEffect } from "react"
+import { ErrorBoundary } from "react-error-boundary"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -27,10 +30,10 @@ export interface EntryData {
   purpose: string
   contactNumber: string
   email: string
-  numberOfPersons?: number // Added numberOfPersons field to interface
+  numberOfPersons?: number
   vehicleNumber?: string
   fileId?: string
-  photo?: string // Added photo property to interface
+  photo?: string
   entryTime: string
   exitTime?: string
   status: "inside" | "exited"
@@ -56,14 +59,31 @@ const demoPersonData: Record<string, PersonDetails> = {
   },
 }
 
-export function EntryForm({ isOpen, onClose, category, onSubmit }: EntryFormProps) {
+function ErrorFallback({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }): ReactElement {
+  console.error("[v0] React Error Boundary caught error:", error)
+  console.error("[v0] Error stack:", error.stack)
+
+  return (
+    <div className="p-4 border border-red-200 bg-red-50 rounded-lg">
+      <h2 className="text-lg font-semibold text-red-800 mb-2">Something went wrong</h2>
+      <p className="text-red-600 mb-4">Error: {error.message}</p>
+      <Button onClick={resetErrorBoundary} variant="outline">
+        Try again
+      </Button>
+    </div>
+  )
+}
+
+export function EntryForm({ isOpen, onClose, category, onSubmit }: EntryFormProps): ReactElement {
+  const [reactError, setReactError] = useState<string | null>(null)
+
   const [formData, setFormData] = useState({
     name: "",
     company: "",
     purpose: "",
     contactNumber: "",
     email: "",
-    numberOfPersons: 1, // Added numberOfPersons field with default value of 1
+    numberOfPersons: 1,
     vehicleNumber: "",
     fileId: "",
   })
@@ -78,25 +98,33 @@ export function EntryForm({ isOpen, onClose, category, onSubmit }: EntryFormProp
   const qrCanvasRef = useRef<HTMLCanvasElement>(null)
 
   const handleCheckFileId = async () => {
-    if (!formData.fileId.trim()) {
-      setFileIdError("Please enter a File ID")
-      return
-    }
-
-    console.log("[v0] ===== FILE ID CHECK START =====")
-    console.log("[v0] Environment:", {
-      url: window.location.href,
-      origin: window.location.origin,
-      hostname: window.location.hostname,
-      protocol: window.location.protocol,
-    })
-    console.log("[v0] Starting File ID check for:", formData.fileId)
-    console.log("[v0] Current timestamp:", new Date().toISOString())
-
-    setIsChecking(true)
-    setFileIdError("")
-
     try {
+      console.log("[v0] ===== REACT ERROR CHECK =====")
+      console.log("[v0] React version:", typeof window !== "undefined" ? window.React?.version || "unknown" : "unknown")
+      console.log("[v0] Component mounted:", !!qrVideoRef.current)
+      console.log("[v0] Window object:", typeof window)
+      console.log("[v0] Document ready state:", document.readyState)
+
+      if (!formData.fileId.trim()) {
+        setFileIdError("Please enter a File ID")
+        return
+      }
+
+      console.log("[v0] ===== FILE ID CHECK START =====")
+      console.log("[v0] Environment:", {
+        url: window.location.href,
+        origin: window.location.origin,
+        hostname: window.location.hostname,
+        protocol: window.location.protocol,
+        userAgent: navigator.userAgent,
+      })
+      console.log("[v0] Starting File ID check for:", formData.fileId)
+      console.log("[v0] Current timestamp:", new Date().toISOString())
+
+      setIsChecking(true)
+      setFileIdError("")
+      setReactError(null)
+
       console.log("[v0] Making API request to /api/odoo/staff")
       console.log("[v0] Request payload:", { fileId: formData.fileId })
 
@@ -129,17 +157,21 @@ export function EntryForm({ isOpen, onClose, category, onSubmit }: EntryFormProp
           hasImage: !!person.image,
         })
 
-        setPersonDetails(person)
-        // Pre-populate form fields with fetched data
-        setFormData((prev) => ({
-          ...prev,
-          name: person.name,
-          email: person.email,
-          contactNumber: person.phone,
-          company: person.company,
-          purpose: person.department,
-        }))
-        console.log("[v0] ✅ Form data updated successfully")
+        try {
+          setPersonDetails(person)
+          setFormData((prev) => ({
+            ...prev,
+            name: person.name,
+            email: person.email,
+            contactNumber: person.phone,
+            company: person.company,
+            purpose: person.department,
+          }))
+          console.log("[v0] ✅ Form data updated successfully")
+        } catch (stateError) {
+          console.error("[v0] ❌ React state update error:", stateError)
+          setReactError(`State update failed: ${stateError.message}`)
+        }
       } else {
         console.log("[v0] ❌ API request failed:")
         console.log("[v0] - Response OK:", response.ok)
@@ -158,8 +190,17 @@ export function EntryForm({ isOpen, onClose, category, onSubmit }: EntryFormProp
         message: error.message,
         stack: error.stack,
       })
-      setFileIdError("Error connecting to server. Please try again.")
+
+      if (error.name === "TypeError" && error.message.includes("fetch")) {
+        setFileIdError("Network error. Please check your internet connection.")
+      } else if (error.name === "SyntaxError") {
+        setFileIdError("Server response error. Please try again.")
+      } else {
+        setFileIdError("Error connecting to server. Please try again.")
+      }
+
       setPersonDetails(null)
+      setReactError(`Fetch error: ${error.message}`)
     } finally {
       setIsChecking(false)
       console.log("[v0] ===== FILE ID CHECK END =====")
@@ -186,7 +227,7 @@ export function EntryForm({ isOpen, onClose, category, onSubmit }: EntryFormProp
       purpose: "",
       contactNumber: "",
       email: "",
-      numberOfPersons: 1, // Reset numberOfPersons to default value
+      numberOfPersons: 1,
       vehicleNumber: "",
       fileId: "",
     })
@@ -260,7 +301,6 @@ export function EntryForm({ isOpen, onClose, category, onSubmit }: EntryFormProp
         qrVideoRef.current.play()
       }
 
-      // Start scanning for QR codes
       scanForQrCode()
     } catch (error) {
       console.error("Error accessing camera:", error)
@@ -291,18 +331,11 @@ export function EntryForm({ isOpen, onClose, category, onSubmit }: EntryFormProp
         canvas.height = video.videoHeight
         context.drawImage(video, 0, 0, canvas.width, canvas.height)
 
-        // Simple QR code detection simulation
-        // In a real implementation, you'd use a QR code detection library
-        const imageData = context.getImageData(0, 0, canvas.width, canvas.height)
-
-        // For demo purposes, simulate QR code detection after 3 seconds
         setTimeout(() => {
           if (isQrScannerOpen) {
-            // Simulate finding QR code with File ID
-            const simulatedQrData = "2897" // This would be extracted from actual QR code
+            const simulatedQrData = "2897"
             setFormData((prev) => ({ ...prev, fileId: simulatedQrData }))
             stopQrScanner()
-            // Automatically check the File ID
             setTimeout(() => {
               handleCheckFileId()
             }, 100)
@@ -327,7 +360,28 @@ export function EntryForm({ isOpen, onClose, category, onSubmit }: EntryFormProp
   }, [qrStream])
 
   return (
-    <>
+    <ErrorBoundary
+      FallbackComponent={ErrorFallback}
+      onError={(error, errorInfo) => {
+        console.error("[v0] Error Boundary triggered:", error)
+        console.error("[v0] Error Info:", errorInfo)
+        setReactError(`React Error: ${error.message}`)
+      }}
+      onReset={() => {
+        setReactError(null)
+        setFileIdError("")
+        setPersonDetails(null)
+      }}
+    >
+      {reactError && (
+        <div className="fixed top-4 right-4 z-50 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg max-w-md">
+          <strong>React Error:</strong> {reactError}
+          <Button onClick={() => setReactError(null)} variant="ghost" size="sm" className="ml-2">
+            ×
+          </Button>
+        </div>
+      )}
+
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="w-[95vw] max-w-md sm:max-w-lg max-h-[95vh] overflow-y-auto mx-2">
           <DialogHeader>
@@ -566,6 +620,6 @@ export function EntryForm({ isOpen, onClose, category, onSubmit }: EntryFormProp
           </div>
         </DialogContent>
       </Dialog>
-    </>
+    </ErrorBoundary>
   )
 }
