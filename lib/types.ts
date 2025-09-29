@@ -9,7 +9,7 @@ export interface SecurityPerson {
 export interface Project {
   id: string
   name: string
-  status: "active" | "completed" | "pending"
+  status: "active" | "completed" | "pending" | "on-hold" | "planning"
   assignedTo?: string // security person id
   startDate: string
   endDate?: string
