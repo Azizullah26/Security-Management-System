@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { staffSessionStore } from '../staff/auth/route'
 import { projectAssignments, getAllAssignments, setAssignment, removeAssignment } from '@/lib/assignments-store'
+import { verifyAdminSession } from '@/lib/auth-utils'
 
 // Staff data to sync with assignments
 const staffData = [
@@ -14,6 +15,15 @@ const staffData = [
 
 export async function GET(request: NextRequest) {
   try {
+    // Verify admin access
+    const isAdmin = verifyAdminSession(request)
+    if (!isAdmin) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Admin access required' },
+        { status: 403 }
+      )
+    }
+
     // Convert assignments map to array format for easier handling
     const allAssignments = getAllAssignments()
     const assignments = allAssignments.map(({ staffId, projectName }) => {
@@ -37,6 +47,15 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Verify admin access
+    const isAdmin = verifyAdminSession(request)
+    if (!isAdmin) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Admin access required' },
+        { status: 403 }
+      )
+    }
+
     const { staffId, projectName } = await request.json()
     
     if (!staffId || !projectName) {
@@ -84,6 +103,15 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    // Verify admin access
+    const isAdmin = verifyAdminSession(request)
+    if (!isAdmin) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Admin access required' },
+        { status: 403 }
+      )
+    }
+
     const { staffId } = await request.json()
     
     if (!staffId) {

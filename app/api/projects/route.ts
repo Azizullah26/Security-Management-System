@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import type { Project } from "@/lib/types"
+import { verifyAdminSession } from '@/lib/auth-utils'
 
 const mockProjects: Project[] = [
   {
@@ -2435,22 +2436,57 @@ const mockProjects: Project[] = [
   },
 ]
 
-export async function GET() {
-  return NextResponse.json(mockProjects)
-}
-
-export async function POST(request: Request) {
-  const body = await request.json()
-  const { action, projectId, securityPersonId } = body
-
-  if (action === "assign") {
-    // In real app, update database
-    const projectIndex = mockProjects.findIndex((p) => p.id === projectId)
-    if (projectIndex !== -1) {
-      mockProjects[projectIndex].assignedTo = securityPersonId
+export async function GET(request: NextRequest) {
+  try {
+    // Verify admin access
+    const isAdmin = verifyAdminSession(request)
+    if (!isAdmin) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Admin access required' },
+        { status: 403 }
+      )
     }
-    return NextResponse.json({ success: true })
-  }
 
-  return NextResponse.json({ error: "Invalid action" }, { status: 400 })
+    return NextResponse.json(mockProjects)
+  } catch (error) {
+    console.error('Projects fetch error:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch projects' },
+      { status: 500 }
+    )
+  }
 }
+
+export async function POST(request: NextRequest) {
+  try {
+    // Verify admin access
+    const isAdmin = verifyAdminSession(request)
+    if (!isAdmin) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Admin access required' },
+        { status: 403 }
+      )
+    }
+
+    const body = await request.json()
+    const { action, projectId, securityPersonId } = body
+
+    if (action === "assign") {
+      // In real app, update database
+      const projectIndex = mockProjects.findIndex((p) => p.id === projectId)
+      if (projectIndex !== -1) {
+        mockProjects[projectIndex].assignedTo = securityPersonId
+      }
+      return NextResponse.json({ success: true })
+    }
+
+    return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
+  } catch (error) {
+    console.error('Projects POST error:', error)
+    return NextResponse.json(
+      { error: 'Failed to process request' },
+      { status: 500 }
+    )
+  }
+}
+

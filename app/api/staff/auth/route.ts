@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 
-// Staff credentials  
+// Staff credentials (passwords should be in environment variables in production)
+// For demo purposes, using predictable passwords - in production use bcrypt/Argon2
 const staffCredentials = [
-  { fileId: '3252', name: 'Mohus' },
-  { fileId: '3242', name: 'Umair' },
-  { fileId: '3253', name: 'Salman' },
-  { fileId: '2234', name: 'Tanweer' },
-  { fileId: '3245', name: 'Tilak' },
-  { fileId: '3248', name: 'Ramesh' },
+  { fileId: '3252', name: 'Mohus', password: process.env.STAFF_3252_PASSWORD || 'Mohus' },
+  { fileId: '3242', name: 'Umair', password: process.env.STAFF_3242_PASSWORD || 'Umair' },
+  { fileId: '3253', name: 'Salman', password: process.env.STAFF_3253_PASSWORD || 'Salman' },
+  { fileId: '2234', name: 'Tanweer', password: process.env.STAFF_2234_PASSWORD || 'Tanweer' },
+  { fileId: '3245', name: 'Tilak', password: process.env.STAFF_3245_PASSWORD || 'Tilak' },
+  { fileId: '3248', name: 'Ramesh', password: process.env.STAFF_3248_PASSWORD || 'Ramesh' },
 ]
 
 // Import shared assignments store
@@ -99,8 +100,16 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    // For now, password is the staff name (in production, use proper hashed passwords)
-    const isValidPassword = password.toLowerCase() === staff.name.toLowerCase()
+    // Use constant-time comparison to prevent timing attacks
+    // Pad both strings to same length to prevent length-based timing attacks
+    const maxLength = Math.max(password.length, staff.password.length)
+    const paddedPassword = password.padEnd(maxLength, '\0')
+    const paddedStaffPassword = staff.password.padEnd(maxLength, '\0')
+    
+    const isValidPassword = crypto.timingSafeEqual(
+      Buffer.from(paddedPassword),
+      Buffer.from(paddedStaffPassword)
+    ) && password.length === staff.password.length
     
     if (isValidPassword) {
       recordAttempt(ip, true)

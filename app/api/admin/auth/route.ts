@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
+import { adminSessionStore } from '@/lib/auth-utils'
 
-// Session storage (in production, use Redis or database)
-export const sessionStore = new Map<string, { createdAt: number; expiresAt: number }>()
+// Use shared admin session store
 
 // Rate limiting map (in production, use Redis or database)
 const rateLimitMap = new Map<string, { attempts: number; lastAttempt: number; lockUntil?: number }>()
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
       const expiresAt = now + 24 * 60 * 60 * 1000 // 24 hours
       
       // Store session server-side
-      sessionStore.set(sessionToken, {
+      adminSessionStore.set(sessionToken, {
         createdAt: now,
         expiresAt: expiresAt
       })
