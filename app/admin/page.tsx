@@ -80,7 +80,9 @@ export default function AdminDashboard() {
     // Only fetch data if authenticated
     if (isAuthenticated) {
       Promise.all([
-        fetch("/api/projects").then((res) => {
+        fetch("/api/projects", {
+          credentials: 'include' // Include authentication cookies
+        }).then((res) => {
           if (!res.ok) {
             console.error('Failed to fetch projects:', res.status)
             return []
@@ -90,7 +92,9 @@ export default function AdminDashboard() {
           console.error('Error fetching projects:', error)
           return []
         }),
-        fetch("/api/security-staff").then((res) => {
+        fetch("/api/security-staff", {
+          credentials: 'include' // Include authentication cookies
+        }).then((res) => {
           if (!res.ok) {
             console.error('Failed to fetch security staff:', res.status)
             return []

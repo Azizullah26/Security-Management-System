@@ -54,8 +54,12 @@ export function StaffAssignmentManagement() {
     const fetchData = async () => {
       try {
         const [projectsRes, assignmentsRes] = await Promise.all([
-          fetch("/api/projects"),
-          fetch("/api/assignments")
+          fetch("/api/projects", {
+            credentials: 'include' // Include authentication cookies
+          }),
+          fetch("/api/assignments", {
+            credentials: 'include' // Include authentication cookies
+          })
         ])
 
         if (projectsRes.ok) {
@@ -89,6 +93,7 @@ export function StaffAssignmentManagement() {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: 'include', // Include authentication cookies
         body: JSON.stringify({
           staffId: selectedStaff,
           projectName: selectedProject,
@@ -122,6 +127,7 @@ export function StaffAssignmentManagement() {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: 'include', // Include authentication cookies
         body: JSON.stringify({ staffId }),
       })
 
