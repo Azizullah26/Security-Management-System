@@ -25,7 +25,7 @@ import {
   Cell,
   Legend,
 } from "recharts"
-import { Search, Users, FolderOpen, CheckCircle, AlertTriangle, UserPlus, Sun, Moon } from "lucide-react"
+import { Search, Users, FolderOpen, CheckCircle, AlertTriangle, UserPlus } from "lucide-react"
 import type { Project, SecurityPerson } from "@/lib/types"
 import { StaffManagement } from "@/components/staff-management"
 
@@ -39,7 +39,6 @@ export default function AdminDashboard() {
     isOpen: boolean
     project: Project | null
   }>({ isOpen: false, project: null })
-  const [isDarkTheme, setIsDarkTheme] = useState(false)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
 
@@ -108,9 +107,6 @@ export default function AdminDashboard() {
     }
   }, [isAuthenticated])
 
-  const toggleTheme = () => {
-    setIsDarkTheme(!isDarkTheme)
-  }
 
   const handleLogin = () => {
     setIsAuthenticated(true)
@@ -210,15 +206,6 @@ export default function AdminDashboard() {
             Monitor and manage security projects and personnel
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={toggleTheme}
-          className="flex items-center gap-2 transition-all duration-300 hover:scale-105 hover:shadow-lg bg-gradient-to-r from-blue-500 to-purple-500 text-white border-transparent hover:from-purple-500 hover:to-pink-500 hover:shadow-purple-300/50"
-        >
-          {isDarkTheme ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          {isDarkTheme ? "Light" : "Dark"}
-        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -358,15 +345,6 @@ export default function AdminDashboard() {
             Manage security projects and assignments
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={toggleTheme}
-          className="flex items-center gap-2 transition-all duration-300 hover:scale-105 hover:shadow-lg bg-gradient-to-r from-blue-500 to-purple-500 text-white border-transparent hover:from-purple-500 hover:to-pink-500 hover:shadow-purple-300/50"
-        >
-          {isDarkTheme ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          {isDarkTheme ? "Light" : "Dark"}
-        </Button>
       </div>
 
       <div className="flex gap-4 items-center bg-white/70 backdrop-blur-sm p-4 rounded-lg border border-white/50 shadow-sm">
