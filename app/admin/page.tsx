@@ -11,6 +11,7 @@ import { AdminSidebar } from "@/components/admin-sidebar"
 import { ProjectAssignmentDialog } from "@/components/project-assignment-dialog"
 import { AllRecordsView } from "@/components/all-records-view"
 import { AdminLogin } from "@/components/admin-login"
+import { StaffAssignmentManagement } from "@/components/staff-assignment-management"
 import {
   BarChart,
   Bar,
@@ -489,6 +490,8 @@ export default function AdminDashboard() {
 
   const renderStaff = () => <StaffManagement securityStaff={securityStaff} projects={projects} />
 
+  const renderAssignments = () => <StaffAssignmentManagement />
+
   const renderContent = () => {
     switch (activeSection) {
       case "overview":
@@ -496,7 +499,7 @@ export default function AdminDashboard() {
       case "projects":
         return renderProjects()
       case "assignments":
-        return renderProjects()
+        return renderAssignments()
       case "staff":
         return renderStaff()
       case "analytics":
