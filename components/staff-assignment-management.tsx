@@ -229,57 +229,57 @@ export function StaffAssignmentManagement() {
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
+        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 shadow-lg hover:shadow-xl transition-all duration-300">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Users className="h-5 w-5 text-blue-600" />
+              <div className="p-2 bg-blue-200 rounded-lg">
+                <Users className="h-5 w-5 text-blue-700" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Total Staff</p>
-                <p className="text-xl font-bold">{staffMembers.length}</p>
+                <p className="text-sm text-blue-700 font-medium">Total Staff</p>
+                <p className="text-xl font-bold text-blue-900">{staffMembers.length}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 shadow-lg hover:shadow-xl transition-all duration-300">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <UserPlus className="h-5 w-5 text-green-600" />
+              <div className="p-2 bg-green-200 rounded-lg">
+                <UserPlus className="h-5 w-5 text-green-700" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Assigned</p>
-                <p className="text-xl font-bold">{assignments.length}</p>
+                <p className="text-sm text-green-700 font-medium">Assigned</p>
+                <p className="text-xl font-bold text-green-900">{assignments.length}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200 shadow-lg hover:shadow-xl transition-all duration-300">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-orange-100 rounded-lg">
-                <Users className="h-5 w-5 text-orange-600" />
+              <div className="p-2 bg-orange-200 rounded-lg">
+                <Users className="h-5 w-5 text-orange-700" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Unassigned</p>
-                <p className="text-xl font-bold">{staffMembers.length - assignments.length}</p>
+                <p className="text-sm text-orange-700 font-medium">Unassigned</p>
+                <p className="text-xl font-bold text-orange-900">{staffMembers.length - assignments.length}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 shadow-lg hover:shadow-xl transition-all duration-300">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <MapPin className="h-5 w-5 text-purple-600" />
+              <div className="p-2 bg-purple-200 rounded-lg">
+                <MapPin className="h-5 w-5 text-purple-700" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Active Projects</p>
-                <p className="text-xl font-bold">{getActiveProjects().length}</p>
+                <p className="text-sm text-purple-700 font-medium">Active Projects</p>
+                <p className="text-xl font-bold text-purple-900">{getActiveProjects().length}</p>
               </div>
             </div>
           </CardContent>
@@ -287,11 +287,11 @@ export function StaffAssignmentManagement() {
       </div>
 
       {/* Search and Filter */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Current Assignments</CardTitle>
+      <Card className="bg-gradient-to-br from-slate-50 to-blue-50 border-slate-200 shadow-lg">
+        <CardHeader className="bg-gradient-to-r from-blue-100 to-slate-100 border-b border-blue-200">
+          <CardTitle className="text-slate-800">Current Assignments</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="bg-white">
           <div className="flex items-center gap-4 mb-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -361,20 +361,20 @@ export function StaffAssignmentManagement() {
 
       {/* Unassigned Staff */}
       {getUnassignedStaff().length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Unassigned Staff</CardTitle>
+        <Card className="bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200 shadow-lg">
+          <CardHeader className="bg-gradient-to-r from-orange-100 to-amber-100 border-b border-orange-200">
+            <CardTitle className="text-amber-800">Unassigned Staff</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="bg-white">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {getUnassignedStaff().map((staff) => (
-                <div key={staff.fileId} className="p-3 border rounded-lg bg-gray-50">
+                <div key={staff.fileId} className="p-3 border border-orange-200 rounded-lg bg-gradient-to-br from-orange-50 to-amber-50 hover:shadow-md transition-all duration-300">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium">{staff.name}</p>
-                      <p className="text-sm text-gray-500">ID: {staff.fileId}</p>
+                      <p className="font-medium text-amber-900">{staff.name}</p>
+                      <p className="text-sm text-amber-700">ID: {staff.fileId}</p>
                     </div>
-                    <Badge variant="secondary">Unassigned</Badge>
+                    <Badge variant="secondary" className="bg-orange-200 text-orange-800 border-orange-300">Unassigned</Badge>
                   </div>
                 </div>
               ))}
