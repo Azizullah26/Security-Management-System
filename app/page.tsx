@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -70,6 +70,33 @@ export default function SecurityDashboard() {
   const [selectedCategory, setSelectedCategory] = useState<string>("")
   const [entries, setEntries] = useState<EntryData[]>([])
 
+  // Load entries from localStorage on component mount
+  useEffect(() => {
+    const savedEntries = localStorage.getItem("security-entries")
+    if (savedEntries) {
+      try {
+        const parsedEntries = JSON.parse(savedEntries)
+        setEntries(parsedEntries)
+        
+        // Update category counts based on loaded entries
+        const categoryCounts: Record<string, number> = {}
+        parsedEntries.forEach((entry: EntryData) => {
+          const categoryKey = entry.category.toLowerCase()
+          categoryCounts[categoryKey] = (categoryCounts[categoryKey] || 0) + 1
+        })
+        
+        setCategories((prev) =>
+          prev.map((cat) => ({
+            ...cat,
+            count: categoryCounts[cat.id] || 0
+          }))
+        )
+      } catch (error) {
+        console.error("Failed to load entries from localStorage:", error)
+      }
+    }
+  }, [])
+
   const handleAddEntry = (categoryId: string) => {
     setSelectedCategory(categoryId)
     setIsEntryFormOpen(true)
@@ -81,7 +108,11 @@ export default function SecurityDashboard() {
   }
 
   const handleEntrySubmit = (entryData: EntryData) => {
-    setEntries((prev) => [...prev, entryData])
+    const updatedEntries = [...entries, entryData]
+    setEntries(updatedEntries)
+    
+    // Save to localStorage
+    localStorage.setItem("security-entries", JSON.stringify(updatedEntries))
 
     // Update category count
     setCategories((prev) =>
@@ -90,17 +121,19 @@ export default function SecurityDashboard() {
   }
 
   const handleCheckOut = (entryId: string) => {
-    setEntries((prev) =>
-      prev.map((entry) =>
-        entry.id === entryId
-          ? {
-              ...entry,
-              status: "exited" as const,
-              exitTime: new Date().toISOString(),
-            }
-          : entry,
-      ),
+    const updatedEntries = entries.map((entry) =>
+      entry.id === entryId
+        ? {
+            ...entry,
+            status: "exited" as const,
+            exitTime: new Date().toISOString(),
+          }
+        : entry,
     )
+    setEntries(updatedEntries)
+    
+    // Save to localStorage
+    localStorage.setItem("security-entries", JSON.stringify(updatedEntries))
   }
 
   const currentlyInside = entries.filter((entry) => entry.status === "inside").length
