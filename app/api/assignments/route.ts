@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { staffSessionStore } from '../staff/auth/route'
-
-// Mock project assignments data (in production, this would come from a database)
-const projectAssignments = new Map<string, string>()
+import { projectAssignments, getAllAssignments, setAssignment, removeAssignment } from '@/lib/assignments-store'
 
 // Staff data to sync with assignments
 const staffData = [
@@ -17,7 +15,8 @@ const staffData = [
 export async function GET(request: NextRequest) {
   try {
     // Convert assignments map to array format for easier handling
-    const assignments = Array.from(projectAssignments.entries()).map(([staffId, projectName]) => {
+    const allAssignments = getAllAssignments()
+    const assignments = allAssignments.map(({ staffId, projectName }) => {
       const staff = staffData.find(s => s.fileId === staffId)
       return {
         staffId,
@@ -57,7 +56,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Assign project to staff
-    projectAssignments.set(staffId, projectName)
+    setAssignment(staffId, projectName)
 
     // Update all active sessions for this staff member
     for (const [sessionToken, session] of staffSessionStore.entries()) {
@@ -95,7 +94,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Remove assignment
-    projectAssignments.delete(staffId)
+    removeAssignment(staffId)
 
     // Update all active sessions for this staff member
     for (const [sessionToken, session] of staffSessionStore.entries()) {

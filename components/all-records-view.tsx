@@ -19,10 +19,12 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [categoryFilter, setCategoryFilter] = useState<string>("all")
   const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [projectFilter, setProjectFilter] = useState<string>("all")
   const [selectedEntry, setSelectedEntry] = useState<EntryData | null>(null)
   const [localEntries, setLocalEntries] = useState<EntryData[]>([])
+  const [projects, setProjects] = useState<any[]>([])
 
-  // Load entries from localStorage on mount
+  // Load entries from localStorage and projects from API on mount
   useEffect(() => {
     const savedEntries = localStorage.getItem("security-entries")
     if (savedEntries) {
@@ -32,12 +34,26 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
         console.error("Failed to load entries from localStorage:", error)
       }
     }
+
+    // Load projects for project filter
+    const loadProjects = async () => {
+      try {
+        const response = await fetch("/api/projects")
+        if (response.ok) {
+          const data = await response.json()
+          setProjects(data.projects || data || [])
+        }
+      } catch (error) {
+        console.error("Failed to load projects:", error)
+      }
+    }
+    loadProjects()
   }, []) // Run only once on mount
 
   // Use provided entries or local entries (only fall back when entries is undefined)
   const allEntries = entries ?? localEntries
 
-  // Filter entries based on search term, category, and status
+  // Filter entries based on search term, category, status, and project
   const filteredEntries = allEntries.filter((entry) => {
     const matchesSearch =
       entry.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -47,8 +63,9 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
 
     const matchesCategory = categoryFilter === "all" || entry.category.toLowerCase() === categoryFilter.toLowerCase()
     const matchesStatus = statusFilter === "all" || entry.status === statusFilter
+    const matchesProject = projectFilter === "all" || entry.projectName === projectFilter
 
-    return matchesSearch && matchesCategory && matchesStatus
+    return matchesSearch && matchesCategory && matchesStatus && matchesProject
   })
 
   const formatTime = (isoString: string) => {
@@ -263,6 +280,23 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
             <SelectItem value="exited">Exited</SelectItem>
           </SelectContent>
         </Select>
+
+        <Select value={projectFilter} onValueChange={setProjectFilter}>
+          <SelectTrigger className="w-48 border-orange-200 focus:border-orange-500">
+            <SelectValue placeholder="All Projects" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Projects</SelectItem>
+            {projects
+              .filter(project => project.status === 'active')
+              .slice(0, 10) // Limit to first 10 for UI performance
+              .map((project) => (
+                <SelectItem key={project.id} value={project.name}>
+                  {project.name}
+                </SelectItem>
+              ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Records Table */}
@@ -278,6 +312,7 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
                   <TableHead className="min-w-[150px] text-slate-700 font-semibold">Company</TableHead>
                   <TableHead className="min-w-[120px] text-slate-700 font-semibold">Purpose</TableHead>
                   <TableHead className="min-w-[140px] text-slate-700 font-semibold">Contact</TableHead>
+                  <TableHead className="min-w-[150px] text-slate-700 font-semibold">Project</TableHead>
                   <TableHead className="min-w-[140px] text-slate-700 font-semibold">Entry Time</TableHead>
                   <TableHead className="min-w-[140px] text-slate-700 font-semibold">Exit Time</TableHead>
                   <TableHead className="min-w-[140px] text-slate-700 font-semibold">Status/Duration</TableHead>
@@ -287,7 +322,7 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
               <TableBody>
                 {filteredEntries.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={10} className="text-center py-8 text-slate-500">
+                    <TableCell colSpan={11} className="text-center py-8 text-slate-500">
                       {allEntries.length === 0 ? "No records found" : "No entries match your filters"}
                     </TableCell>
                   </TableRow>
@@ -311,6 +346,15 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
                       <TableCell className="text-slate-700">{entry.company || "N/A"}</TableCell>
                       <TableCell className="text-slate-700">{entry.purpose || "N/A"}</TableCell>
                       <TableCell className="text-slate-700">{entry.contactNumber || "N/A"}</TableCell>
+                      <TableCell className="text-slate-700">
+                        {entry.projectName ? (
+                          <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+                            {entry.projectName}
+                          </Badge>
+                        ) : (
+                          <span className="text-slate-400">No project</span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-slate-700">{formatTime(entry.entryTime)}</TableCell>
                       <TableCell>
                         {entry.exitTime ? (

@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 
-// Staff credentials
+// Staff credentials  
 const staffCredentials = [
-  { fileId: '3252', name: 'Mohus', assignedProject: null },
-  { fileId: '3242', name: 'Umair', assignedProject: null },
-  { fileId: '3253', name: 'Salman', assignedProject: null },
-  { fileId: '2234', name: 'Tanweer', assignedProject: null },
-  { fileId: '3245', name: 'Tilak', assignedProject: null },
-  { fileId: '3248', name: 'Ramesh', assignedProject: null },
+  { fileId: '3252', name: 'Mohus' },
+  { fileId: '3242', name: 'Umair' },
+  { fileId: '3253', name: 'Salman' },
+  { fileId: '2234', name: 'Tanweer' },
+  { fileId: '3245', name: 'Tilak' },
+  { fileId: '3248', name: 'Ramesh' },
 ]
+
+// Import shared assignments store
+import { getAssignment } from '@/lib/assignments-store'
 
 // Session storage for staff (in production, use Redis or database)
 export const staffSessionStore = new Map<string, { 
@@ -102,6 +105,9 @@ export async function POST(request: NextRequest) {
     if (isValidPassword) {
       recordAttempt(ip, true)
       
+      // Get current project assignment for this staff member
+      const assignedProject = getAssignment(staff.fileId)
+      
       // Generate session token
       const sessionToken = crypto.randomBytes(32).toString('hex')
       const now = Date.now()
@@ -111,7 +117,7 @@ export async function POST(request: NextRequest) {
       staffSessionStore.set(sessionToken, {
         staffId: staff.fileId,
         name: staff.name,
-        assignedProject: staff.assignedProject,
+        assignedProject: assignedProject,
         createdAt: now,
         expiresAt: expiresAt
       })
@@ -121,7 +127,7 @@ export async function POST(request: NextRequest) {
         staff: {
           fileId: staff.fileId,
           name: staff.name,
-          assignedProject: staff.assignedProject
+          assignedProject: assignedProject
         }
       })
       
