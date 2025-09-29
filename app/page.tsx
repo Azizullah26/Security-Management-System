@@ -6,10 +6,12 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Users, HardHat, Wrench, Briefcase, Truck, UserCheck } from "lucide-react"
+import { Users, HardHat, Wrench, Briefcase, Truck, UserCheck, LogOut } from "lucide-react"
 import { EntryForm, type EntryData } from "@/components/entry-form"
 import { RecordsTable } from "@/components/records-table"
 import { TimeTracker } from "@/components/time-tracker"
+import { StaffLogin } from "@/components/staff-login"
+import { type StaffMember } from "@/lib/types"
 
 interface CategoryData {
   id: string
@@ -20,6 +22,8 @@ interface CategoryData {
 }
 
 export default function SecurityDashboard() {
+  const [currentStaff, setCurrentStaff] = useState<StaffMember | null>(null)
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true)
   const [categories, setCategories] = useState<CategoryData[]>([
     {
       id: "staff",
@@ -70,17 +74,45 @@ export default function SecurityDashboard() {
   const [selectedCategory, setSelectedCategory] = useState<string>("")
   const [entries, setEntries] = useState<EntryData[]>([])
 
+  // Check authentication status on component mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch("/api/staff/verify")
+        if (response.ok) {
+          const data = await response.json()
+          setCurrentStaff(data.staff)
+        }
+      } catch (error) {
+        console.error("Auth check failed:", error)
+      } finally {
+        setIsLoadingAuth(false)
+      }
+    }
+
+    checkAuth()
+  }, [])
+
   // Load entries from localStorage on component mount
   useEffect(() => {
+    if (!currentStaff) return
+
     const savedEntries = localStorage.getItem("security-entries")
     if (savedEntries) {
       try {
         const parsedEntries = JSON.parse(savedEntries)
-        setEntries(parsedEntries)
         
-        // Update category counts based on loaded entries
+        // Filter entries by staff's assigned project (if they have one)
+        const filteredEntries = currentStaff.assignedProject 
+          ? parsedEntries.filter((entry: EntryData) => 
+              entry.projectName === currentStaff.assignedProject)
+          : parsedEntries
+        
+        setEntries(filteredEntries)
+        
+        // Update category counts based on filtered entries
         const categoryCounts: Record<string, number> = {}
-        parsedEntries.forEach((entry: EntryData) => {
+        filteredEntries.forEach((entry: EntryData) => {
           const categoryKey = entry.category.toLowerCase()
           categoryCounts[categoryKey] = (categoryCounts[categoryKey] || 0) + 1
         })
@@ -95,7 +127,25 @@ export default function SecurityDashboard() {
         console.error("Failed to load entries from localStorage:", error)
       }
     }
-  }, [])
+  }, [currentStaff])
+
+  const handleLogin = (staff: StaffMember) => {
+    setCurrentStaff(staff)
+  }
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/staff/logout", { method: "POST" })
+      setCurrentStaff(null)
+      setEntries([])
+      // Reset category counts
+      setCategories((prev) =>
+        prev.map((cat) => ({ ...cat, count: 0 }))
+      )
+    } catch (error) {
+      console.error("Logout failed:", error)
+    }
+  }
 
   const handleAddEntry = (categoryId: string) => {
     setSelectedCategory(categoryId)
@@ -140,6 +190,23 @@ export default function SecurityDashboard() {
   const checkedOut = entries.filter((entry) => entry.status === "exited").length
   const totalEntries = entries.length
 
+  // Show loading screen while checking authentication
+  if (isLoadingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show staff login if not authenticated
+  if (!currentStaff) {
+    return <StaffLogin onLogin={handleLogin} />
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 p-2 sm:p-4 lg:p-6">
       <div className="max-w-7xl mx-auto">
@@ -157,11 +224,35 @@ export default function SecurityDashboard() {
                 Security Management System
               </h1>
               <p className="text-xs sm:text-sm md:text-base text-gray-600">Visitor and Personnel Tracking Dashboard</p>
+              
+              {/* Staff and Project Info */}
+              <div className="mt-2 flex flex-col sm:flex-row gap-2 sm:gap-4 text-xs sm:text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-blue-600">Staff:</span>
+                  <span className="text-gray-700">{currentStaff.name} (ID: {currentStaff.fileId})</span>
+                </div>
+                {currentStaff.assignedProject && (
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-green-600">Project:</span>
+                    <span className="text-gray-700">{currentStaff.assignedProject}</span>
+                  </div>
+                )}
+                {!currentStaff.assignedProject && (
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-orange-600">Project:</span>
+                    <span className="text-gray-500">No project assigned</span>
+                  </div>
+                )}
+              </div>
             </div>
             <div className="flex-shrink-0 flex gap-2">
               <Button onClick={() => (window.location.href = "/admin")} variant="outline" className="gap-2">
                 <Users className="h-4 w-4" />
                 Admin Dashboard
+              </Button>
+              <Button onClick={handleLogout} variant="outline" className="gap-2 text-red-600 hover:text-red-700">
+                <LogOut className="h-4 w-4" />
+                Logout
               </Button>
             </div>
           </div>

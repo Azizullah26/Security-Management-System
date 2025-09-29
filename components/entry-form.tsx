@@ -33,6 +33,7 @@ export interface EntryData {
   entryTime: string
   exitTime?: string
   status: "inside" | "exited"
+  projectName?: string
 }
 
 function ErrorFallback({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }): ReactElement {

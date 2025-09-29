@@ -22,3 +22,9 @@ export interface ProjectAssignment {
   securityPersonId: string
   assignedDate: string
 }
+
+export interface StaffMember {
+  fileId: string
+  name: string
+  assignedProject: string | null
+}
