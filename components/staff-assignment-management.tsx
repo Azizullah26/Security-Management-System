@@ -151,8 +151,8 @@ export function StaffAssignmentManagement() {
     return staffMembers.filter(staff => !assignedStaffIds.includes(staff.fileId))
   }
 
-  const getActiveProjects = () => {
-    return projects.filter(project => project.status === 'active').map(p => p.name)
+  const getAllProjects = () => {
+    return projects.map(p => p.name)
   }
 
   return (
@@ -202,7 +202,7 @@ export function StaffAssignmentManagement() {
                     <SelectValue placeholder="Select project" />
                   </SelectTrigger>
                   <SelectContent>
-                    {getActiveProjects().map((projectName) => (
+                    {getAllProjects().map((projectName) => (
                       <SelectItem key={projectName} value={projectName}>
                         {projectName}
                       </SelectItem>
@@ -278,8 +278,8 @@ export function StaffAssignmentManagement() {
                 <MapPin className="h-5 w-5 text-purple-700" />
               </div>
               <div>
-                <p className="text-sm text-purple-700 font-medium">Active Projects</p>
-                <p className="text-xl font-bold text-purple-900">{getActiveProjects().length}</p>
+                <p className="text-sm text-purple-700 font-medium">Total Projects</p>
+                <p className="text-xl font-bold text-purple-900">{getAllProjects().length}</p>
               </div>
             </div>
           </CardContent>
