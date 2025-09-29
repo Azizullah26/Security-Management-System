@@ -9,6 +9,7 @@ interface OdooStaffResponse {
   company: string
   image: string
   emp_id: string
+  job_id: string
 }
 
 interface StaffData {
@@ -18,6 +19,7 @@ interface StaffData {
   department: string
   company: string
   image: string
+  jobPosition: string
 }
 
 export async function POST(request: NextRequest) {
@@ -119,6 +121,7 @@ export async function POST(request: NextRequest) {
 <value><string>company_id</string></value>
 <value><string>image_1920</string></value>
 <value><string>emp_id</string></value>
+<value><string>job_id</string></value>
 </data></array></value>
 </member>
 </struct></value></param>
@@ -192,6 +195,7 @@ export async function POST(request: NextRequest) {
         company_id: extractRelationalField("company_id"),
         image_1920: extractField("image_1920"),
         emp_id: extractField("emp_id"),
+        job_id: extractRelationalField("job_id"),
       }
 
       console.log("[v0] Parsed employee data:", employee)
@@ -215,10 +219,11 @@ export async function POST(request: NextRequest) {
     const staffData: StaffData = {
       name: employee.name || "",
       email: employee.work_email || "",
-      phone: employee.work_phone || "",
+      phone: employee.work_phone || "", // Using work_phone directly
       department: employee.department_id || "",
       company: employee.company_id || "",
       image: employee.image_1920 ? `data:image/png;base64,${employee.image_1920}` : "/placeholder.svg",
+      jobPosition: employee.job_id || "",
     }
 
     console.log("[v0] Returning staff data:", staffData)

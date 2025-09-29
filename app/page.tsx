@@ -26,42 +26,42 @@ export default function SecurityDashboard() {
       name: "Staff",
       count: 0,
       icon: Users,
-      color: "bg-blue-500",
+      color: "bg-blue-100", // Changed from bg-blue-500 to light blue
     },
     {
       id: "clients",
       name: "Client", // removed 's' to make singular
       count: 0,
       icon: Briefcase,
-      color: "bg-green-500",
+      color: "bg-green-100", // Changed from bg-green-500 to light green
     },
     {
       id: "contractors",
       name: "Consultant", // removed 's' to make singular
       count: 0,
       icon: HardHat,
-      color: "bg-orange-500",
+      color: "bg-orange-100", // Changed from bg-orange-500 to light orange
     },
     {
       id: "subcontractors",
       name: "Subcontractor", // removed 's' to make singular
       count: 0,
       icon: Wrench,
-      color: "bg-purple-500",
+      color: "bg-purple-100", // Changed from bg-purple-500 to light purple
     },
     {
       id: "suppliers",
       name: "Supplier", // removed 's' to make singular
       count: 0,
       icon: Truck,
-      color: "bg-yellow-500",
+      color: "bg-yellow-100", // Changed from bg-yellow-500 to light yellow
     },
     {
       id: "visitors",
       name: "Visitor", // removed 's' to make singular
       count: 0,
       icon: UserCheck,
-      color: "bg-red-500",
+      color: "bg-red-100", // Changed from bg-red-500 to light red
     },
   ])
 
@@ -114,16 +114,22 @@ export default function SecurityDashboard() {
           <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 mb-4">
             <div className="flex-shrink-0">
               <img
-                src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/2025%20LOGO-VKDxv7CBrndhNC53B0BNL6c6W1gbHS.jpeg"
+                src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/design-mode-images/2025%20LOGO-1kiwZfItFUaLBZ7oWbwDuWRBXfrcRZ.jpeg"
                 alt="RCC - El Race Contracting Logo"
                 className="h-12 sm:h-16 md:h-20 lg:h-24 w-auto object-contain"
               />
             </div>
-            <div className="text-center sm:text-left">
+            <div className="text-center sm:text-left flex-1">
               <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-1 sm:mb-2">
                 Security Management System
               </h1>
               <p className="text-xs sm:text-sm md:text-base text-gray-600">Visitor and Personnel Tracking Dashboard</p>
+            </div>
+            <div className="flex-shrink-0 flex gap-2">
+              <Button onClick={() => (window.location.href = "/admin")} variant="outline" className="gap-2">
+                <Users className="h-4 w-4" />
+                Admin Dashboard
+              </Button>
             </div>
           </div>
         </div>
@@ -135,14 +141,17 @@ export default function SecurityDashboard() {
               {categories.map((category) => {
                 const IconComponent = category.icon
                 return (
-                  <Card key={category.id} className="hover:shadow-lg transition-shadow">
+                  <Card
+                    key={category.id}
+                    className="hover:shadow-lg transition-shadow bg-gradient-to-br from-white to-gray-50 border-gray-200"
+                  >
                     <CardHeader className="pb-2 sm:pb-3">
                       <div className="flex items-center justify-between">
                         <CardTitle className="text-sm sm:text-base lg:text-lg font-semibold text-gray-800">
                           {category.name}
                         </CardTitle>
                         <div className={`p-2 sm:p-2.5 rounded-lg ${category.color}`}>
-                          <IconComponent className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                          <IconComponent className="h-4 w-4 sm:h-5 sm:w-5 text-gray-700" />
                         </div>
                       </div>
                     </CardHeader>
