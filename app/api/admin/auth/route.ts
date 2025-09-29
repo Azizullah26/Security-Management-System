@@ -89,9 +89,9 @@ export async function POST(request: NextRequest) {
     const paddedAdminPassword = adminPassword.padEnd(maxLength, '\0')
     
     const isValidPassword = crypto.timingSafeEqual(
-      Buffer.from(paddedPassword, 'utf8'),
-      Buffer.from(paddedAdminPassword, 'utf8')
-    )
+      new Uint8Array(Buffer.from(paddedPassword, 'utf8')),
+      new Uint8Array(Buffer.from(paddedAdminPassword, 'utf8'))
+    ) && password.length === adminPassword.length
     
     if (isValidPassword) {
       recordAttempt(ip, true)

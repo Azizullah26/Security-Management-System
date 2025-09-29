@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { sessionStore } from '../auth/route'
+import { adminSessionStore } from '@/lib/auth-utils'
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,13 +13,13 @@ export async function GET(request: NextRequest) {
     }
     
     // Verify session token exists and is not expired
-    const session = sessionStore.get(sessionCookie.value)
+    const session = adminSessionStore.get(sessionCookie.value)
     const now = Date.now()
     
     if (!session || now > session.expiresAt) {
       // Clean up expired session
       if (session) {
-        sessionStore.delete(sessionCookie.value)
+        adminSessionStore.delete(sessionCookie.value)
       }
       
       return NextResponse.json(

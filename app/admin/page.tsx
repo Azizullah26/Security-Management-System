@@ -81,11 +81,29 @@ export default function AdminDashboard() {
     // Only fetch data if authenticated
     if (isAuthenticated) {
       Promise.all([
-        fetch("/api/projects").then((res) => res.json()),
-        fetch("/api/security-staff").then((res) => res.json()),
+        fetch("/api/projects").then((res) => {
+          if (!res.ok) {
+            console.error('Failed to fetch projects:', res.status)
+            return []
+          }
+          return res.json()
+        }).catch((error) => {
+          console.error('Error fetching projects:', error)
+          return []
+        }),
+        fetch("/api/security-staff").then((res) => {
+          if (!res.ok) {
+            console.error('Failed to fetch security staff:', res.status)
+            return []
+          }
+          return res.json()
+        }).catch((error) => {
+          console.error('Error fetching security staff:', error)
+          return []
+        }),
       ]).then(([projectsData, staffData]) => {
-        setProjects(projectsData)
-        setSecurityStaff(staffData)
+        setProjects(Array.isArray(projectsData) ? projectsData : [])
+        setSecurityStaff(Array.isArray(staffData) ? staffData : [])
       })
     }
   }, [isAuthenticated])
