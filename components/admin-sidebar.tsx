@@ -19,6 +19,7 @@ import { useRouter } from "next/navigation"
 interface AdminSidebarProps {
   activeSection: string
   onSectionChange: (section: string) => void
+  onLogout?: () => void
 }
 
 const sidebarItems = [
@@ -72,7 +73,7 @@ const sidebarItems = [
   },
 ]
 
-export function AdminSidebar({ activeSection, onSectionChange }: AdminSidebarProps) {
+export function AdminSidebar({ activeSection, onSectionChange, onLogout }: AdminSidebarProps) {
   const [collapsed, setCollapsed] = useState(false)
   const router = useRouter()
 
@@ -88,7 +89,11 @@ export function AdminSidebar({ activeSection, onSectionChange }: AdminSidebarPro
   )
 
   const handleLogout = () => {
-    router.push("/")
+    if (onLogout) {
+      onLogout()
+    } else {
+      router.push("/")
+    }
   }
 
   return (

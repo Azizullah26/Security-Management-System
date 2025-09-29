@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AdminSidebar } from "@/components/admin-sidebar"
 import { ProjectAssignmentDialog } from "@/components/project-assignment-dialog"
 import { AllRecordsView } from "@/components/all-records-view"
+import { AdminLogin } from "@/components/admin-login"
 import {
   BarChart,
   Bar,
@@ -38,15 +39,26 @@ export default function AdminDashboard() {
     project: Project | null
   }>({ isOpen: false, project: null })
   const [isDarkTheme, setIsDarkTheme] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true)
 
   useEffect(() => {
-    Promise.all([
-      fetch("/api/projects").then((res) => res.json()),
-      fetch("/api/security-staff").then((res) => res.json()),
-    ]).then(([projectsData, staffData]) => {
-      setProjects(projectsData)
-      setSecurityStaff(staffData)
-    })
+    // Check if user is already authenticated by checking server
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/admin/verify', {
+          credentials: 'include' // Include cookies
+        })
+        setIsAuthenticated(response.ok)
+      } catch (error) {
+        console.error('Auth check failed:', error)
+        setIsAuthenticated(false)
+      } finally {
+        setIsCheckingAuth(false)
+      }
+    }
+
+    checkAuth()
 
     const handleResizeObserverError = (e: ErrorEvent) => {
       if (
@@ -64,8 +76,56 @@ export default function AdminDashboard() {
     }
   }, [])
 
+  useEffect(() => {
+    // Only fetch data if authenticated
+    if (isAuthenticated) {
+      Promise.all([
+        fetch("/api/projects").then((res) => res.json()),
+        fetch("/api/security-staff").then((res) => res.json()),
+      ]).then(([projectsData, staffData]) => {
+        setProjects(projectsData)
+        setSecurityStaff(staffData)
+      })
+    }
+  }, [isAuthenticated])
+
   const toggleTheme = () => {
     setIsDarkTheme(!isDarkTheme)
+  }
+
+  const handleLogin = () => {
+    setIsAuthenticated(true)
+  }
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/admin/logout', {
+        method: 'POST',
+        credentials: 'include'
+      })
+    } catch (error) {
+      console.error('Logout error:', error)
+    } finally {
+      setIsAuthenticated(false)
+      setActiveSection("overview")
+    }
+  }
+
+  // Show loading while checking authentication
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading admin dashboard...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show login if not authenticated
+  if (!isAuthenticated) {
+    return <AdminLogin onLogin={handleLogin} />
   }
 
   const handleAssignProject = async (projectId: string, securityPersonId: string) => {
@@ -462,7 +522,7 @@ export default function AdminDashboard() {
 
   return (
     <div className={`flex h-screen bg-gray-50`}>
-      <AdminSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
+      <AdminSidebar activeSection={activeSection} onSectionChange={setActiveSection} onLogout={handleLogout} />
 
       <main className="flex-1 overflow-auto">
         <div className="p-6 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-full relative overflow-hidden">
