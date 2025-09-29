@@ -15,31 +15,27 @@ interface AllRecordsViewProps {
   entries?: EntryData[]
 }
 
-export function AllRecordsView({ entries = [] }: AllRecordsViewProps) {
+export function AllRecordsView({ entries }: AllRecordsViewProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [categoryFilter, setCategoryFilter] = useState<string>("all")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [selectedEntry, setSelectedEntry] = useState<EntryData | null>(null)
   const [localEntries, setLocalEntries] = useState<EntryData[]>([])
 
-  // Load entries from localStorage if no entries prop provided
+  // Load entries from localStorage on mount
   useEffect(() => {
-    if (entries.length === 0) {
-      const savedEntries = localStorage.getItem("security-entries")
-      if (savedEntries) {
-        try {
-          setLocalEntries(JSON.parse(savedEntries))
-        } catch (error) {
-          console.error("Failed to load entries from localStorage:", error)
-        }
+    const savedEntries = localStorage.getItem("security-entries")
+    if (savedEntries) {
+      try {
+        setLocalEntries(JSON.parse(savedEntries))
+      } catch (error) {
+        console.error("Failed to load entries from localStorage:", error)
       }
-    } else {
-      setLocalEntries(entries)
     }
-  }, [entries])
+  }, []) // Run only once on mount
 
-  // Use provided entries or local entries
-  const allEntries = entries.length > 0 ? entries : localEntries
+  // Use provided entries or local entries (only fall back when entries is undefined)
+  const allEntries = entries ?? localEntries
 
   // Filter entries based on search term, category, and status
   const filteredEntries = allEntries.filter((entry) => {
