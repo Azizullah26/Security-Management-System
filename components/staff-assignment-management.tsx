@@ -188,7 +188,7 @@ export function StaffAssignmentManagement() {
                   <SelectTrigger className="mt-1">
                     <SelectValue placeholder="Select staff member" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-[300px] overflow-y-auto" position="popper">
                     {getUnassignedStaff().map((staff) => (
                       <SelectItem key={staff.fileId} value={staff.fileId}>
                         <div className="flex items-center gap-2">
@@ -207,7 +207,7 @@ export function StaffAssignmentManagement() {
                   <SelectTrigger className="mt-1">
                     <SelectValue placeholder="Select project" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-[300px] overflow-y-auto" position="popper">
                     {getAllProjects().map((projectName) => (
                       <SelectItem key={projectName} value={projectName}>
                         {projectName}
