@@ -311,20 +311,20 @@ export function StaffAssignmentManagement() {
           </div>
 
           {/* Assignments Table */}
-          <div className="border rounded-lg">
+          <div className="border-2 border-blue-900 rounded-lg">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Staff ID</TableHead>
-                  <TableHead>Staff Name</TableHead>
-                  <TableHead>Assigned Project</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead className="text-blue-900 font-semibold">Staff ID</TableHead>
+                  <TableHead className="text-blue-900 font-semibold">Staff Name</TableHead>
+                  <TableHead className="text-blue-900 font-semibold">Assigned Project</TableHead>
+                  <TableHead className="text-blue-900 font-semibold">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredAssignments.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={4} className="text-center py-8 text-blue-900">
                       No assignments found
                     </TableCell>
                   </TableRow>
@@ -332,16 +332,16 @@ export function StaffAssignmentManagement() {
                   filteredAssignments.map((assignment) => (
                     <TableRow key={assignment.staffId}>
                       <TableCell>
-                        <Badge variant="outline" className="font-mono">
+                        <Badge variant="outline" className="font-mono border-blue-900 text-blue-900">
                           {assignment.staffId}
                         </Badge>
                       </TableCell>
-                      <TableCell className="font-medium">
+                      <TableCell className="font-medium text-blue-900">
                         {assignment.staffName}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="text-blue-900">
                         <div className="flex items-center gap-2">
-                          <MapPin className="h-4 w-4 text-gray-400" />
+                          <MapPin className="h-4 w-4 text-blue-900" />
                           {assignment.projectName}
                         </div>
                       </TableCell>
