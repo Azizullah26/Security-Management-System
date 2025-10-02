@@ -36,13 +36,21 @@ The system employs a hybrid approach for data management:
 - **Odoo Integration**: Employee lookup through Odoo's HR module for additional staff verification
 
 ### Data Storage Solutions
-**Primary Storage**: Server-side in-memory storage for entry records with role-based access control
+**Primary Storage**: Supabase PostgreSQL database for persistent storage of all entries and assignments
 **Session Management**: HTTP-only cookies with secure server-side session validation
 **External Database**: Odoo ERP system for employee master data
 **Image Handling**: Base64 encoding for profile photos and captured images
-**Fallback Storage**: Browser localStorage for offline capability and legacy support
+**Backup Storage**: Browser localStorage for offline capability and legacy support
 
 The system uses a schema-based approach with TypeScript interfaces for type safety across all data operations.
+
+**Supabase Integration** (Updated: October 2, 2025):
+- **Database**: PostgreSQL database hosted on Supabase for persistent data storage
+- **Tables**: 
+  - `entries` - Stores all visitor/staff/contractor entry records with timestamps
+  - `assignments` - Stores staff-to-project assignments
+- **Authentication**: Secure API key-based authentication with Row Level Security (RLS) enabled
+- **Real-time sync**: All entry and assignment data persists across server restarts
 
 ### Form Validation and User Input
 **Validation Library**: Zod for TypeScript-first schema validation
@@ -72,6 +80,10 @@ The system uses a schema-based approach with TypeScript interfaces for type safe
 - **Recharts 2.15.4** - Charts and graphs for dashboard analytics
 
 ### External Services
+- **Supabase** - PostgreSQL database for persistent data storage
+  - Entry records storage with full-text search capabilities
+  - Staff assignment management with real-time updates
+  - Row Level Security (RLS) for data protection
 - **Odoo ERP System** - HR employee management and master data
   - Custom REST API module (`hr_employee_rest_api`)
   - XML-RPC protocol for authentication
@@ -90,6 +102,8 @@ The system is configured to allow cross-origin requests from:
 - `http://localhost:3000` (development)
 
 ### Environment Variables
+- `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous/public API key
 - `ODOO_URL` - Odoo server URL
 - `ODOO_DB` - Odoo database name
 - `ODOO_USERNAME` - Odoo user credentials
@@ -118,11 +132,16 @@ The application has been successfully configured for the Replit environment:
 - Real-time features working (live clock, entry tracking)
 - Admin dashboard accessible and fully operational with password protection
 - All category entry forms operational
-- Records management system functional with server-side storage
+- Records management system functional with Supabase persistent storage
 - Role-based access control implemented (staff see only assigned project, admin sees all)
 - Staff authentication system with predefined credentials operational
 - Project assignment functionality allowing admin to assign projects to staff
-- All Records page working correctly with server-side persistence and project filtering
+- All Records page working correctly with Supabase persistence and project filtering
 - Server-side authorization protecting admin endpoints (September 29, 2025)
 - Implemented secure staff authentication with constant-time password comparison (September 29, 2025)
 - Added comprehensive role-based data access control (September 29, 2025)
+- **Supabase Database Integration** (October 2, 2025):
+  - Persistent storage for all entry records and staff assignments
+  - Automatic synchronization across all sessions
+  - Database schema files provided for easy setup
+  - Database health check API available at `/api/db-setup`

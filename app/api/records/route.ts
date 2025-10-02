@@ -1,15 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { staffSessionStore } from '../staff/auth/route'
 import { verifyAdminSession, validateEntryRecord, validateRequestSize } from '@/lib/auth-utils'
+import { supabase } from '@/lib/supabase'
 
-// In-memory storage for demonstration (in production, use a database)
-const recordsStore = new Map<string, any>()
-const MAX_RECORDS = 10000 // Prevent memory DoS
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
-const RATE_LIMIT_WINDOW = 5 * 60 * 1000 // 5 minutes
+const RATE_LIMIT_WINDOW = 5 * 60 * 1000
 const MAX_REQUESTS_PER_WINDOW = 100
 
-// Staff verification 
 async function verifyStaff(request: NextRequest) {
   const staffSession = request.cookies.get('staff-session')?.value
   
@@ -25,45 +22,6 @@ async function verifyStaff(request: NextRequest) {
   return session
 }
 
-export async function GET(request: NextRequest) {
-  try {
-    // Check if user is admin or staff
-    const isAdmin = verifyAdminSession(request)
-    const staffSession = await verifyStaff(request)
-    
-    if (!isAdmin && !staffSession) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Login required' },
-        { status: 401 }
-      )
-    }
-    
-    const allRecords = Array.from(recordsStore.values())
-    
-    // If admin, return all records
-    if (isAdmin) {
-      return NextResponse.json({ records: allRecords })
-    }
-    
-    // If staff, return only records for their assigned project
-    if (staffSession) {
-      const filteredRecords = allRecords.filter(record => 
-        record.projectName === staffSession.assignedProject
-      )
-      return NextResponse.json({ records: filteredRecords })
-    }
-    
-    return NextResponse.json({ records: [] })
-  } catch (error) {
-    console.error('Records fetch error:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch records' },
-      { status: 500 }
-    )
-  }
-}
-
-// Basic rate limiting function
 function checkRateLimit(userKey: string): boolean {
   const now = Date.now()
   const userLimit = rateLimitMap.get(userKey)
@@ -81,27 +39,55 @@ function checkRateLimit(userKey: string): boolean {
   return true
 }
 
+export async function GET(request: NextRequest) {
+  try {
+    const isAdmin = verifyAdminSession(request)
+    const staffSession = await verifyStaff(request)
+    
+    if (!isAdmin && !staffSession) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Login required' },
+        { status: 401 }
+      )
+    }
+    
+    let query = supabase.from('entries').select('*').order('entry_time', { ascending: false })
+    
+    if (staffSession && !isAdmin) {
+      query = query.eq('project_name', staffSession.assignedProject)
+    }
+    
+    const { data: records, error } = await query
+    
+    if (error) {
+      console.error('Supabase fetch error:', error)
+      return NextResponse.json(
+        { error: 'Failed to fetch records' },
+        { status: 500 }
+      )
+    }
+    
+    return NextResponse.json({ records: records || [] })
+  } catch (error) {
+    console.error('Records fetch error:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch records' },
+      { status: 500 }
+    )
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
-    // Check if user is admin or staff
     const isAdmin = verifyAdminSession(request)
     const staffSession = await verifyStaff(request)
     
     const userKey = isAdmin ? 'admin' : staffSession?.staffId || 'unknown'
     
-    // Basic rate limiting
     if (!checkRateLimit(userKey)) {
       return NextResponse.json(
         { error: 'Rate limit exceeded' },
         { status: 429 }
-      )
-    }
-    
-    // Check memory limits
-    if (recordsStore.size >= MAX_RECORDS) {
-      return NextResponse.json(
-        { error: 'Storage capacity reached' },
-        { status: 507 }
       )
     }
     
@@ -114,7 +100,6 @@ export async function POST(request: NextRequest) {
     
     const recordData = await request.json()
     
-    // Validate request size
     if (!validateRequestSize(recordData)) {
       return NextResponse.json(
         { error: 'Request payload too large' },
@@ -122,7 +107,6 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    // Validate record data
     const validation = validateEntryRecord(recordData)
     if (!validation.valid) {
       return NextResponse.json(
@@ -131,18 +115,23 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    // Generate unique ID
-    const recordId = `record_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-    
-    // Add server-side metadata
-    const record = {
-      ...recordData,
-      id: recordId,
-      createdAt: new Date().toISOString(),
-      createdBy: isAdmin ? 'admin' : staffSession?.staffId || 'unknown'
+    const entryData = {
+      category: recordData.category,
+      name: recordData.name,
+      file_id: recordData.fileId || null,
+      company: recordData.company || null,
+      phone: recordData.phone || null,
+      vehicle_no: recordData.vehicleNo || null,
+      items: recordData.items || null,
+      purpose: recordData.purpose || null,
+      host: recordData.host || null,
+      photo: recordData.photo || null,
+      entry_time: recordData.entryTime || new Date().toISOString(),
+      exit_time: recordData.exitTime || null,
+      duration: recordData.duration || null,
+      project_name: recordData.projectName || null
     }
     
-    // If staff is creating the record, ensure it's assigned to their project
     if (staffSession && !isAdmin) {
       if (!staffSession.assignedProject) {
         return NextResponse.json(
@@ -150,14 +139,26 @@ export async function POST(request: NextRequest) {
           { status: 403 }
         )
       }
-      record.projectName = staffSession.assignedProject
+      entryData.project_name = staffSession.assignedProject
     }
     
-    recordsStore.set(recordId, record)
+    const { data, error } = await supabase
+      .from('entries')
+      .insert(entryData)
+      .select()
+      .single()
+    
+    if (error) {
+      console.error('Supabase insert error:', error)
+      return NextResponse.json(
+        { error: 'Failed to create record' },
+        { status: 500 }
+      )
+    }
     
     return NextResponse.json({ 
       success: true, 
-      record: record
+      record: data
     })
   } catch (error) {
     console.error('Record creation error:', error)
@@ -170,7 +171,6 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    // Check if user is admin or staff
     const isAdmin = verifyAdminSession(request)
     const staffSession = await verifyStaff(request)
     
@@ -190,17 +190,21 @@ export async function PUT(request: NextRequest) {
       )
     }
     
-    const existingRecord = recordsStore.get(recordId)
-    if (!existingRecord) {
+    const { data: existingRecord, error: fetchError } = await supabase
+      .from('entries')
+      .select('*')
+      .eq('id', recordId)
+      .single()
+    
+    if (fetchError || !existingRecord) {
       return NextResponse.json(
         { error: 'Record not found' },
         { status: 404 }
       )
     }
     
-    // If staff, ensure they can only update records for their project
     if (staffSession && !isAdmin) {
-      if (existingRecord.projectName !== staffSession.assignedProject) {
+      if (existingRecord.project_name !== staffSession.assignedProject) {
         return NextResponse.json(
           { error: 'Unauthorized - Cannot modify records outside your project' },
           { status: 403 }
@@ -208,14 +212,31 @@ export async function PUT(request: NextRequest) {
       }
     }
     
-    const updatedRecord = {
-      ...existingRecord,
-      ...updateData,
-      updatedAt: new Date().toISOString(),
-      updatedBy: isAdmin ? 'admin' : staffSession?.staffId || 'unknown'
-    }
+    const updateFields: any = {}
+    if (updateData.exitTime) updateFields.exit_time = updateData.exitTime
+    if (updateData.duration) updateFields.duration = updateData.duration
+    if (updateData.name) updateFields.name = updateData.name
+    if (updateData.phone) updateFields.phone = updateData.phone
+    if (updateData.company) updateFields.company = updateData.company
+    if (updateData.vehicleNo) updateFields.vehicle_no = updateData.vehicleNo
+    if (updateData.items) updateFields.items = updateData.items
+    if (updateData.purpose) updateFields.purpose = updateData.purpose
+    if (updateData.host) updateFields.host = updateData.host
     
-    recordsStore.set(recordId, updatedRecord)
+    const { data: updatedRecord, error: updateError } = await supabase
+      .from('entries')
+      .update(updateFields)
+      .eq('id', recordId)
+      .select()
+      .single()
+    
+    if (updateError) {
+      console.error('Supabase update error:', updateError)
+      return NextResponse.json(
+        { error: 'Failed to update record' },
+        { status: 500 }
+      )
+    }
     
     return NextResponse.json({ 
       success: true, 

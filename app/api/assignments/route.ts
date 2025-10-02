@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { staffSessionStore } from '../staff/auth/route'
-import { projectAssignments, getAllAssignments, setAssignment, removeAssignment } from '@/lib/assignments-store'
 import { verifyAdminSession } from '@/lib/auth-utils'
+import { supabase } from '@/lib/supabase'
 
-// Staff data to sync with assignments
 const staffData = [
   { fileId: '3252', name: 'Mohus' },
   { fileId: '3242', name: 'Umair' },
@@ -15,7 +14,6 @@ const staffData = [
 
 export async function GET(request: NextRequest) {
   try {
-    // Verify admin access
     const isAdmin = verifyAdminSession(request)
     if (!isAdmin) {
       return NextResponse.json(
@@ -24,18 +22,29 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Convert assignments map to array format for easier handling
-    const allAssignments = getAllAssignments()
-    const assignments = allAssignments.map(({ staffId, projectName }) => {
-      const staff = staffData.find(s => s.fileId === staffId)
+    const { data: assignments, error } = await supabase
+      .from('assignments')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('Supabase fetch error:', error)
+      return NextResponse.json(
+        { error: 'Failed to fetch assignments' },
+        { status: 500 }
+      )
+    }
+
+    const formattedAssignments = (assignments || []).map((assignment) => {
+      const staff = staffData.find(s => s.fileId === assignment.staff_id)
       return {
-        staffId,
+        staffId: assignment.staff_id,
         staffName: staff?.name || 'Unknown',
-        projectName
+        projectName: assignment.project_name
       }
     })
 
-    return NextResponse.json({ assignments })
+    return NextResponse.json({ assignments: formattedAssignments })
   } catch (error) {
     console.error('Assignments fetch error:', error)
     return NextResponse.json(
@@ -47,7 +56,6 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // Verify admin access
     const isAdmin = verifyAdminSession(request)
     if (!isAdmin) {
       return NextResponse.json(
@@ -65,7 +73,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verify staff exists
     const staff = staffData.find(s => s.fileId === staffId)
     if (!staff) {
       return NextResponse.json(
@@ -74,10 +81,26 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Assign project to staff
-    setAssignment(staffId, projectName)
+    const { data, error } = await supabase
+      .from('assignments')
+      .upsert({
+        staff_id: staffId,
+        project_name: projectName,
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'staff_id'
+      })
+      .select()
+      .single()
 
-    // Update all active sessions for this staff member
+    if (error) {
+      console.error('Supabase insert error:', error)
+      return NextResponse.json(
+        { error: 'Failed to create assignment' },
+        { status: 500 }
+      )
+    }
+
     for (const [sessionToken, session] of staffSessionStore.entries()) {
       if (session.staffId === staffId) {
         session.assignedProject = projectName
@@ -103,7 +126,6 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    // Verify admin access
     const isAdmin = verifyAdminSession(request)
     if (!isAdmin) {
       return NextResponse.json(
@@ -121,10 +143,19 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    // Remove assignment
-    removeAssignment(staffId)
+    const { error } = await supabase
+      .from('assignments')
+      .delete()
+      .eq('staff_id', staffId)
 
-    // Update all active sessions for this staff member
+    if (error) {
+      console.error('Supabase delete error:', error)
+      return NextResponse.json(
+        { error: 'Failed to delete assignment' },
+        { status: 500 }
+      )
+    }
+
     for (const [sessionToken, session] of staffSessionStore.entries()) {
       if (session.staffId === staffId) {
         session.assignedProject = null
