@@ -87,6 +87,41 @@ export type Database = {
           updated_at?: string
         }
       }
+      projects: {
+        Row: {
+          id: number
+          name: string
+          description: string | null
+          status: string
+          priority: string | null
+          start_date: string | null
+          assigned_to: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          name: string
+          description?: string | null
+          status?: string
+          priority?: string | null
+          start_date?: string | null
+          assigned_to?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          name?: string
+          description?: string | null
+          status?: string
+          priority?: string | null
+          start_date?: string | null
+          assigned_to?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
   }
 }

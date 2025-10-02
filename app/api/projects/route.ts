@@ -1,30 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import type { Project } from "@/lib/types"
 import { verifyAdminSession } from '@/lib/auth-utils'
-import path from 'path'
-import fs from 'fs'
-
-// Load projects data safely
-function loadProjectsData(): { projects: Project[], error?: string } {
-  try {
-    const dataPath = path.join(process.cwd(), 'data', 'all_real_projects.json')
-    const projectsData = JSON.parse(fs.readFileSync(dataPath, 'utf8')) as Project[]
-    
-    if (!Array.isArray(projectsData)) {
-      return { projects: [], error: 'Projects data is not an array' }
-    }
-    
-    if (projectsData.length !== 245) {
-      console.warn(`Expected 245 projects, got ${projectsData.length}`)
-      return { projects: projectsData, error: `Expected 245 projects, got ${projectsData.length}` }
-    }
-    
-    return { projects: projectsData }
-  } catch (error) {
-    console.error('Failed to load projects data:', error)
-    return { projects: [], error: 'Failed to load projects data' }
-  }
-}
+import { supabase } from '@/lib/supabase'
 
 export async function GET(request: NextRequest) {
   try {
@@ -37,17 +13,30 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const { projects, error } = loadProjectsData()
+    const { data: projects, error } = await supabase
+      .from('projects')
+      .select('*')
+      .order('id', { ascending: true })
     
     if (error) {
-      console.error('Projects data error:', error)
+      console.error('Supabase fetch error:', error)
       return NextResponse.json(
-        { error: 'Failed to load projects data' },
+        { error: 'Failed to fetch projects from database' },
         { status: 500 }
       )
     }
 
-    return NextResponse.json(projects)
+    const formattedProjects = (projects || []).map(project => ({
+      id: project.id.toString(),
+      name: project.name,
+      description: project.description,
+      status: project.status,
+      priority: project.priority,
+      startDate: project.start_date,
+      assignedTo: project.assigned_to
+    }))
+
+    return NextResponse.json(formattedProjects)
   } catch (error) {
     console.error('Projects fetch error:', error)
     return NextResponse.json(
@@ -68,26 +57,29 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { projects, error } = loadProjectsData()
-    
-    if (error) {
-      console.error('Projects data error:', error)
-      return NextResponse.json(
-        { error: 'Failed to load projects data' },
-        { status: 500 }
-      )
-    }
-
     const body = await request.json()
     const { action, projectId, securityPersonId } = body
 
     if (action === "assign") {
-      // In real app, update database
-      const projectIndex = projects.findIndex((p: Project) => p.id === projectId)
-      if (projectIndex !== -1) {
-        projects[projectIndex].assignedTo = securityPersonId
+      const { data, error } = await supabase
+        .from('projects')
+        .update({ 
+          assigned_to: securityPersonId,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', projectId)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Assignment error:', error)
+        return NextResponse.json(
+          { error: 'Failed to assign project' },
+          { status: 500 }
+        )
       }
-      return NextResponse.json({ success: true })
+
+      return NextResponse.json({ success: true, project: data })
     }
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 })
