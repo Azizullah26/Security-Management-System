@@ -37,6 +37,7 @@ export function SupplierEntryForm({ onSubmit, onCancel }: SupplierEntryFormProps
       id: Date.now().toString(),
       category: "suppliers",
       ...formData,
+      email: "",
       photo: capturedPhoto || undefined,
       entryTime: new Date().toISOString(),
       status: "inside",

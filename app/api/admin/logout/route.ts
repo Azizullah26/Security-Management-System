@@ -1,15 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { sessionStore } from '../auth/route'
 
 export async function POST(request: NextRequest) {
   try {
-    const sessionCookie = request.cookies.get('admin-session')
-    
-    // Remove session from server-side store
-    if (sessionCookie && sessionCookie.value) {
-      sessionStore.delete(sessionCookie.value)
-    }
-    
     const response = NextResponse.json({ success: true })
     
     // Clear the admin session cookie

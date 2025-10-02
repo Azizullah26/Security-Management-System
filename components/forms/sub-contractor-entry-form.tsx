@@ -31,6 +31,7 @@ export function SubContractorEntryForm({ onSubmit, onCancel }: SubContractorEntr
       id: Date.now().toString(),
       category: "subcontractors",
       ...formData,
+      email: "",
       entryTime: new Date().toISOString(),
       status: "inside",
     }

@@ -4,6 +4,8 @@ export interface SecurityPerson {
   assignedProjects: string[]
   email: string
   phone?: string
+  employeeId?: string
+  position?: string
 }
 
 export interface Project {

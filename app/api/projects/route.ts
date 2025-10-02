@@ -1,6 +1,38 @@
 import { NextRequest, NextResponse } from "next/server"
 import { verifyAdminSession } from '@/lib/auth-utils'
-import { supabase } from '@/lib/supabase'
+import fs from 'fs'
+import path from 'path'
+
+interface Project {
+  id: string
+  name: string
+  description: string
+  status: string
+  assignedTo: string | null
+  priority: string
+  startDate: string | null
+}
+
+function loadProjects(): Project[] {
+  try {
+    const filePath = path.join(process.cwd(), 'data', 'all_real_projects.json')
+    const fileContent = fs.readFileSync(filePath, 'utf-8')
+    return JSON.parse(fileContent)
+  } catch (error) {
+    console.error('Error loading projects:', error)
+    return []
+  }
+}
+
+function saveProjects(projects: Project[]): void {
+  try {
+    const filePath = path.join(process.cwd(), 'data', 'all_real_projects.json')
+    fs.writeFileSync(filePath, JSON.stringify(projects, null, 2), 'utf-8')
+  } catch (error) {
+    console.error('Error saving projects:', error)
+    throw error
+  }
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,30 +45,9 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const { data: projects, error } = await supabase
-      .from('projects')
-      .select('*')
-      .order('id', { ascending: true })
-    
-    if (error) {
-      console.error('Supabase fetch error:', error)
-      return NextResponse.json(
-        { error: 'Failed to fetch projects from database' },
-        { status: 500 }
-      )
-    }
+    const projects = loadProjects()
 
-    const formattedProjects = (projects || []).map(project => ({
-      id: project.id.toString(),
-      name: project.name,
-      description: project.description,
-      status: project.status,
-      priority: project.priority,
-      startDate: project.start_date,
-      assignedTo: project.assigned_to
-    }))
-
-    return NextResponse.json(formattedProjects)
+    return NextResponse.json(projects)
   } catch (error) {
     console.error('Projects fetch error:', error)
     return NextResponse.json(
@@ -61,25 +72,23 @@ export async function POST(request: NextRequest) {
     const { action, projectId, securityPersonId } = body
 
     if (action === "assign") {
-      const { data, error } = await supabase
-        .from('projects')
-        .update({ 
-          assigned_to: securityPersonId,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', projectId)
-        .select()
-        .single()
+      const projects = loadProjects()
+      const projectIndex = projects.findIndex(p => p.id === projectId)
 
-      if (error) {
-        console.error('Assignment error:', error)
+      if (projectIndex === -1) {
         return NextResponse.json(
-          { error: 'Failed to assign project' },
-          { status: 500 }
+          { error: 'Project not found' },
+          { status: 404 }
         )
       }
 
-      return NextResponse.json({ success: true, project: data })
+      projects[projectIndex].assignedTo = securityPersonId
+      saveProjects(projects)
+
+      return NextResponse.json({ 
+        success: true, 
+        project: projects[projectIndex] 
+      })
     }
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 })
