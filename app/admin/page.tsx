@@ -152,6 +152,7 @@ export default function AdminDashboard() {
       await fetch("/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: 'include',
         body: JSON.stringify({ action: "assign", projectId, securityPersonId }),
       })
 

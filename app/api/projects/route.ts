@@ -36,17 +36,7 @@ function saveProjects(projects: Project[]): void {
 
 export async function GET(request: NextRequest) {
   try {
-    const isValidSession = verifyAdminSession(request)
-    
-    if (!isValidSession) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Authentication required' },
-        { status: 403 }
-      )
-    }
-
     const projects = loadProjects()
-
     return NextResponse.json(projects)
   } catch (error) {
     console.error('Projects fetch error:', error)

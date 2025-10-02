@@ -8,6 +8,11 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // Allow GET requests to projects (admin page handles auth client-side)
+  if (pathname.startsWith('/api/projects') && request.method === 'GET') {
+    return NextResponse.next()
+  }
+
   // Protect admin API routes and sensitive endpoints
   if (pathname.startsWith('/api/projects') || 
       pathname.startsWith('/api/security-staff') ||

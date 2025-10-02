@@ -37,6 +37,7 @@ The system employs a hybrid approach for data management:
 
 ### Data Storage Solutions
 **Primary Storage**: Supabase PostgreSQL database for persistent storage of all entries and assignments
+**Projects Storage**: JSON file (`data/all_real_projects.json`) containing all 245 real-world projects
 **Session Management**: HTTP-only cookies with secure server-side session validation
 **External Database**: Odoo ERP system for employee master data
 **Image Handling**: Base64 encoding for profile photos and captured images
@@ -51,6 +52,12 @@ The system uses a schema-based approach with TypeScript interfaces for type safe
   - `assignments` - Stores staff-to-project assignments
 - **Authentication**: Secure API key-based authentication with Row Level Security (RLS) enabled
 - **Real-time sync**: All entry and assignment data persists across server restarts
+
+**Projects Management** (Updated: October 2, 2025):
+- **Storage**: 245 projects stored in `/data/all_real_projects.json`
+- **API**: Projects API reads from JSON file for fast access
+- **Structure**: Each project includes id, name, description, status, priority, start date, and assignment info
+- **Updates**: Project assignments saved back to JSON file when admins assign projects to staff
 
 ### Form Validation and User Input
 **Validation Library**: Zod for TypeScript-first schema validation
