@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
+import { supabase } from '@/lib/supabase'
 
 // Staff credentials (passwords should be in environment variables in production)
 // For demo purposes, using predictable passwords - in production use bcrypt/Argon2
@@ -11,9 +12,6 @@ const staffCredentials = [
   { fileId: '3245', name: 'Tilak', password: process.env.STAFF_3245_PASSWORD || 'Tilak' },
   { fileId: '3248', name: 'Ramesh', password: process.env.STAFF_3248_PASSWORD || 'Ramesh' },
 ]
-
-// Import shared assignments store
-import { getAssignment } from '@/lib/assignments-store'
 
 // Session storage for staff (in production, use Redis or database)
 export const staffSessionStore = new Map<string, { 
@@ -114,8 +112,14 @@ export async function POST(request: NextRequest) {
     if (isValidPassword) {
       recordAttempt(ip, true)
       
-      // Get current project assignment for this staff member
-      const assignedProject = getAssignment(staff.fileId)
+      // Get current project assignment from Supabase database
+      const { data: assignment } = await supabase
+        .from('assignments')
+        .select('project_name')
+        .eq('staff_id', staff.fileId)
+        .single()
+      
+      const assignedProject = assignment?.project_name || null
       
       // Generate session token
       const sessionToken = crypto.randomBytes(32).toString('hex')
