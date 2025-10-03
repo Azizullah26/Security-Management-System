@@ -41,7 +41,7 @@ function checkRateLimit(userKey: string): boolean {
 
 export async function GET(request: NextRequest) {
   try {
-    const isAdmin = verifyAdminSession(request)
+    const isAdmin = await verifyAdminSession(request)
     const staffSession = await verifyStaff(request)
     
     if (!isAdmin && !staffSession) {
@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const isAdmin = verifyAdminSession(request)
+    const isAdmin = await verifyAdminSession(request)
     const staffSession = await verifyStaff(request)
     
     const userKey = isAdmin ? 'admin' : staffSession?.staffId || 'unknown'
@@ -171,7 +171,7 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const isAdmin = verifyAdminSession(request)
+    const isAdmin = await verifyAdminSession(request)
     const staffSession = await verifyStaff(request)
     
     if (!isAdmin && !staffSession) {

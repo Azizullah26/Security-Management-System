@@ -14,7 +14,7 @@ const staffData = [
 
 export async function GET(request: NextRequest) {
   try {
-    const isAdmin = verifyAdminSession(request)
+    const isAdmin = await verifyAdminSession(request)
     if (!isAdmin) {
       return NextResponse.json(
         { error: 'Unauthorized - Admin access required' },
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const isAdmin = verifyAdminSession(request)
+    const isAdmin = await verifyAdminSession(request)
     if (!isAdmin) {
       return NextResponse.json(
         { error: 'Unauthorized - Admin access required' },
@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const isAdmin = verifyAdminSession(request)
+    const isAdmin = await verifyAdminSession(request)
     if (!isAdmin) {
       return NextResponse.json(
         { error: 'Unauthorized - Admin access required' },

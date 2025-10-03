@@ -16,6 +16,7 @@ export function middleware(request: NextRequest) {
   // Protect admin API routes and sensitive endpoints
   if (pathname.startsWith('/api/projects') || 
       pathname.startsWith('/api/security-staff') ||
+      pathname.startsWith('/api/assignments') ||
       pathname.startsWith('/api/admin/')) {
     
     const authCookie = request.cookies.get('admin-session')
@@ -36,5 +37,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/api/admin/:path*', '/api/projects', '/api/security-staff']
+  matcher: ['/api/admin/:path*', '/api/projects', '/api/security-staff', '/api/assignments']
 }

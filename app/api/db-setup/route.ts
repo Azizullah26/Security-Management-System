@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase'
 
 export async function POST(request: NextRequest) {
   try {
-    const isAdmin = verifyAdminSession(request)
+    const isAdmin = await verifyAdminSession(request)
     
     if (!isAdmin) {
       return NextResponse.json(

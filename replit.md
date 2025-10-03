@@ -38,20 +38,22 @@ The system employs a hybrid approach for data management:
 ### Data Storage Solutions
 **Primary Storage**: Supabase PostgreSQL database for persistent storage of all entries and assignments
 **Projects Storage**: JSON file (`data/all_real_projects.json`) containing all 245 real-world projects
-**Session Management**: HTTP-only cookies with secure server-side session validation
+**Session Management**: HTTP-only cookies with Supabase-based server-side session validation
 **External Database**: Odoo ERP system for employee master data
 **Image Handling**: Base64 encoding for profile photos and captured images
 **Backup Storage**: Browser localStorage for offline capability and legacy support
 
 The system uses a schema-based approach with TypeScript interfaces for type safety across all data operations.
 
-**Supabase Integration** (Updated: October 2, 2025):
+**Supabase Integration** (Updated: October 3, 2025):
 - **Database**: PostgreSQL database hosted on Supabase for persistent data storage
 - **Tables**: 
   - `entries` - Stores all visitor/staff/contractor entry records with timestamps
   - `assignments` - Stores staff-to-project assignments
+  - `admin_sessions` - Stores admin authentication sessions (migrated from in-memory storage)
 - **Authentication**: Secure API key-based authentication with Row Level Security (RLS) enabled
-- **Real-time sync**: All entry and assignment data persists across server restarts
+- **Real-time sync**: All entry, assignment, and session data persists across server restarts
+- **Session Management**: Admin sessions stored in database for persistence across server restarts
 
 **Projects Management** (Updated: October 2, 2025):
 - **Storage**: 245 projects stored in `/data/all_real_projects.json`

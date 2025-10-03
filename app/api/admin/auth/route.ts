@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
-import { adminSessionStore } from '@/lib/auth-utils'
-
-// Use shared admin session store
+import { supabase } from '@/lib/supabase'
 
 // Rate limiting map (in production, use Redis or database)
 const rateLimitMap = new Map<string, { attempts: number; lastAttempt: number; lockUntil?: number }>()
@@ -96,16 +94,27 @@ export async function POST(request: NextRequest) {
     if (isValidPassword) {
       recordAttempt(ip, true)
       
-      // Generate session token and store server-side
+      // Generate session token and store in Supabase
       const sessionToken = crypto.randomBytes(32).toString('hex')
       const now = Date.now()
       const expiresAt = now + 24 * 60 * 60 * 1000 // 24 hours
       
-      // Store session server-side
-      adminSessionStore.set(sessionToken, {
-        createdAt: now,
-        expiresAt: expiresAt
-      })
+      // Store session in Supabase
+      const { error: insertError } = await supabase
+        .from('admin_sessions')
+        .insert({
+          session_token: sessionToken,
+          created_at: now,
+          expires_at: expiresAt
+        })
+      
+      if (insertError) {
+        console.error('Failed to store session:', insertError)
+        return NextResponse.json(
+          { error: 'Failed to create session' },
+          { status: 500 }
+        )
+      }
       
       const response = NextResponse.json({ success: true })
       

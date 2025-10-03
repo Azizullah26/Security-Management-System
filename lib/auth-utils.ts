@@ -1,31 +1,45 @@
 import { NextRequest } from 'next/server'
+import { supabase } from './supabase'
 
-// Shared admin session store (in production, use Redis or database)
+// Shared admin session store (deprecated - using Supabase now)
 export const adminSessionStore = new Map<string, { 
   createdAt: number
   expiresAt: number 
 }>()
 
-// Direct admin verification without self-fetch
-export function verifyAdminSession(request: NextRequest): boolean {
+// Direct admin verification using Supabase
+export async function verifyAdminSession(request: NextRequest): Promise<boolean> {
   const adminSession = request.cookies.get('admin-session')?.value
   
   if (!adminSession) {
     return false
   }
   
-  const session = adminSessionStore.get(adminSession)
-  if (!session) {
+  try {
+    const { data: session, error } = await supabase
+      .from('admin_sessions')
+      .select('*')
+      .eq('session_token', adminSession)
+      .single()
+    
+    if (error || !session) {
+      return false
+    }
+    
+    const now = Date.now()
+    if (now > session.expires_at) {
+      await supabase
+        .from('admin_sessions')
+        .delete()
+        .eq('session_token', adminSession)
+      return false
+    }
+    
+    return true
+  } catch (error) {
+    console.error('Session verification error:', error)
     return false
   }
-  
-  const now = Date.now()
-  if (now > session.expiresAt) {
-    adminSessionStore.delete(adminSession)
-    return false
-  }
-  
-  return true
 }
 
 // CSRF token generation and validation
