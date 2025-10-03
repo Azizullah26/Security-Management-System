@@ -156,7 +156,7 @@ export default function SecurityDashboard() {
     setIsRecordsTableOpen(true)
   }
 
-  const handleEntrySubmit = (entryData: EntryData) => {
+  const handleEntrySubmit = async (entryData: EntryData) => {
     // Update local state immediately for responsive UI
     const updatedEntries = [...entries, entryData]
     setEntries(updatedEntries)
@@ -165,20 +165,52 @@ export default function SecurityDashboard() {
     setCategories((prev) =>
       prev.map((cat) => (cat.id === entryData.category.toLowerCase() ? { ...cat, count: cat.count + 1 } : cat)),
     )
+
+    // Save to database
+    try {
+      const response = await fetch("/api/records", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(entryData),
+      })
+      
+      if (!response.ok) {
+        console.error("Failed to save entry to database")
+      }
+    } catch (error) {
+      console.error("Error saving entry:", error)
+    }
   }
 
-  const handleCheckOut = (entryId: string) => {
+  const handleCheckOut = async (entryId: string) => {
+    const exitTime = new Date().toISOString()
+    
     // Update local state immediately for responsive UI
     const updatedEntries = entries.map((entry) =>
       entry.id === entryId
         ? {
             ...entry,
             status: "exited" as const,
-            exitTime: new Date().toISOString(),
+            exitTime: exitTime,
           }
         : entry,
     )
     setEntries(updatedEntries)
+
+    // Update database
+    try {
+      const response = await fetch("/api/records", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: entryId, exitTime, status: "exited" }),
+      })
+      
+      if (!response.ok) {
+        console.error("Failed to update exit time in database")
+      }
+    } catch (error) {
+      console.error("Error updating checkout:", error)
+    }
   }
 
   const currentlyInside = entries.filter((entry) => entry.status === "inside").length
