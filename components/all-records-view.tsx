@@ -24,30 +24,28 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
   const [localEntries, setLocalEntries] = useState<EntryData[]>([])
   const [projects, setProjects] = useState<any[]>([])
 
-  // Load entries from localStorage and projects from API on mount
+  // Load entries from database and projects from API on mount
   useEffect(() => {
-    const savedEntries = localStorage.getItem("security-entries")
-    if (savedEntries) {
+    const loadData = async () => {
       try {
-        setLocalEntries(JSON.parse(savedEntries))
-      } catch (error) {
-        console.error("Failed to load entries from localStorage:", error)
-      }
-    }
+        // Load entries from database
+        const entriesResponse = await fetch("/api/records")
+        if (entriesResponse.ok) {
+          const data = await entriesResponse.json()
+          setLocalEntries(data.records || [])
+        }
 
-    // Load projects for project filter
-    const loadProjects = async () => {
-      try {
-        const response = await fetch("/api/projects")
-        if (response.ok) {
-          const data = await response.json()
+        // Load projects for project filter
+        const projectsResponse = await fetch("/api/projects")
+        if (projectsResponse.ok) {
+          const data = await projectsResponse.json()
           setProjects(data.projects || data || [])
         }
       } catch (error) {
-        console.error("Failed to load projects:", error)
+        console.error("Failed to load data:", error)
       }
     }
-    loadProjects()
+    loadData()
   }, []) // Run only once on mount
 
   // Use provided entries or local entries (only fall back when entries is undefined)

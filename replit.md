@@ -36,24 +36,35 @@ The system employs a hybrid approach for data management:
 - **Odoo Integration**: Employee lookup through Odoo's HR module for additional staff verification
 
 ### Data Storage Solutions
-**Primary Storage**: Supabase PostgreSQL database for persistent storage of all entries and assignments
+**Primary Storage**: Supabase PostgreSQL database for ALL persistent data storage
+- **Entry Records**: All visitor/staff/contractor entries stored in `entries` table (auto-deleted after 1 month)
+- **Project Assignments**: Staff-to-project assignments in `assignments` table
+- **Admin Sessions**: Authenticated admin sessions in `admin_sessions` table
+
 **Projects Storage**: JSON file (`data/all_real_projects.json`) containing all 245 real-world projects
 **Session Management**: HTTP-only cookies with Supabase-based server-side session validation
 **External Database**: Odoo ERP system for employee master data
 **Image Handling**: Base64 encoding for profile photos and captured images
-**Backup Storage**: Browser localStorage for offline capability and legacy support
+
+**Important**: The system NO LONGER uses localStorage for entry records. All records are stored in Supabase for:
+- Persistence across page refreshes and server restarts
+- Multi-user access (all staff can see relevant records)
+- Automatic cleanup after 1 month
+- Admin visibility of all records from all staff members
 
 The system uses a schema-based approach with TypeScript interfaces for type safety across all data operations.
 
 **Supabase Integration** (Updated: October 3, 2025):
 - **Database**: PostgreSQL database hosted on Supabase for persistent data storage
 - **Tables**: 
-  - `entries` - Stores all visitor/staff/contractor entry records with timestamps
+  - `entries` - Stores ALL visitor/staff/contractor entry records with automatic 1-month retention
   - `assignments` - Stores staff-to-project assignments
   - `admin_sessions` - Stores admin authentication sessions (migrated from in-memory storage)
 - **Authentication**: Secure API key-based authentication with Row Level Security (RLS) enabled
-- **Real-time sync**: All entry, assignment, and session data persists across server restarts
+- **Real-time sync**: All entry, assignment, and session data persists across server restarts and page refreshes
 - **Session Management**: Admin sessions stored in database for persistence across server restarts
+- **Multi-user Support**: All records visible to admin; staff see only their assigned project records
+- **Auto-cleanup**: Records older than 1 month are automatically deleted on each fetch
 
 **Projects Management** (Updated: October 2, 2025):
 - **Storage**: 245 projects stored in `/data/all_real_projects.json`

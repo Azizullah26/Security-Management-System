@@ -51,6 +51,15 @@ export async function GET(request: NextRequest) {
       )
     }
     
+    // Delete records older than 1 month (automatic cleanup)
+    const oneMonthAgo = new Date()
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1)
+    
+    await supabase
+      .from('entries')
+      .delete()
+      .lt('entry_time', oneMonthAgo.toISOString())
+    
     let query = supabase.from('entries').select('*').order('entry_time', { ascending: false })
     
     if (staffSession && !isAdmin) {

@@ -93,40 +93,39 @@ export default function SecurityDashboard() {
     checkAuth()
   }, [])
 
-  // Load entries from localStorage on component mount
+  // Load entries from database on component mount
   useEffect(() => {
     if (!currentStaff) return
 
-    const savedEntries = localStorage.getItem("security-entries")
-    if (savedEntries) {
+    const loadEntries = async () => {
       try {
-        const parsedEntries = JSON.parse(savedEntries)
-        
-        // Filter entries by staff's assigned project (if they have one)
-        const filteredEntries = currentStaff.assignedProject 
-          ? parsedEntries.filter((entry: EntryData) => 
-              entry.projectName === currentStaff.assignedProject)
-          : parsedEntries
-        
-        setEntries(filteredEntries)
-        
-        // Update category counts based on filtered entries
-        const categoryCounts: Record<string, number> = {}
-        filteredEntries.forEach((entry: EntryData) => {
-          const categoryKey = entry.category.toLowerCase()
-          categoryCounts[categoryKey] = (categoryCounts[categoryKey] || 0) + 1
-        })
-        
-        setCategories((prev) =>
-          prev.map((cat) => ({
-            ...cat,
-            count: categoryCounts[cat.id] || 0
-          }))
-        )
+        const response = await fetch("/api/records")
+        if (response.ok) {
+          const data = await response.json()
+          const records = data.records || []
+          
+          setEntries(records)
+          
+          // Update category counts based on records
+          const categoryCounts: Record<string, number> = {}
+          records.forEach((entry: EntryData) => {
+            const categoryKey = entry.category.toLowerCase()
+            categoryCounts[categoryKey] = (categoryCounts[categoryKey] || 0) + 1
+          })
+          
+          setCategories((prev) =>
+            prev.map((cat) => ({
+              ...cat,
+              count: categoryCounts[cat.id] || 0
+            }))
+          )
+        }
       } catch (error) {
-        console.error("Failed to load entries from localStorage:", error)
+        console.error("Failed to load entries from database:", error)
       }
     }
+
+    loadEntries()
   }, [currentStaff])
 
   const handleLogin = (staff: StaffMember) => {
@@ -158,11 +157,9 @@ export default function SecurityDashboard() {
   }
 
   const handleEntrySubmit = (entryData: EntryData) => {
+    // Update local state immediately for responsive UI
     const updatedEntries = [...entries, entryData]
     setEntries(updatedEntries)
-    
-    // Save to localStorage
-    localStorage.setItem("security-entries", JSON.stringify(updatedEntries))
 
     // Update category count
     setCategories((prev) =>
@@ -171,6 +168,7 @@ export default function SecurityDashboard() {
   }
 
   const handleCheckOut = (entryId: string) => {
+    // Update local state immediately for responsive UI
     const updatedEntries = entries.map((entry) =>
       entry.id === entryId
         ? {
@@ -181,9 +179,6 @@ export default function SecurityDashboard() {
         : entry,
     )
     setEntries(updatedEntries)
-    
-    // Save to localStorage
-    localStorage.setItem("security-entries", JSON.stringify(updatedEntries))
   }
 
   const currentlyInside = entries.filter((entry) => entry.status === "inside").length
