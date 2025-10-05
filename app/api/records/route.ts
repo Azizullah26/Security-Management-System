@@ -135,7 +135,6 @@ export async function POST(request: NextRequest) {
       vehicle_number: recordData.vehicleNumber || null,
       number_of_persons: recordData.numberOfPersons || null,
       purpose: recordData.purpose || null,
-      photo: recordData.photo || null,
       entry_time: recordData.entryTime || new Date().toISOString(),
       exit_time: recordData.exitTime || null,
       status: recordData.status || 'inside',

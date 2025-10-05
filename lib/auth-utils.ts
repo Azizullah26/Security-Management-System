@@ -103,5 +103,5 @@ export function validateStaffProjectAssignment(staffSession: any): boolean {
 // Request size validation
 export function validateRequestSize(data: any): boolean {
   const jsonString = JSON.stringify(data)
-  return jsonString.length <= 1024 * 100 // 100KB limit
+  return jsonString.length <= 1024 * 500 // 500KB limit for large staff photos
 }
