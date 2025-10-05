@@ -34,7 +34,7 @@ export function SupplierEntryForm({ onSubmit, onCancel }: SupplierEntryFormProps
     e.preventDefault()
 
     const entryData: EntryData = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       category: "suppliers",
       ...formData,
       email: "",

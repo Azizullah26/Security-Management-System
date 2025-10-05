@@ -27,7 +27,7 @@ export function ClientEntryForm({ onSubmit, onCancel }: ClientEntryFormProps): R
     e.preventDefault()
 
     const entryData: EntryData = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       category: "clients",
       ...formData,
       contactNumber: "", // Client forms don't include contact number

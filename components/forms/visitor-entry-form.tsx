@@ -29,7 +29,7 @@ export function VisitorEntryForm({ onSubmit, onCancel }: VisitorEntryFormProps):
     e.preventDefault()
 
     const entryData: EntryData = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       category: "visitors",
       ...formData,
       entryTime: new Date().toISOString(),

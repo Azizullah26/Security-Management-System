@@ -125,7 +125,7 @@ export function StaffEntryForm({ onSubmit, onCancel }: StaffEntryFormProps): Rea
     e.preventDefault()
 
     const entryData: EntryData = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       category: "staff",
       ...formData,
       photo: personDetails?.image || undefined,

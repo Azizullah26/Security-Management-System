@@ -28,7 +28,7 @@ export function SubContractorEntryForm({ onSubmit, onCancel }: SubContractorEntr
     e.preventDefault()
 
     const entryData: EntryData = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       category: "subcontractors",
       ...formData,
       email: "",
