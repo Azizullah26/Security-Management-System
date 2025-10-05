@@ -125,19 +125,20 @@ export async function POST(request: NextRequest) {
     }
     
     const entryData = {
+      id: recordData.id,
       category: recordData.category,
       name: recordData.name,
       file_id: recordData.fileId || null,
       company: recordData.company || null,
-      phone: recordData.phone || null,
-      vehicle_no: recordData.vehicleNo || null,
-      items: recordData.items || null,
+      contact_number: recordData.contactNumber || null,
+      email: recordData.email || null,
+      vehicle_number: recordData.vehicleNumber || null,
+      number_of_persons: recordData.numberOfPersons || null,
       purpose: recordData.purpose || null,
-      host: recordData.host || null,
       photo: recordData.photo || null,
       entry_time: recordData.entryTime || new Date().toISOString(),
       exit_time: recordData.exitTime || null,
-      duration: recordData.duration || null,
+      status: recordData.status || 'inside',
       project_name: recordData.projectName || null
     }
     
