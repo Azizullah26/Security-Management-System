@@ -22,6 +22,7 @@ interface CategoryData {
 }
 
 export default function SecurityDashboard() {
+  const [isInitializing, setIsInitializing] = useState(true)
   const [currentStaff, setCurrentStaff] = useState<StaffMember | null>(null)
   const [categories, setCategories] = useState<CategoryData[]>([
     {
@@ -73,6 +74,11 @@ export default function SecurityDashboard() {
   const [selectedCategory, setSelectedCategory] = useState<string>("")
   const [entries, setEntries] = useState<EntryData[]>([])
   const [viewingMyRecords, setViewingMyRecords] = useState(false)
+
+  useEffect(() => {
+    localStorage.removeItem("staff-session-token")
+    setIsInitializing(false)
+  }, [])
 
   useEffect(() => {
     if (!currentStaff) return
@@ -257,6 +263,17 @@ export default function SecurityDashboard() {
   const currentlyInside = entries.filter((entry) => entry.status === "inside").length
   const checkedOut = entries.filter((entry) => entry.status === "exited").length
   const totalEntries = entries.length
+
+  if (isInitializing) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
+  }
 
   if (!currentStaff) {
     return <StaffLogin onLogin={handleLogin} />
