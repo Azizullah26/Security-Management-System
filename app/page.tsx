@@ -23,49 +23,48 @@ interface CategoryData {
 
 export default function SecurityDashboard() {
   const [currentStaff, setCurrentStaff] = useState<StaffMember | null>(null)
-  const [isLoadingAuth, setIsLoadingAuth] = useState(true)
   const [categories, setCategories] = useState<CategoryData[]>([
     {
       id: "staff",
       name: "Staff",
       count: 0,
       icon: Users,
-      color: "bg-blue-100", // Changed from bg-blue-500 to light blue
+      color: "bg-blue-100",
     },
     {
       id: "clients",
-      name: "Client", // removed 's' to make singular
+      name: "Client",
       count: 0,
       icon: Briefcase,
-      color: "bg-green-100", // Changed from bg-green-500 to light green
+      color: "bg-green-100",
     },
     {
       id: "contractors",
-      name: "Consultant", // removed 's' to make singular
+      name: "Consultant",
       count: 0,
       icon: HardHat,
-      color: "bg-orange-100", // Changed from bg-orange-500 to light orange
+      color: "bg-orange-100",
     },
     {
       id: "subcontractors",
-      name: "Subcontractor", // removed 's' to make singular
+      name: "Subcontractor",
       count: 0,
       icon: Wrench,
-      color: "bg-purple-100", // Changed from bg-purple-500 to light purple
+      color: "bg-purple-100",
     },
     {
       id: "suppliers",
-      name: "Supplier", // removed 's' to make singular
+      name: "Supplier",
       count: 0,
       icon: Truck,
-      color: "bg-yellow-100", // Changed from bg-yellow-500 to light yellow
+      color: "bg-yellow-100",
     },
     {
       id: "visitors",
-      name: "Visitor", // removed 's' to make singular
+      name: "Visitor",
       count: 0,
       icon: UserCheck,
-      color: "bg-red-100", // Changed from bg-red-500 to light red
+      color: "bg-red-100",
     },
   ])
 
@@ -75,26 +74,6 @@ export default function SecurityDashboard() {
   const [entries, setEntries] = useState<EntryData[]>([])
   const [viewingMyRecords, setViewingMyRecords] = useState(false)
 
-  // Check authentication status on component mount
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const response = await fetch("/api/staff/verify")
-        if (response.ok) {
-          const data = await response.json()
-          setCurrentStaff(data.staff)
-        }
-      } catch (error) {
-        console.error("Auth check failed:", error)
-      } finally {
-        setIsLoadingAuth(false)
-      }
-    }
-
-    checkAuth()
-  }, [])
-
-  // Load entries from database on component mount
   useEffect(() => {
     if (!currentStaff) return
 
@@ -116,7 +95,6 @@ export default function SecurityDashboard() {
 
           setEntries(records)
 
-          // Update category counts based on records
           const categoryCounts: Record<string, number> = {}
           records.forEach((entry: EntryData) => {
             const categoryKey = entry.category.toLowerCase()
@@ -147,8 +125,8 @@ export default function SecurityDashboard() {
       await fetch("/api/staff/logout", { method: "POST" })
       setCurrentStaff(null)
       setEntries([])
-      // Reset category counts
       setCategories((prev) => prev.map((cat) => ({ ...cat, count: 0 })))
+      localStorage.removeItem("staff-session-token")
     } catch (error) {
       console.error("Logout failed:", error)
     }
@@ -165,16 +143,13 @@ export default function SecurityDashboard() {
   }
 
   const handleEntrySubmit = async (entryData: EntryData) => {
-    // Update local state immediately for responsive UI
     const updatedEntries = [...entries, entryData]
     setEntries(updatedEntries)
 
-    // Update category count
     setCategories((prev) =>
       prev.map((cat) => (cat.id === entryData.category.toLowerCase() ? { ...cat, count: cat.count + 1 } : cat)),
     )
 
-    // Save to database
     try {
       const staffToken = localStorage.getItem("staff-session-token")
       const headers: HeadersInit = { "Content-Type": "application/json" }
@@ -200,7 +175,6 @@ export default function SecurityDashboard() {
   const handleCheckOut = async (entryId: string) => {
     const exitTime = new Date().toISOString()
 
-    // Update local state immediately for responsive UI
     const updatedEntries = entries.map((entry) =>
       entry.id === entryId
         ? {
@@ -212,7 +186,6 @@ export default function SecurityDashboard() {
     )
     setEntries(updatedEntries)
 
-    // Update database
     try {
       const staffToken = localStorage.getItem("staff-session-token")
       const headers: HeadersInit = { "Content-Type": "application/json" }
@@ -224,7 +197,7 @@ export default function SecurityDashboard() {
         method: "PUT",
         headers,
         credentials: "include",
-        body: JSON.stringify({ id: entryId, exit_time, status: "exited" }),
+        body: JSON.stringify({ id: entryId, exitTime, status: "exited" }),
       })
 
       if (!response.ok) {
@@ -285,19 +258,6 @@ export default function SecurityDashboard() {
   const checkedOut = entries.filter((entry) => entry.status === "exited").length
   const totalEntries = entries.length
 
-  // Show loading screen while checking authentication
-  if (isLoadingAuth) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    )
-  }
-
-  // Show staff login if not authenticated
   if (!currentStaff) {
     return <StaffLogin onLogin={handleLogin} />
   }
@@ -320,7 +280,6 @@ export default function SecurityDashboard() {
               </h1>
               <p className="text-xs sm:text-sm md:text-base text-gray-600">Visitor and Personnel Tracking Dashboard</p>
 
-              {/* Staff and Project Info */}
               <div className="mt-2 flex flex-col sm:flex-row gap-2 sm:gap-4 text-xs sm:text-sm">
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-blue-600">Staff:</span>
@@ -364,7 +323,6 @@ export default function SecurityDashboard() {
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
-          {/* Main Content */}
           <div className="xl:col-span-3 space-y-3 sm:space-y-4 lg:space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
               {categories.map((category) => {
