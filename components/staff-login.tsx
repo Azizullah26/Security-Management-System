@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -28,12 +30,17 @@ export function StaffLogin({ onLogin }: StaffLoginProps) {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include", // Added to ensure cookies are sent and received
         body: JSON.stringify({ fileId, password }),
       })
 
       const data = await response.json()
 
       if (response.ok && data.success) {
+        if (data.sessionToken) {
+          localStorage.setItem("staff-session-token", data.sessionToken)
+          console.log("[v0] Staff session token stored in localStorage")
+        }
         onLogin(data.staff)
       } else {
         setError(data.error || "Invalid File ID or Password")
@@ -62,7 +69,7 @@ export function StaffLogin({ onLogin }: StaffLoginProps) {
             <p className="text-gray-600 mt-2">Enter your File ID and Password to access the system</p>
           </div>
         </CardHeader>
-        
+
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
@@ -117,9 +124,7 @@ export function StaffLogin({ onLogin }: StaffLoginProps) {
             </div>
 
             {error && (
-              <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-3">
-                {error}
-              </div>
+              <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-3">{error}</div>
             )}
 
             <Button

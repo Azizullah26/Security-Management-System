@@ -32,13 +32,25 @@ export function RecordsTable({ isOpen, onClose, category, entries, onCheckOut }:
         entry.contactNumber.includes(searchTerm),
     )
 
-  const formatTime = (isoString: string) => {
-    return new Date(isoString).toLocaleString("en-US", {
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    })
+  const formatTime = (isoString: string | null | undefined) => {
+    if (!isoString) return "N/A"
+
+    try {
+      const date = new Date(isoString)
+      // Check if date is valid
+      if (isNaN(date.getTime())) return "Invalid Date"
+
+      return date.toLocaleString("en-US", {
+        timeZone: "Asia/Dubai",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    } catch (error) {
+      console.error("[v0] Error formatting date:", error)
+      return "Invalid Date"
+    }
   }
 
   const calculateDuration = (entryTime: string, exitTime?: string): string => {

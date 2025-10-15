@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -34,6 +36,10 @@ export function AdminLogin({ onLogin }: AdminLoginProps) {
 
       if (response.ok && data.success) {
         // Authentication successful - server set HTTP-only cookie
+        if (data.token) {
+          localStorage.setItem("admin-token", data.token)
+          console.log("[v0] Admin token stored in localStorage")
+        }
         onLogin()
       } else {
         setError(data.error || "Invalid password")
@@ -61,7 +67,7 @@ export function AdminLogin({ onLogin }: AdminLoginProps) {
             <p className="text-gray-600 mt-2">Enter password to access the admin dashboard</p>
           </div>
         </CardHeader>
-        
+
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
@@ -97,9 +103,7 @@ export function AdminLogin({ onLogin }: AdminLoginProps) {
             </div>
 
             {error && (
-              <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-3">
-                {error}
-              </div>
+              <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-3">{error}</div>
             )}
 
             <Button
@@ -122,7 +126,7 @@ export function AdminLogin({ onLogin }: AdminLoginProps) {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => window.location.href = "/"}
+              onClick={() => (window.location.href = "/")}
               className="text-gray-500 hover:text-gray-700"
             >
               ← Back to Main Dashboard

@@ -59,6 +59,7 @@ export function TimeTracker({ entries }: TimeTrackerProps) {
         <CardContent className="pb-3 sm:pb-4">
           <div className="text-lg sm:text-2xl font-mono font-bold text-center text-blue-800">
             {currentTime.toLocaleTimeString("en-US", {
+              timeZone: "Asia/Dubai",
               hour: "2-digit",
               minute: "2-digit",
               second: "2-digit",
@@ -66,6 +67,7 @@ export function TimeTracker({ entries }: TimeTrackerProps) {
           </div>
           <div className="text-center text-xs sm:text-sm text-blue-600 mt-1">
             {currentTime.toLocaleDateString("en-US", {
+              timeZone: "Asia/Dubai",
               weekday: "short", // Shortened weekday for mobile
               year: "numeric",
               month: "short", // Shortened month for mobile
@@ -150,6 +152,7 @@ export function TimeTracker({ entries }: TimeTrackerProps) {
                       </Badge>
                       <div className="text-xs text-green-500">
                         {new Date(entry.entryTime).toLocaleTimeString("en-US", {
+                          timeZone: "Asia/Dubai",
                           hour: "2-digit",
                           minute: "2-digit",
                         })}

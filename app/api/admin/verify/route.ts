@@ -1,39 +1,17 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { adminSessionStore } from '@/lib/auth-utils'
+import { type NextRequest, NextResponse } from "next/server"
+import { verifyAdminSession } from "@/lib/auth-utils"
 
 export async function GET(request: NextRequest) {
   try {
-    const sessionCookie = request.cookies.get('admin-session')
-    
-    if (!sessionCookie || !sessionCookie.value) {
-      return NextResponse.json(
-        { error: 'Not authenticated' },
-        { status: 401 }
-      )
+    const isAuthenticated = await verifyAdminSession(request)
+
+    if (!isAuthenticated) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
-    
-    // Verify session token exists and is not expired
-    const session = adminSessionStore.get(sessionCookie.value)
-    const now = Date.now()
-    
-    if (!session || now > session.expiresAt) {
-      // Clean up expired session
-      if (session) {
-        adminSessionStore.delete(sessionCookie.value)
-      }
-      
-      return NextResponse.json(
-        { error: 'Session expired' },
-        { status: 401 }
-      )
-    }
-    
+
     return NextResponse.json({ authenticated: true })
   } catch (error) {
-    console.error('Verification error:', error)
-    return NextResponse.json(
-      { error: 'Verification failed' },
-      { status: 500 }
-    )
+    console.error("[v0] Verification error:", error)
+    return NextResponse.json({ error: "Verification failed" }, { status: 500 })
   }
 }

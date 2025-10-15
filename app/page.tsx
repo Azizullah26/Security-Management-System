@@ -11,7 +11,7 @@ import { EntryForm, type EntryData } from "@/components/entry-form"
 import { RecordsTable } from "@/components/records-table"
 import { TimeTracker } from "@/components/time-tracker"
 import { StaffLogin } from "@/components/staff-login"
-import { type StaffMember } from "@/lib/types"
+import type { StaffMember } from "@/lib/types"
 
 interface CategoryData {
   id: string
@@ -73,6 +73,7 @@ export default function SecurityDashboard() {
   const [isRecordsTableOpen, setIsRecordsTableOpen] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<string>("")
   const [entries, setEntries] = useState<EntryData[]>([])
+  const [viewingMyRecords, setViewingMyRecords] = useState(false)
 
   // Check authentication status on component mount
   useEffect(() => {
@@ -99,25 +100,34 @@ export default function SecurityDashboard() {
 
     const loadEntries = async () => {
       try {
-        const response = await fetch("/api/records")
+        const staffToken = localStorage.getItem("staff-session-token")
+        const headers: HeadersInit = {}
+        if (staffToken) {
+          headers["x-staff-session-token"] = staffToken
+        }
+
+        const response = await fetch("/api/records", {
+          headers,
+          credentials: "include",
+        })
         if (response.ok) {
           const data = await response.json()
           const records = data.records || []
-          
+
           setEntries(records)
-          
+
           // Update category counts based on records
           const categoryCounts: Record<string, number> = {}
           records.forEach((entry: EntryData) => {
             const categoryKey = entry.category.toLowerCase()
             categoryCounts[categoryKey] = (categoryCounts[categoryKey] || 0) + 1
           })
-          
+
           setCategories((prev) =>
             prev.map((cat) => ({
               ...cat,
-              count: categoryCounts[cat.id] || 0
-            }))
+              count: categoryCounts[cat.id] || 0,
+            })),
           )
         }
       } catch (error) {
@@ -138,9 +148,7 @@ export default function SecurityDashboard() {
       setCurrentStaff(null)
       setEntries([])
       // Reset category counts
-      setCategories((prev) =>
-        prev.map((cat) => ({ ...cat, count: 0 }))
-      )
+      setCategories((prev) => prev.map((cat) => ({ ...cat, count: 0 })))
     } catch (error) {
       console.error("Logout failed:", error)
     }
@@ -168,12 +176,19 @@ export default function SecurityDashboard() {
 
     // Save to database
     try {
+      const staffToken = localStorage.getItem("staff-session-token")
+      const headers: HeadersInit = { "Content-Type": "application/json" }
+      if (staffToken) {
+        headers["x-staff-session-token"] = staffToken
+      }
+
       const response = await fetch("/api/records", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
+        credentials: "include",
         body: JSON.stringify(entryData),
       })
-      
+
       if (!response.ok) {
         console.error("Failed to save entry to database")
       }
@@ -184,7 +199,7 @@ export default function SecurityDashboard() {
 
   const handleCheckOut = async (entryId: string) => {
     const exitTime = new Date().toISOString()
-    
+
     // Update local state immediately for responsive UI
     const updatedEntries = entries.map((entry) =>
       entry.id === entryId
@@ -199,17 +214,70 @@ export default function SecurityDashboard() {
 
     // Update database
     try {
+      const staffToken = localStorage.getItem("staff-session-token")
+      const headers: HeadersInit = { "Content-Type": "application/json" }
+      if (staffToken) {
+        headers["x-staff-session-token"] = staffToken
+      }
+
       const response = await fetch("/api/records", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: entryId, exitTime, status: "exited" }),
+        headers,
+        credentials: "include",
+        body: JSON.stringify({ id: entryId, exit_time, status: "exited" }),
       })
-      
+
       if (!response.ok) {
         console.error("Failed to update exit time in database")
       }
     } catch (error) {
       console.error("Error updating checkout:", error)
+    }
+  }
+
+  const handleViewMyRecords = async () => {
+    try {
+      const staffToken = localStorage.getItem("staff-session-token")
+      const headers: HeadersInit = {}
+      if (staffToken) {
+        headers["x-staff-session-token"] = staffToken
+      }
+
+      const response = await fetch("/api/records?filter=my-records&date=today", {
+        headers,
+        credentials: "include",
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setEntries(data.records || [])
+        setViewingMyRecords(true)
+        setIsRecordsTableOpen(true)
+        setSelectedCategory("my-records")
+      }
+    } catch (error) {
+      console.error("Failed to load my records:", error)
+    }
+  }
+
+  const handleViewAllRecords = async () => {
+    try {
+      const staffToken = localStorage.getItem("staff-session-token")
+      const headers: HeadersInit = {}
+      if (staffToken) {
+        headers["x-staff-session-token"] = staffToken
+      }
+
+      const response = await fetch("/api/records", {
+        headers,
+        credentials: "include",
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setEntries(data.records || [])
+        setViewingMyRecords(false)
+      }
+    } catch (error) {
+      console.error("Failed to load all records:", error)
     }
   }
 
@@ -241,7 +309,7 @@ export default function SecurityDashboard() {
           <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 mb-4">
             <div className="flex-shrink-0">
               <img
-                src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/design-mode-images/2025%20LOGO-1kiwZfItFUaLBZ7oWbwDuWRBXfrcRZ.jpeg"
+                src="/images/design-mode/2025%20LOGO(1).jpeg"
                 alt="RCC - El Race Contracting Logo"
                 className="h-12 sm:h-16 md:h-20 lg:h-24 w-auto object-contain"
               />
@@ -251,12 +319,14 @@ export default function SecurityDashboard() {
                 Security Management System
               </h1>
               <p className="text-xs sm:text-sm md:text-base text-gray-600">Visitor and Personnel Tracking Dashboard</p>
-              
+
               {/* Staff and Project Info */}
               <div className="mt-2 flex flex-col sm:flex-row gap-2 sm:gap-4 text-xs sm:text-sm">
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-blue-600">Staff:</span>
-                  <span className="text-gray-700">{currentStaff.name} (ID: {currentStaff.fileId})</span>
+                  <span className="text-gray-700">
+                    {currentStaff.name} (ID: {currentStaff.fileId})
+                  </span>
                 </div>
                 {currentStaff.assignedProject && (
                   <div className="flex items-center gap-2">
@@ -273,11 +343,19 @@ export default function SecurityDashboard() {
               </div>
             </div>
             <div className="flex-shrink-0 flex gap-2">
+              <Button onClick={handleViewMyRecords} variant="default" className="gap-2 bg-green-600 hover:bg-green-700">
+                <Users className="h-4 w-4" />
+                My Records Today
+              </Button>
               <Button onClick={() => (window.location.href = "/admin")} variant="outline" className="gap-2">
                 <Users className="h-4 w-4" />
                 Admin Dashboard
               </Button>
-              <Button onClick={handleLogout} variant="outline" className="gap-2 text-red-600 hover:text-red-700">
+              <Button
+                onClick={handleLogout}
+                variant="outline"
+                className="gap-2 text-red-600 hover:text-red-700 bg-transparent"
+              >
                 <LogOut className="h-4 w-4" />
                 Logout
               </Button>

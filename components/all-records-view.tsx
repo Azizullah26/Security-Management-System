@@ -28,18 +28,37 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
   useEffect(() => {
     const loadData = async () => {
       try {
+        const token = localStorage.getItem("admin-token")
+        const headers: HeadersInit = {
+          "Content-Type": "application/json",
+        }
+
+        if (token) {
+          headers["Authorization"] = `Bearer ${token}`
+        }
+
         // Load entries from database
-        const entriesResponse = await fetch("/api/records")
+        const entriesResponse = await fetch("/api/records", {
+          credentials: "include", // Include authentication cookies as fallback
+          headers,
+        })
         if (entriesResponse.ok) {
           const data = await entriesResponse.json()
           setLocalEntries(data.records || [])
+        } else {
+          console.error("Failed to fetch entries:", entriesResponse.status)
         }
 
         // Load projects for project filter
-        const projectsResponse = await fetch("/api/projects")
+        const projectsResponse = await fetch("/api/projects", {
+          credentials: "include", // Include authentication cookies as fallback
+          headers,
+        })
         if (projectsResponse.ok) {
           const data = await projectsResponse.json()
           setProjects(data.projects || data || [])
+        } else {
+          console.error("Failed to fetch projects:", projectsResponse.status)
         }
       } catch (error) {
         console.error("Failed to load data:", error)
@@ -66,14 +85,26 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
     return matchesSearch && matchesCategory && matchesStatus && matchesProject
   })
 
-  const formatTime = (isoString: string) => {
-    return new Date(isoString).toLocaleString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    })
+  const formatTime = (isoString: string | null | undefined) => {
+    if (!isoString) return "N/A"
+
+    try {
+      const date = new Date(isoString)
+      // Check if date is valid
+      if (isNaN(date.getTime())) return "Invalid Date"
+
+      return date.toLocaleString("en-US", {
+        timeZone: "Asia/Dubai",
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    } catch (error) {
+      console.error("[v0] Error formatting date:", error)
+      return "Invalid Date"
+    }
   }
 
   const calculateDuration = (entryTime: string, exitTime?: string): string => {
@@ -286,7 +317,7 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
           <SelectContent>
             <SelectItem value="all">All Projects</SelectItem>
             {projects
-              .filter(project => project.status === 'active')
+              .filter((project) => project.status === "active")
               .slice(0, 10) // Limit to first 10 for UI performance
               .map((project) => (
                 <SelectItem key={project.id} value={project.name}>

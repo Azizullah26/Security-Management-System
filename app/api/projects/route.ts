@@ -1,7 +1,6 @@
-import { NextRequest, NextResponse } from "next/server"
-import { verifyAdminSession } from '@/lib/auth-utils'
-import fs from 'fs'
-import path from 'path'
+import { type NextRequest, NextResponse } from "next/server"
+import { verifyAdminSession } from "@/lib/auth-utils"
+import { createServiceRoleClient } from "@/lib/supabase/server"
 
 interface Project {
   id: string
@@ -13,36 +12,27 @@ interface Project {
   startDate: string | null
 }
 
-function loadProjects(): Project[] {
-  try {
-    const filePath = path.join(process.cwd(), 'data', 'all_real_projects.json')
-    const fileContent = fs.readFileSync(filePath, 'utf-8')
-    return JSON.parse(fileContent)
-  } catch (error) {
-    console.error('Error loading projects:', error)
-    return []
-  }
-}
-
-function saveProjects(projects: Project[]): void {
-  try {
-    const filePath = path.join(process.cwd(), 'data', 'all_real_projects.json')
-    fs.writeFileSync(filePath, JSON.stringify(projects, null, 2), 'utf-8')
-  } catch (error) {
-    console.error('Error saving projects:', error)
-    throw error
-  }
-}
-
 export async function GET(request: NextRequest) {
   try {
-    const projects = loadProjects()
-    return NextResponse.json(projects)
+    console.log("[v0] GET /api/projects - Fetching projects from Supabase")
+
+    const supabase = await createServiceRoleClient()
+
+    const { data: projects, error } = await supabase.from("projects").select("*").order("name")
+
+    if (error) {
+      console.error("[v0] Supabase error fetching projects:", error)
+      return NextResponse.json({ error: "Failed to fetch projects", details: error.message }, { status: 500 })
+    }
+
+    console.log("[v0] Successfully fetched", projects?.length || 0, "projects from Supabase")
+    return NextResponse.json(projects || [])
   } catch (error) {
-    console.error('Projects fetch error:', error)
+    console.error("[v0] Projects fetch error:", error)
+    console.error("[v0] Error details:", error instanceof Error ? error.message : String(error))
     return NextResponse.json(
-      { error: 'Failed to fetch projects' },
-      { status: 500 }
+      { error: "Failed to fetch projects", details: error instanceof Error ? error.message : String(error) },
+      { status: 500 },
     )
   }
 }
@@ -50,43 +40,45 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const isValidSession = await verifyAdminSession(request)
-    
+
     if (!isValidSession) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Authentication required' },
-        { status: 403 }
-      )
+      return NextResponse.json({ error: "Unauthorized - Authentication required" }, { status: 403 })
     }
 
     const body = await request.json()
     const { action, projectId, securityPersonId } = body
 
     if (action === "assign") {
-      const projects = loadProjects()
-      const projectIndex = projects.findIndex(p => p.id === projectId)
+      const supabase = await createServiceRoleClient()
 
-      if (projectIndex === -1) {
-        return NextResponse.json(
-          { error: 'Project not found' },
-          { status: 404 }
-        )
+      const { data: project, error } = await supabase
+        .from("projects")
+        .update({ assigned_to: securityPersonId })
+        .eq("id", projectId)
+        .select()
+        .single()
+
+      if (error) {
+        console.error("[v0] Error assigning project:", error)
+        return NextResponse.json({ error: "Failed to assign project", details: error.message }, { status: 500 })
       }
 
-      projects[projectIndex].assignedTo = securityPersonId
-      saveProjects(projects)
+      if (!project) {
+        return NextResponse.json({ error: "Project not found" }, { status: 404 })
+      }
 
-      return NextResponse.json({ 
-        success: true, 
-        project: projects[projectIndex] 
+      return NextResponse.json({
+        success: true,
+        project,
       })
     }
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 })
   } catch (error) {
-    console.error('Project assignment error:', error)
+    console.error("[v0] Project assignment error:", error)
     return NextResponse.json(
-      { error: 'Failed to assign project' },
-      { status: 500 }
+      { error: "Failed to assign project", details: error instanceof Error ? error.message : String(error) },
+      { status: 500 },
     )
   }
 }
