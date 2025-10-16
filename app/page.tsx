@@ -280,68 +280,76 @@ export default function SecurityDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-2 sm:p-4 lg:p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-4 sm:mb-6 lg:mb-8">
-          <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 mb-4">
+    <div className="min-h-screen bg-gray-50 p-2 sm:p-3 md:p-4 lg:p-6">
+      <div className="max-w-[1620px] mx-auto">
+        <div className="mb-3 sm:mb-4 md:mb-6 lg:mb-8">
+          <div className="flex flex-col md:flex-row items-center gap-3 md:gap-5 lg:gap-6 mb-3 sm:mb-4">
             <div className="flex-shrink-0">
               <img
                 src="/images/design-mode/2025%20LOGO(1).jpeg"
                 alt="RCC - El Race Contracting Logo"
-                className="h-12 sm:h-16 md:h-20 lg:h-24 w-auto object-contain"
+                className="h-14 sm:h-16 md:h-18 lg:h-20 xl:h-24 w-auto object-contain"
               />
             </div>
-            <div className="text-center sm:text-left flex-1">
-              <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-1 sm:mb-2">
+            <div className="text-center md:text-left flex-1 w-full md:w-auto">
+              <h1 className="text-xl sm:text-2xl md:text-2xl lg:text-3xl xl:text-4xl font-bold text-gray-900 mb-1 md:mb-2">
                 Security Management System
               </h1>
-              <p className="text-xs sm:text-sm md:text-base text-gray-600">Visitor and Personnel Tracking Dashboard</p>
+              <p className="text-sm md:text-base lg:text-lg text-gray-600">Visitor and Personnel Tracking Dashboard</p>
 
-              <div className="mt-2 flex flex-col sm:flex-row gap-2 sm:gap-4 text-xs sm:text-sm">
-                <div className="flex items-center gap-2">
+              <div className="mt-2 md:mt-3 flex flex-col sm:flex-row gap-2 md:gap-4 text-xs sm:text-sm md:text-base">
+                <div className="flex items-center justify-center md:justify-start gap-2">
                   <span className="font-medium text-blue-600">Staff:</span>
                   <span className="text-gray-700">
                     {currentStaff.name} (ID: {currentStaff.fileId})
                   </span>
                 </div>
                 {currentStaff.assignedProject && (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-center md:justify-start gap-2">
                     <span className="font-medium text-green-600">Project:</span>
                     <span className="text-gray-700">{currentStaff.assignedProject}</span>
                   </div>
                 )}
                 {!currentStaff.assignedProject && (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-center md:justify-start gap-2">
                     <span className="font-medium text-orange-600">Project:</span>
                     <span className="text-gray-500">No project assigned</span>
                   </div>
                 )}
               </div>
             </div>
-            <div className="flex-shrink-0 flex gap-2">
-              <Button onClick={handleViewMyRecords} variant="default" className="gap-2 bg-green-600 hover:bg-green-700">
-                <Users className="h-4 w-4" />
-                My Records Today
+            <div className="w-full md:w-auto flex-shrink-0 flex flex-col sm:flex-row md:flex-col lg:flex-row gap-2 md:gap-2.5">
+              <Button
+                onClick={handleViewMyRecords}
+                variant="default"
+                className="w-full md:w-auto gap-2 bg-green-600 hover:bg-green-700 text-sm md:text-base px-4 md:px-5 h-10 md:h-11"
+              >
+                <Users className="h-4 w-4 md:h-5 md:w-5" />
+                <span className="whitespace-nowrap">My Records Today</span>
               </Button>
-              <Button onClick={() => (window.location.href = "/admin")} variant="outline" className="gap-2">
-                <Users className="h-4 w-4" />
-                Admin Dashboard
+              <Button
+                onClick={() => (window.location.href = "/admin")}
+                variant="outline"
+                className="w-full md:w-auto gap-2 text-sm md:text-base px-4 md:px-5 h-10 md:h-11"
+              >
+                <Users className="h-4 w-4 md:h-5 md:w-5" />
+                <span className="whitespace-nowrap">Admin Dashboard</span>
               </Button>
               <Button
                 onClick={handleLogout}
                 variant="outline"
-                className="gap-2 text-red-600 hover:text-red-700 bg-transparent"
+                className="w-full md:w-auto gap-2 text-red-600 hover:text-red-700 bg-transparent text-sm md:text-base px-4 md:px-5 h-10 md:h-11"
               >
-                <LogOut className="h-4 w-4" />
+                <LogOut className="h-4 w-4 md:h-5 md:w-5" />
                 Logout
               </Button>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
-          <div className="xl:col-span-3 space-y-3 sm:space-y-4 lg:space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+          <div className="xl:col-span-3 space-y-3 sm:space-y-4 md:space-y-5 lg:space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
               {categories.map((category) => {
                 const IconComponent = category.icon
                 return (
@@ -351,7 +359,7 @@ export default function SecurityDashboard() {
                   >
                     <CardHeader className="pb-2 sm:pb-3">
                       <div className="flex items-center justify-between">
-                        <CardTitle className="text-sm sm:text-base lg:text-lg font-semibold text-gray-800">
+                        <CardTitle className="text-sm sm:text-base md:text-lg font-semibold text-gray-800">
                           {category.name}
                         </CardTitle>
                         <div className={`p-2 sm:p-2.5 rounded-lg ${category.color}`}>
@@ -359,18 +367,18 @@ export default function SecurityDashboard() {
                         </div>
                       </div>
                     </CardHeader>
-                    <CardContent className="space-y-3 sm:space-y-4">
+                    <CardContent className="space-y-2 sm:space-y-3">
                       <div className="flex items-center justify-between">
                         <span className="text-xs sm:text-sm text-gray-600">Current Count:</span>
-                        <Badge variant="secondary" className="text-sm sm:text-base lg:text-lg px-2 sm:px-3 py-1">
+                        <Badge variant="secondary" className="text-sm sm:text-base md:text-lg px-2 sm:px-3 py-1">
                           {category.count}
                         </Badge>
                       </div>
 
-                      <div className="flex flex-col gap-2 sm:gap-3">
+                      <div className="flex flex-col gap-2">
                         <Button
                           onClick={() => handleAddEntry(category.id)}
-                          className="w-full text-sm sm:text-base h-10 sm:h-11"
+                          className="w-full text-xs sm:text-sm md:text-base h-9 sm:h-10 md:h-11"
                           size="default"
                         >
                           Add Entry
@@ -378,7 +386,7 @@ export default function SecurityDashboard() {
                         <Button
                           onClick={() => handleViewRecords(category.id)}
                           variant="outline"
-                          className="w-full text-sm sm:text-base h-10 sm:h-11"
+                          className="w-full text-xs sm:text-sm md:text-base h-9 sm:h-10 md:h-11"
                           size="default"
                         >
                           View Records
@@ -390,26 +398,26 @@ export default function SecurityDashboard() {
               })}
             </div>
 
-            <div className="bg-white rounded-lg shadow p-3 sm:p-4 lg:p-6">
-              <h2 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-800 mb-3 sm:mb-4">
+            <div className="bg-white rounded-lg shadow p-3 sm:p-4 md:p-5 lg:p-6">
+              <h2 className="text-base sm:text-lg md:text-xl font-semibold text-gray-800 mb-3 sm:mb-4">
                 Today's Summary
               </h2>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
                 <div className="text-center p-3 sm:p-4 bg-gray-50 rounded-lg">
-                  <div className="text-lg sm:text-xl lg:text-2xl font-bold text-blue-600">{totalEntries}</div>
-                  <div className="text-xs sm:text-sm text-gray-600">Total Entries</div>
+                  <div className="text-xl sm:text-2xl md:text-3xl font-bold text-blue-600">{totalEntries}</div>
+                  <div className="text-xs sm:text-sm text-gray-600 mt-1">Total Entries</div>
                 </div>
                 <div className="text-center p-3 sm:p-4 bg-gray-50 rounded-lg">
-                  <div className="text-lg sm:text-xl lg:text-2xl font-bold text-green-600">{currentlyInside}</div>
-                  <div className="text-xs sm:text-sm text-gray-600">Currently Inside</div>
+                  <div className="text-xl sm:text-2xl md:text-3xl font-bold text-green-600">{currentlyInside}</div>
+                  <div className="text-xs sm:text-sm text-gray-600 mt-1">Currently Inside</div>
                 </div>
                 <div className="text-center p-3 sm:p-4 bg-gray-50 rounded-lg">
-                  <div className="text-lg sm:text-xl lg:text-2xl font-bold text-orange-600">{checkedOut}</div>
-                  <div className="text-xs sm:text-sm text-gray-600">Checked Out</div>
+                  <div className="text-xl sm:text-2xl md:text-3xl font-bold text-orange-600">{checkedOut}</div>
+                  <div className="text-xs sm:text-sm text-gray-600 mt-1">Checked Out</div>
                 </div>
                 <div className="text-center p-3 sm:p-4 bg-gray-50 rounded-lg">
-                  <div className="text-lg sm:text-xl lg:text-2xl font-bold text-purple-600">0</div>
-                  <div className="text-xs sm:text-sm text-gray-600">Pending Exit</div>
+                  <div className="text-xl sm:text-2xl md:text-3xl font-bold text-purple-600">0</div>
+                  <div className="text-xs sm:text-sm text-gray-600 mt-1">Pending Exit</div>
                 </div>
               </div>
             </div>

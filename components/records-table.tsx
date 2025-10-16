@@ -24,7 +24,12 @@ export function RecordsTable({ isOpen, onClose, category, entries, onCheckOut }:
 
   // Filter entries by category and search term
   const filteredEntries = entries
-    .filter((entry) => entry.category.toLowerCase() === category.toLowerCase())
+    .filter((entry) => {
+      // Special case: if category is "my-records", don't filter by category
+      // since the backend already filtered the records by the logged-in staff member
+      if (category === "my-records") return true
+      return entry.category.toLowerCase() === category.toLowerCase()
+    })
     .filter(
       (entry) =>
         entry.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

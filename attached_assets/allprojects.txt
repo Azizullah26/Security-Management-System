@@ -1,736 +1,103 @@
-Internal
-Internal security operations
-active	Unassigned	high	1/15/2024	Reassign
-Meteiya Building (New) - (Closed)
-Security for Meteiya Building project
-completed	Unassigned	medium	1/1/2024	Reassign
-WOCM47:157 Al Ain Municipality Main Building
-Al Ain Municipality Main Building security
-active	Unassigned	high	2/1/2024	Reassign
-Dubai Hospital
-Hospital security operations
-active	Unassigned	high	3/1/2024	Reassign
-HAMDAN SCHOOL ///AC CHANGE
-Hamdan School AC system security
-pending	Unassigned	medium	4/1/2024	Reassign
-WOCM47:162 Al Ain Municipality Main Building
-Al Ain Municipality security operations
-active	Unassigned	high	2/15/2024	Reassign
-HYDROTHERAPY POOL AT SENIORS HAPPINESS CENTRE
-Seniors Happiness Centre pool security
-planning	Unassigned	medium	5/1/2024	Assign
-Temple Extension Works
-Temple extension project security
-active	Unassigned	medium	3/15/2024	Reassign
-DWO: 8731///C1177 - BAYAAT AL REDHWAN///Emirates Schools Establishment
-Emirates Schools Establishment security
-active	Unassigned	high	1/20/2024	Reassign
-Al Howar Building Shops & Offices - Al Ain
-Al Howar Building security operations
-active	Unassigned	medium	2/10/2024	Reassign
-Al Howar Camp & Store - Al Ain
-Al Howar Camp and Store security
-pending	Unassigned	medium	4/15/2024	Assign
-58:112 //H8004 - Rulers Representative old and new courts
-Rulers Representative courts security
-active	Unassigned	high	1/10/2024	Reassign
-58:114 C1164 - AL SHABHANA///Emirates Schools Establishment
-Al Shabhana Emirates Schools security
-active	Unassigned	high	2/5/2024	Reassign
-Al Adel School - Al Ain (Gen. Maint)
-Al Adel School general maintenance security
-on-hold	Unassigned	low	5/1/2024	Assign
-Al Ain Municipality
-Al Ain Municipality security operations
-active	Unassigned	high	1/1/2024	Reassign
-Al Ataa School - Al Ain
-Al Ataa School security operations
-active	Unassigned	medium	2/20/2024	Reassign
-Al Ataa School - Al Ain (Pasco Shifting)
-Al Ataa School Pasco shifting security
-pending	Unassigned	medium	4/1/2024	Assign
-Al Ataa School - Al Ain (Physics Lab)
-Al Ataa School Physics Lab security
-planning	Unassigned	low	5/15/2024	Assign
-Al Badiyah School - Al Ain (Flooring)
-Al Badiyah School flooring project security
-active	Unassigned	medium	3/1/2024	Reassign
-Al Dahra Fodder Distribution center WOCM47: 196
-Al Dahra Fodder Distribution center security
-active	Unassigned	medium	2/25/2024	Reassign
-Al Dhaher Girls School - Al Ain (Flooring)
-Al Dhaher Girls School flooring security
-active	Unassigned	medium	3/10/2024	Reassign
-Al Dhaher School - Al Ain (Bio Lab)
-Al Dhaher School Biology Lab security
-planning	Unassigned	low	5/20/2024	Assign
-Al Dhahera School - Al Ain
-Al Dhahera School security operations
-active	Unassigned	medium	2/1/2024	Reassign
-Al Dhahra Fodder Distribution Center
-Al Dhahra Fodder Distribution Center security
-active	Unassigned	medium	1/15/2024	Reassign
-Al Falah School -Emirates Insurance Company
-Al Falah School Emirates Insurance security
-active	Unassigned	medium	2/15/2024	Reassign
-Al Ghaith School - Al Ain (New Sign Board)
-Al Ghaith School signboard project security
-pending	Unassigned	low	4/10/2024	Assign
-Al Hayer School - Al Ain (Science Lab)
-Al Hayer School Science Lab security
-planning	Unassigned	medium	6/1/2024	Assign
-Al Khatem School - Al Ain (New Sign Board)
-Al Khatem School signboard security
-pending	Unassigned	low	4/15/2024	Assign
-Al Khatem School - Al Ain (Shades)
-Al Khatem School shades installation security
-active	Unassigned	medium	3/20/2024	Reassign
-Al Khazna School - Al Ain
-Al Khazna School security operations
-active	Unassigned	medium	2/10/2024	Reassign
-Al Loulo School - DWO.7901
-Al Loulo School security operations
-active	Unassigned	medium	1/25/2024	Reassign
-Al Maqam School - Al Ain (Chemistry Cabinet)
-Al Maqam School Chemistry Cabinet security
-planning	Unassigned	low	5/25/2024	Assign
-Al Nebras School - Al Ain (New Sign Board)
-Al Nebras School signboard security
-pending	Unassigned	low	4/20/2024	Assign
-Al Quaa Extension Center
-Al Quaa Extension Center security
-active	Unassigned	medium	2/5/2024	Reassign
-Al Quaa School - Al Ain (Flooring)
-Al Quaa School flooring project security
-active	Unassigned	medium	3/5/2024	Reassign
-Al Sareyah School - Al Ain (Carpet & Paint)
-Al Sareyah School carpet and paint security
-active	Unassigned	medium	3/15/2024	Reassign
-Al Sumow School - Al Ain (Shades)
-Al Sumow School shades security
-pending	Unassigned	medium	4/25/2024	Assign
-Al Tafawoq School - Al Ain (civil works)
-Al Tafawoq School civil works security
-active	Unassigned	high	2/20/2024	Reassign
-Al Tamooh School - Al Ain (Chemistry Cabinet)
-Al Tamooh School Chemistry Cabinet security
-planning	Unassigned	low	6/10/2024	Assign
-Al Tamooh School - Al Ain (Flooring)
-Al Tamooh School flooring security
-active	Unassigned	medium	3/25/2024	Reassign
-Al Wagan School - Al Ain (Gypsum Part.)
-Al Wagan School gypsum partition security
-pending	Unassigned	medium	5/5/2024	Assign
-BONAT AL GHAD KG - WO. 132 - Provis HCI
-Bonat Al Ghad Kindergarten security
-active	Unassigned	medium	2/28/2024	Reassign
-Bainoona Tunnel Utility Building - WOCM 36:104
-Bainoona Tunnel Utility Building security
-active	Unassigned	high	1/20/2024	Reassign
-DOT AL Reem Building - WOCM 36:118
-DOT AL Reem Building security
-active	Unassigned	medium	2/12/2024	Reassign
-DWO: 8463 AbuKrayyah Vet & Agri ServiceCenter
-AbuKrayyah Veterinary & Agricultural Service Center security
-active	Unassigned	medium	1/30/2024	Reassign
-DWO: 8464 Al Quaa Veterinary Clinic
-Al Quaa Veterinary Clinic security
-active	Unassigned	medium	2/8/2024	Reassign
-DWO:6695Al Dhaher FDF
-Al Dhaher FDF security operations
-active	Unassigned	medium	1/18/2024	Reassign
-DWO:6748Old Vegitable Market
-Old Vegetable Market security
-on-hold	Unassigned	low	5/15/2024	Assign
-DWO:6834Al Narjis School
-Al Narjis School security operations
-active	Unassigned	medium	2/22/2024	Reassign
-DWO:6847Old Vegitable Market
-Old Vegetable Market security operations
-on-hold	Unassigned	low	5/20/2024	Assign
-DWO:6855AL Jennan School
-AL Jennan School security operations
-active	Unassigned	medium	2/18/2024	Reassign
-E4027 - Barakat Al Dar Club
-Barakat Al Dar Club security
-active	Unassigned	medium	1/22/2024	Reassign
-Employees Residence - Al Ain (Maintenance)
-Employees Residence maintenance security
-active	Unassigned	medium	3/1/2024	Reassign
-Family Development Foundation Al Shwaib
-Family Development Foundation Al Shwaib security
-active	Unassigned	medium	1/28/2024	Reassign
-Family Development Foundation Al Shwaib WOC152:103
-Family Development Foundation Al Shwaib WOC security
-active	Unassigned	medium	2/2/2024	Reassign
-Family Development Foundation Buildings
-Family Development Foundation Buildings security
-active	Unassigned	medium	1/25/2024	Reassign
-Family Development Foundation Buildings WOC152: 101
-Family Development Foundation Buildings WOC security
-active	Unassigned	medium	2/5/2024	Reassign
-HAMDAN BIN ZAYED C2 AND 3 BOY-36:172
-Hamdan Bin Zayed C2 and 3 Boys security
-active	Unassigned	high	2/15/2024	Reassign
-HAMDAN BIN ZAYED C2 AND 3 BOY-SCHOOL
-Hamdan Bin Zayed C2 and 3 Boys School security
-active	Unassigned	high	2/20/2024	Reassign
-HCI-ESE-2023-07 Al Quaa School - Al Ain
-HCI-ESE Al Quaa School security
-active	Unassigned	medium	1/15/2024	Reassign
-J1190 - Madinat Zayed Fodder Distribution
-Madinat Zayed Fodder Distribution security
-active	Unassigned	medium	2/10/2024	Reassign
-KHALIFA CITY A SCHOOL - WOCM36:169
-Khalifa City A School security
-active	Unassigned	medium	2/25/2024	Reassign
-Karamah Bus (Washing) Depot - WOCM 36:117
-Karamah Bus Washing Depot security
-active	Unassigned	medium	1/12/2024	Reassign
-MOE Building - Al Ain (store works)
-MOE Building store works security
-pending	Unassigned	medium	4/30/2024	Assign
-Madinat Zayed Fodder Distribution Center - DWO:8892
-Madinat Zayed Fodder Distribution Center security
-active	Unassigned	medium	2/8/2024	Reassign
-Main Building -MOE- Al Ain (Fire Fighting)
-MOE Main Building Fire Fighting security
-active	Unassigned	high	1/20/2024	Reassign
-Mariam Bint Sultan School - Al Ain (Shades)
-Mariam Bint Sultan School shades security
-pending	Unassigned	medium	5/10/2024	Assign
-Mezyad School - Al Ain - HCI
-Mezyad School HCI security
-active	Unassigned	medium	2/12/2024	Reassign
-Musanada HCI PD/CA/FM/MH/R1467/General-/20/102 WOCM36:102 Abu Dhabi Al Mawaheb School
-Abu Dhabi Al Mawaheb School Musanada HCI security
-active	Unassigned	medium	1/18/2024	Reassign
-Musanada HCI PD/CA/FM/MH/R1467/General-/20/102 WOCM36:108 ADEC General
-ADEC General Musanada HCI security
-active	Unassigned	medium	1/25/2024	Reassign
-Musanada HCI PD/CA/FM/MH/R1467/General-/20/102 WOCM36:122 G1023 - Parking No.1
-Parking No.1 Musanada HCI security
-active	Unassigned	low	2/1/2024	Reassign
-Musanada HCI PD/CA/FM/MH/R1467/General-/20/102 WOCM36:130 G1033 - Abu Dhabi Bus Terminal
-Abu Dhabi Bus Terminal Musanada HCI security
-active	Unassigned	high	1/30/2024	Reassign
-Neima School for Boys - Al Ain (Toilets Renovation)
-Neima School Boys toilets renovation security
-pending	Unassigned	medium	5/15/2024	Assign
-PD/CA/FM/MH/R1467/GENERAL-/20/102 - HCI - Al Dafrah
-Al Dafrah HCI security operations
-active	Unassigned	medium	2/5/2024	Reassign
-Parking No.1 - WO. 122 - Provis HCI
-Parking No.1 Provis HCI security
-active	Unassigned	low	1/15/2024	Reassign
-Parking No.2 - WO. 123 - Provis HCI
-Parking No.2 Provis HCI security
-active	Unassigned	low	1/20/2024	Reassign
-Parking No.5 - WO. 124 - Provis HCI
-Parking No.5 Provis HCI security
-active	Unassigned	low	1/25/2024	Reassign
-Parking No.7 - WO. 121 - Provis HCI
-Parking No.7 Provis HCI security
-active	Unassigned	low	1/18/2024	Reassign
-Rabdan C2 Boys - W.O. 153 - Provis HCI
-Rabdan C2 Boys Provis HCI security
-active	Unassigned	medium	2/10/2024	Reassign
-Rulers Representative old and new courts - DWO:8888
-Rulers Representative courts DWO security
-active	Unassigned	high	1/10/2024	Reassign
-Rulers Representative old and new courts - WOCM58:112
-Rulers Representative courts WOCM security
-active	Unassigned	high	1/12/2024	Reassign
-Sweihan School - Al Ain
-Sweihan School security operations
-active	Unassigned	medium	2/15/2024	Reassign
-Sweihan School - Al Ain (Artifical Grass)
-Sweihan School artificial grass security
-pending	Unassigned	medium	5/1/2024	Assign
-Tahfiz Al Qoran Al Karim Center
-Tahfiz Al Qoran Al Karim Center security
-active	Unassigned	medium	1/28/2024	Reassign
-Tahfiz Al Qoran Al Karim Center (Family) WOC152:102
-Tahfiz Al Qoran Al Karim Center Family WOC security
-active	Unassigned	medium	2/2/2024	Reassign
-Tahnoon Bin Mohamed School - Al Ain (CCTV)
-Tahnoon Bin Mohamed School CCTV security
-active	Unassigned	high	2/20/2024	Reassign
-UM AL EMARAT SCHOOL - WO. 133 - Provis HCI
-Um Al Emarat School Provis HCI security
-active	Unassigned	medium	2/25/2024	Reassign
-WOC 109:101 E9056 - Hoson Al Dhafra
-Hoson Al Dhafra WOC security
-active	Unassigned	medium	1/22/2024	Reassign
-WOCM 58:122 C1178 - BEDAA AL MUTAWA
-Bedaa Al Mutawa WOCM security
-active	Unassigned	medium	2/8/2024	Reassign
-WOCM 58:109 C1161 - New Al Falah School
-New Al Falah School WOCM security
-active	Unassigned	medium	2/12/2024	Reassign
-WOCM 58:117 C1161 - Al Falah School
-Al Falah School WOCM security
-active	Unassigned	medium	2/10/2024	Reassign
-WOCM 58:121J1367 - Seih Al Kheir Model Farm
-Seih Al Kheir Model Farm WOCM security
-active	Unassigned	medium	1/30/2024	Reassign
-WOCM 58:123 C1484 - AL SELAA
-AL SELAA WOCM security
-active	Unassigned	medium	2/5/2024	Reassign
-WOCM 58:102///E4027 - Family Development Foundation - Silaa
-Family Development Foundation Silaa WOCM security
-active	Unassigned	medium	1/25/2024	Reassign
-WOCM47-145 Al Ghayth School
-Al Ghayth School WOCM security
-active	Unassigned	medium	2/15/2024	Reassign
-WOCM47-147 Al Hayar Wedding hall
-Al Hayar Wedding hall WOCM security
-active	Unassigned	medium	2/20/2024	Reassign
-WOCM47-155 Al Quaa Veterinary Clinic
-Al Quaa Veterinary Clinic WOCM security
-active	Unassigned	medium	2/8/2024	Reassign
-WOCM47-174 Al Ankah Fodder Distribution Center
-Al Ankah Fodder Distribution Center WOCM security
-active	Unassigned	medium	1/28/2024	Reassign
-WOCM47:102Al Dhaher FDF
-Al Dhaher FDF WOCM security
-active	Unassigned	medium	1/20/2024	Reassign
-WOCM47:104Al Dahmaa School
-Al Dahmaa School WOCM security
-active	Unassigned	medium	2/12/2024	Reassign
-WOCM47:105Old Vegitable Market
-Old Vegetable Market WOCM security
-on-hold	Unassigned	low	5/25/2024	Assign
-WOCM47:106New Neima School
-New Neima School WOCM security
-active	Unassigned	medium	2/18/2024	Reassign
-WOCM47:107Al Bedaa School
-Al Bedaa School WOCM security
-active	Unassigned	medium	2/22/2024	Reassign
-WOCM47:108Sweihan School
-Sweihan School WOCM security
-active	Unassigned	medium	2/15/2024	Reassign
-WOCM47:109-B Al Ain Zoo
-Al Ain Zoo WOCM-B security
-active	Unassigned	high	1/15/2024	Reassign
-WOCM47:109A Al Ain Zoo
-Al Ain Zoo WOCM-A security
-active	Unassigned	high	1/15/2024	Reassign
-WOCM47:110Nahel Center
-Nahel Center WOCM security
-active	Unassigned	medium	2/1/2024	Reassign
-WOCM47:111 Nahel Center
-Nahel Center WOCM 111 security
-active	Unassigned	medium	2/5/2024	Reassign
-WOCM47:112 / 102 Family Development Foundation
-Family Development Foundation WOCM security
-active	Unassigned	medium	1/28/2024	Reassign
-WOCM47:114 Zayedia School
-Zayedia School WOCM security
-active	Unassigned	medium	2/10/2024	Reassign
-WOCM47:119 Hessa Bint Mohamed School
-Hessa Bint Mohamed School WOCM security
-active	Unassigned	medium	2/15/2024	Reassign
-WOCM47:124 Al Ain Zoo
-Al Ain Zoo WOCM 124 security
-active	Unassigned	high	1/20/2024	Reassign
-WOCM47:127Al Salamat Research Center
-Al Salamat Research Center WOCM security
-active	Unassigned	medium	2/8/2024	Reassign
-WOCM47:129 Al Ain Zoo (Parking Ticket)
-Al Ain Zoo Parking Ticket WOCM security
-active	Unassigned	low	1/25/2024	Reassign
-WOCM47:130 Tahnoon Bin Mohamed School
-Tahnoon Bin Mohamed School WOCM security
-active	Unassigned	medium	2/20/2024	Reassign
-WOCM47:133 Al Zayedia School
-Al Zayedia School WOCM security
-active	Unassigned	medium	2/12/2024	Reassign
-WOCM47:136 Al Saad Extension & Clinic (Parking Shade)
-Al Saad Extension & Clinic parking shade security
-pending	Unassigned	medium	5/10/2024	Assign
-WOCM47:137 Al Ankah Fodder Distribution Center (Painting)
-Al Ankah Fodder Distribution Center painting security
-active	Unassigned	medium	3/1/2024	Reassign
-WOCM47:138 Neima School (Painting)
-Neima School painting security
-active	Unassigned	medium	3/5/2024	Reassign
-WOCM47:141 Al Ankah Fodder Distribution Center (Painting)
-Al Ankah Fodder Distribution Center painting 141 security
-active	Unassigned	medium	3/10/2024	Reassign
-WOCM47:149 Al Quaa Extension Center (Gen Maint)
-Al Quaa Extension Center general maintenance security
-pending	Unassigned	medium	5/15/2024	Assign
-WOCM47:150 Abukarayyah Vet & Agri Services Center.
-Abukarayyah Vet & Agri Services Center WOCM security
-active	Unassigned	medium	2/1/2024	Reassign
-WOCM47:151 Al Khatim Vet & Agri Services Center.
-Al Khatim Vet & Agri Services Center WOCM security
-active	Unassigned	medium	2/5/2024	Reassign
-WOCM47:159 Town Sqwaer - Al Ain Municipality
-Town Square Al Ain Municipality WOCM security
-active	Unassigned	medium	1/30/2024	Reassign
-WOCM47:160 Al Oya Vet & Agricultural Services Center - Al Ain
-Al Oya Vet & Agricultural Services Center WOCM security
-active	Unassigned	medium	2/8/2024	Reassign
-WOCM47:164 Hazaa Bosh for Care and Rehabilitation
-Hazaa Bosh Care and Rehabilitation WOCM security
-active	Unassigned	high	2/12/2024	Reassign
-WOCM47:167 Nahel school
-Nahel school WOCM security
-active	Unassigned	medium	2/15/2024	Reassign
-WOCM47:168 Al Bedaa School
-Al Bedaa School WOCM 168 security
-active	Unassigned	medium	2/18/2024	Reassign
-WOCM47:169 Sweihan School
-Sweihan School WOCM 169 security
-active	Unassigned	medium	2/20/2024	Reassign
-WOCM47:170 Al Resalah school
-Al Resalah school WOCM security
-active	Unassigned	medium	2/22/2024	Reassign
-WOCM47:173 Seeh Sabra Veterinary Clinic
-Seeh Sabra Veterinary Clinic WOCM security
-active	Unassigned	medium	2/10/2024	Reassign
-WOCM47:176 Al Quaa Extension Center
-Al Quaa Extension Center WOCM 176 security
-active	Unassigned	medium	2/5/2024	Reassign
-WOCM47:177 AbuKrayyah Vet & Agri ServiceCenter
-AbuKrayyah Vet & Agri ServiceCenter WOCM security
-active	Unassigned	medium	2/1/2024	Reassign
-WOCM47:178 Al Quaa Veterinary Clinic
-Al Quaa Veterinary Clinic WOCM 178 security
-active	Unassigned	medium	2/8/2024	Reassign
-WOCM47:182 Al Wagan Customer Service center
-Al Wagan Customer Service center WOCM security
-active	Unassigned	medium	2/12/2024	Reassign
-WOCM47:189 Al Resalah School (playing yard)
-Al Resalah School playing yard WOCM security
-pending	Unassigned	medium	5/20/2024	Assign
-WOCM58:118J1190 - Madinat Zayed Fodder Distribution Center
-Madinat Zayed Fodder Distribution Center WOCM security
-active	Unassigned	medium	2/10/2024	Reassign
-Wahat Al sahraa Foder Distribution Center - WOCM47: 195
-Wahat Al sahraa Foder Distribution Center WOCM security
-active	Unassigned	medium	1/28/2024	Reassign
-Wahat AlSahraa Foder Distribution Center
-Wahat AlSahraa Foder Distribution Center security
-active	Unassigned	medium	1/30/2024	Reassign
-Yazeid bin Al-Munthir Mosque - WOCM36:110
-Yazeid bin Al-Munthir Mosque WOCM security
-active	Unassigned	medium	1/25/2024	Reassign
-Police Rehabilitation Department - Al Ain Region
-Police Rehabilitation Department Al Ain security
-active	Unassigned	high	1/15/2024	Reassign
-Police Heritage Library - Al Ain Region
-Police Heritage Library Al Ain security
-active	Unassigned	medium	2/1/2024	Reassign
-Criminal Investigation Department - Al Ain City
-Criminal Investigation Department Al Ain security
-active	Unassigned	high	1/20/2024	Reassign
-Al Ain Region Police Centers
-Al Ain Region Police Centers security
-active	Unassigned	high	1/10/2024	Reassign
-Al Ain Region Police Directorate
-Al Ain Region Police Directorate security
-active	Unassigned	high	1/5/2024	Reassign
-Al Murabba Police Station - Al Ain Region
-Al Murabba Police Station Al Ain security
-active	Unassigned	high	1/25/2024	Reassign
-Al Maqam Police Station - Al Ain Region
-Al Maqam Police Station Al Ain security
-active	Unassigned	high	1/28/2024	Reassign
-Traffic and Security Patrols Department - Al Ain Region
-Traffic and Security Patrols Department Al Ain security
-active	Unassigned	high	1/12/2024	Reassign
-Traffic Control Department - Al Ain Region
-Traffic Control Department Al Ain security
-active	Unassigned	high	1/15/2024	Reassign
-Hili Police Station - Al Ain City
-Hili Police Station Al Ain security
-active	Unassigned	high	1/30/2024	Reassign
-Hazaa Falaj Police Station - Al Ain City
-Hazaa Falaj Police Station Al Ain security
-active	Unassigned	high	2/2/2024	Reassign
-Traffic Institute General Maintenance - Al Ain Region
-Traffic Institute general maintenance security
-pending	Unassigned	medium	5/1/2024	Assign
-File No. 31 General Maintenance - Al Ain Hazaa Falaj
-File 31 general maintenance security
-on-hold	Unassigned	low	6/1/2024	Assign
-Engineering Projects Department - Al Ain Region
-Engineering Projects Department Al Ain security
-active	Unassigned	medium	1/18/2024	Reassign
-Narcotics Control Department - Al Ain Region
-Narcotics Control Department Al Ain security
-active	Unassigned	high	1/22/2024	Reassign
-Hazaa Falaj Center - Traffic and Security Patrols Department
-Hazaa Falaj Center Traffic and Security Patrols security
-active	Unassigned	high	2/5/2024	Reassign
-Hili Police Station - Al Ain City
-Hili Police Station Al Ain City security
-active	Unassigned	high	2/8/2024	Reassign
-Zakher Police Station - Al Ain Region
-Zakher Police Station Al Ain security
-active	Unassigned	high	2/10/2024	Reassign
-Hazaa Falaj Police Station - Al Ain Region
-Hazaa Falaj Police Station Al Ain Region security
-active	Unassigned	high	2/12/2024	Reassign
-Air Conditioning Equipment Replacement - File 37 - Al Ain City
-AC equipment replacement File 37 security
-pending	Unassigned	medium	5/15/2024	Assign
-Traffic Training Branch - Security and Police Institutes Department
-Traffic Training Branch security
-active	Unassigned	medium	2/15/2024	Reassign
-Zakher Police Station Support Services - Al Ain City
-Zakher Police Station support services security
-active	Unassigned	medium	2/18/2024	Reassign
-Networks Branch - Al Ain City
-Networks Branch Al Ain security
-active	Unassigned	medium	2/20/2024	Reassign
-File No. 19 - Hazaa Falaj - Housing Department
-File 19 Hazaa Falaj Housing Department security
-active	Unassigned	medium	2/22/2024	Reassign
-Al Ain Corruption Department - Al Maqam Police Station
-Al Ain Corruption Department security
-active	Unassigned	high	1/28/2024	Reassign
-Security Patrols Parking - Patrols Complex
-Security Patrols parking complex security
-active	Unassigned	medium	2/1/2024	Reassign
-Temple Security Point - Al Rahba
-Temple security point Al Rahba security
-active	Unassigned	medium	1/25/2024	Reassign
-Yas Police Station
-Yas Police Station security operations
-active	Unassigned	high	2/5/2024	Reassign
-Directorate Housing Maintenance
-Directorate housing maintenance security
-active	Unassigned	medium	2/10/2024	Reassign
-wocm 58:104///E9056 - Hoson Al Dhafra - Culture & Tourism
-Hoson Al Dhafra Culture & Tourism security
-active	Unassigned	medium	1/22/2024	Reassign
-Special Tasks Department Store Containers
-Special Tasks Department store containers security
-active	Unassigned	medium	2/8/2024	Reassign
-Al Rahba Police Station Helicopter Landing
-Al Rahba Police Station helicopter landing security
-active	Unassigned	high	2/12/2024	Reassign
-General - HCI
-General HCI security operations
-active	Unassigned	medium	1/15/2024	Reassign
-Sports Club - Al Karama
-Sports Club Al Karama security
-active	Unassigned	medium	2/15/2024	Reassign
-Al Rawda Police Station Office Carpet
-Al Rawda Police Station office carpet security
-pending	Unassigned	low	5/10/2024	Assign
-Zayed Cricket Stadium - Khalifa City
-Zayed Cricket Stadium Khalifa City security
-active	Unassigned	high	2/20/2024	Reassign
-Al Madina Police Station Stairs Modifications
-Al Madina Police Station stairs modifications security
-pending	Unassigned	medium	5/20/2024	Assign
-Concrete Footing for Sheds
-Concrete footing for sheds security
-active	Unassigned	medium	3/1/2024	Reassign
-Alaliah Island Police Station
-Alaliah Island Police Station security
-active	Unassigned	high	1/30/2024	Reassign
-Artificial Grass - Crime Scene
-Artificial grass crime scene security
-active	Unassigned	medium	3/5/2024	Reassign
-Musaffah Police Station Demolition and Interlock
-Musaffah Police Station demolition and interlock security
-active	Unassigned	high	3/10/2024	Reassign
-Security Information Department General Maintenance
-Security Information Department maintenance security
-pending	Unassigned	medium	5/25/2024	Assign
-Crime Scene Department - Abu Dhabi
-Crime Scene Department Abu Dhabi security
-active	Unassigned	high	1/20/2024	Reassign
-ADNEC Rehabilitation
-ADNEC rehabilitation security
-active	Unassigned	medium	2/25/2024	Reassign
-YAS Operations Room Electrical Works
-YAS operations room electrical works security
-active	Unassigned	high	3/15/2024	Reassign
-Yas Police Station General Maintenance
-Yas Police Station general maintenance security
-pending	Unassigned	medium	6/1/2024	Assign
-91-3 / 2024 Al Hewar - Al Ain -General
-Al Hewar Al Ain general security
-active	Unassigned	medium	2/28/2024	Reassign
-Abu Dhabi Police General - HCI
-Abu Dhabi Police General HCI security
-active	Unassigned	high	1/10/2024	Reassign
-Security City Parking Technical Landing
-Security City parking technical landing security
-active	Unassigned	medium	2/18/2024	Reassign
-Vehicle Inspection Building Evidence Storage
-Vehicle inspection building evidence storage security
-active	Unassigned	high	2/22/2024	Reassign
-General - Provis - WR- HCI
-General Provis WR HCI security
-active	Unassigned	medium	1/25/2024	Reassign
-KHALIFAH BIN ZAYED SCHOOL
-Khalifah Bin Zayed School security
-active	Unassigned	medium	2/10/2024	Reassign
-Site Office Setup Work - Police Container Finishing
-Site office setup police container finishing security
-active	Unassigned	medium	3/1/2024	Reassign
-Acrylic Barrier Installation
-Acrylic barrier installation security
-pending	Unassigned	medium	5/30/2024	Assign
-Al Rahba Jail Cells Re-innovation
-Al Rahba jail cells re-innovation security
-active	Unassigned	high	3/20/2024	Reassign
-Vehicle Parking Planning for Administration
-Vehicle parking planning administration security
-planning	Unassigned	medium	6/15/2024	Assign
-AL FALAHIYYA - WOCM36:179
-AL FALAHIYYA WOCM security
-active	Unassigned	medium	2/5/2024	Reassign
-Capital Police Directorate Acrylic Panels Replacement
-Capital Police Directorate acrylic panels replacement security
-pending	Unassigned	medium	6/1/2024	Assign
-AL NAHDHA C3 BOYS - WO. 136 - Provis HCI
-AL NAHDHA C3 BOYS Provis HCI security
-active	Unassigned	medium	2/12/2024	Reassign
-PD/CA/FM/MH/R1467/GENERAL-/20/102 - HCI - Abu Dhabi
-PD/CA/FM/MH/R1467 HCI Abu Dhabi security
-active	Unassigned	medium	1/15/2024	Reassign
-PD/CA/FM/MH/R1467/GENERAL-/20/102 - HCI - Al ain
-PD/CA/FM/MH/R1467 HCI Al Ain security
-active	Unassigned	medium	1/18/2024	Reassign
-HAMDAN BIN ZAYED School - WO. 140:101
-Hamdan Bin Zayed School WO security
-active	Unassigned	medium	2/15/2024	Reassign
-Laundry Steel Mesh Replacement - Transport Department
-Laundry steel mesh replacement transport security
-pending	Unassigned	medium	6/10/2024	Assign
-Steel Fence Installation with Footings
-Steel fence installation with footings security
-active	Unassigned	medium	3/25/2024	Reassign
-Crime Scene Internal Painting Works
-Crime scene internal painting works security
-active	Unassigned	medium	4/1/2024	Reassign
-BONAT AL GHAD KG - WOCM 36:132
-Bonat Al Ghad KG WOCM security
-active	Unassigned	medium	2/28/2024	Reassign
-AD Police Al Madina Acrylic Panels Replacement
-AD Police Al Madina acrylic panels replacement security
-pending	Unassigned	medium	6/15/2024	Assign
-Khalidiya Police Station
-Khalidiya Police Station security
-active	Unassigned	high	1/28/2024	Reassign
-AL HOSN SCHOOL - WOCM 36:174
-AL HOSN SCHOOL WOCM security
-active	Unassigned	medium	2/20/2024	Reassign
-AlShabiya Police Station Wall Works
-AlShabiya Police Station wall works security
-active	Unassigned	medium	3/15/2024	Reassign
-Baniyas Police Station Pavement Painting
-Baniyas Police Station pavement painting security
-active	Unassigned	medium	4/5/2024	Reassign
-Interlock Training Hall Path
-Interlock training hall path security
-pending	Unassigned	medium	6/20/2024	Assign
-Provis HCI Old Vegetables Market - WOCM:6847
-Provis HCI old vegetables market security
-on-hold	Unassigned	low	7/1/2024	Assign
-General Maintenance of Accommodation Al Haffar
-General maintenance accommodation Al Haffar security
-active	Unassigned	medium	3/10/2024	Reassign
-Musanada HCI AL LOULO SCHOOL - WOCM36:151
-Musanada HCI AL LOULO SCHOOL security
-active	Unassigned	medium	2/25/2024	Reassign
-Provis HCI Al Ain Municipality Main Building - WOCM:7027
-Provis HCI Al Ain Municipality Main Building security
-active	Unassigned	high	1/30/2024	Reassign
-Mechanical Slaughterhouse - WOCM:7019
-Mechanical Slaughterhouse WOCM security
-active	Unassigned	medium	2/8/2024	Reassign
-Musanada HCI Abu Dhabi
-Musanada HCI Abu Dhabi security
-active	Unassigned	medium	1/20/2024	Reassign
-Provis HCI Al Jannen School - WOCM:6855
-Provis HCI Al Jannen School security
-active	Unassigned	medium	2/18/2024	Reassign
-Shaikh Hamdan bin Mohamad School - WOCM36:111
-Shaikh Hamdan bin Mohamad School security
-active	Unassigned	medium	2/22/2024	Reassign
-ABU DHABI EDUCATION COUNCIL AL-AIN(ADEC --459 B)
-Abu Dhabi Education Council Al Ain security
-active	Unassigned	medium	1/25/2024	Reassign
-Al Sariya School Refurbishments Works - Al Ain
-Al Sariya School refurbishments Al Ain security
-active	Unassigned	medium	3/20/2024	Reassign
-Provis HCI Old Vegetables Market - WOCM:6748
-Provis HCI old vegetables market 6748 security
-on-hold	Unassigned	low	7/15/2024	Assign
-WOCM 58:103FDF AL SELAA E4027 - Family Development Foundation
-WOCM FDF AL SELAA Family Development Foundation security
-active	Unassigned	medium	2/1/2024	Reassign
-Musanada HCI Al AIN
-Musanada HCI Al AIN security
-active	Unassigned	medium	1/22/2024	Reassign
-Musanada HCI Al AIN p
-Musanada HCI Al AIN p security
-active	Unassigned	medium	1/24/2024	Reassign
-WOCM 58:106 J1190 - Madinat Zayed Fodder Distribution Center
-WOCM Madinat Zayed Fodder Distribution Center security
-active	Unassigned	medium	2/12/2024	Reassign
-AL EZZAH - WO. 157 - Provis HCI
-AL EZZAH Provis HCI security
-active	Unassigned	medium	2/28/2024	Reassign
-Provis HCI Al Narjes School - WOCM6834
-Provis HCI Al Narjes School security
-active	Unassigned	medium	2/25/2024	Reassign
-AL FATEH SCHOOL - WO. 140 - Provis HCI
-AL FATEH SCHOOL Provis HCI security
-active	Unassigned	medium	3/1/2024	Reassign
-AL HOSN SCHOOL - WO. 137 - Provis HCI
-AL HOSN SCHOOL WO 137 Provis HCI security
-active	Unassigned	medium	3/5/2024	Reassign
-AL JEEL AL JADEED KG - WO. 158 - Provis HCI
-AL JEEL AL JADEED KG Provis HCI security
-active	Unassigned	medium	3/8/2024	Reassign
-AL LOULO SCHOOL - WO. 146 - Provis HCI
-AL LOULO SCHOOL WO 146 Provis HCI security
-active	Unassigned	medium	3/10/2024	Reassign
-AL LOULO SCHOOL - WO. 36:151 - Provis HCI
-AL LOULO SCHOOL WO 36:151 Provis HCI security
-active	Unassigned	medium	3/12/2024	Reassign
-AL SOROOR KG - WOCM36:154- HCI
-AL SOROOR KG WOCM HCI security
-active	Unassigned	medium	3/15/2024	Reassign
-AL WATHBAH School - WO. 141 - Provis HCI
-AL WATHBAH School Provis HCI security
-active	Unassigned	medium	3/18/2024	Reassign
-ATIFAL AL MAEREFA KG - WO. 142 - Provis HCI
-ATIFAL AL MAEREFA KG Provis HCI security
-active	Unassigned	medium	3/20/2024	Reassign
-Abu Dhabi Bus Terminal - WO. 130 - Provis HCI
-Abu Dhabi Bus Terminal Provis HCI security
-active	Unassigned	high	1/30/2024	Reassign
-Abu Dhabi Islands Services Office - WOCM36:114
-Abu Dhabi Islands Services Office WOCM security
-active	Unassigned	medium	2/15/2024	Reassign
-AbuDhabi Islands Services Office - WOCM36:105
-AbuDhabi Islands Services Office WOCM 105 security
-active	Unassigned	medium	2/18/2024	Reassign
-WOCM36:155 MOHAMMAD BIN AL QASEM
-WOCM Mohammad Bin Al Qasem security
-active	Unassigned	medium	2/20/2024	Reassign
-Yazeid bin Al-Munthir- Provis HCI - WOCM 36:177
-Yazeid bin Al-Munthir Provis HCI WOCM security
-active	Unassigned	medium	2/22/2024	Reassign
-ZHO - Special Needs WOCM36:180
-ZHO Special Needs WOCM security
-active	Unassigned	medium	2/25/2024	Reassign
-HAMDAN BIN ZAYED C2 AND 3 BOY
-Hamdan Bin Zayed C2 and 3 Boy security
-active	Unassigned	high	2/28/2024	Reassign
-KHALIFA CITY A SCHOOL - WOCM36:165
-Khalifa City A School WOCM 165 security
-active	Unassigned	medium	3/1/2024	Reassign
-KHALIFA CITY A SCHOOL - WOCM36:188
+WOCM47:157 Al Ain Municipality Main Building – high – 2/1/2024
+Dubai Hospital – high – 3/1/2024
+WOCM47:162 Al Ain Municipality Main Building – high – 2/15/2024
+Temple Extension Works – medium – 3/15/2024
+DWO: 8731///C1177 - BAYAAT AL REDHWAN – high – 1/20/2024
+Al Howar Building Shops & Offices – medium – 2/10/2024
+58:112 //H8004 - Rulers Representative old and new courts – high – 1/10/2024
+58:114 C1164 - AL SHABHANA – high – 2/5/2024
+Al Ain Municipality – high – 1/1/2024
+Al Ataa School – medium – 2/20/2024
+Al Badiyah School – medium – 3/1/2024
+Al Dahra Fodder Distribution Center – medium – 2/25/2024
+Al Dhaher Girls School – medium – 3/10/2024
+Al Dhahera School – medium – 2/1/2024
+Al Dhahra Fodder Distribution Center – medium – 1/15/2024
+Al Falah School – medium – 2/15/2024
+Al Khatem School – medium – 3/20/2024
+Al Khazna School – medium – 2/10/2024
+Al Loulo School – medium – 1/25/2024
+Al Quaa Extension Center – medium – 2/5/2024
+Al Quaa School – medium – 3/5/2024
+Al Sareyah School – medium – 3/15/2024
+Al Tamooh School – medium – 3/25/2024
+BONAT AL GHAD KG – medium – 2/28/2024
+Bainoona Tunnel Utility Building – high – 1/20/2024
+DOT AL Reem Building – medium – 2/12/2024
+DWO: 8463 AbuKrayyah Vet & Agri ServiceCenter – medium – 1/30/2024
+DWO: 8464 Al Quaa Veterinary Clinic – medium – 2/8/2024
+DWO: 6695 Al Dhaher FDF – medium – 1/18/2024
+DWO: 6834 Al Narjis School – medium – 2/22/2024
+DWO: 6855 AL Jennan School – medium – 2/18/2024
+E4027 - Barakat Al Dar Club – medium – 1/22/2024
+Employees Residence – medium – 3/1/2024
+Family Development Foundation Al Shwaib – medium – 1/28/2024
+Family Development Foundation Buildings – medium – 1/25/2024
+HAMDAN BIN ZAYED C2 AND 3 BOY – high – 2/15/2024
+HAMDAN BIN ZAYED C2 AND 3 BOY-SCHOOL – high – 2/20/2024
+HCI-ESE-2023-07 Al Quaa School – medium – 1/15/2024
+J1190 - Madinat Zayed Fodder Distribution – medium – 2/10/2024
+KHALIFA CITY A SCHOOL – medium – 2/25/2024
+Karamah Bus (Washing) Depot – medium – 1/12/2024
+Madinat Zayed Fodder Distribution Center – medium – 2/8/2024
+Main Building -MOE- Al Ain (Fire Fighting) – high – 1/20/2024
+Mezyad School – medium – 2/12/2024
+Musanada HCI Abu Dhabi – medium – 1/20/2024
+Musanada HCI PD/CA/FM/MH/R1467 – medium – 1/18/2024 (Al Mawaheb School)
+Musanada HCI PD/CA/FM/MH/R1467 – medium – 1/25/2024 (ADEC General)
+Musanada HCI PD/CA/FM/MH/R1467 – low – 2/1/2024 (Parking No.1)
+Musanada HCI PD/CA/FM/MH/R1467 – high – 1/30/2024 (Abu Dhabi Bus Terminal)
+PD/CA/FM/MH/R1467/GENERAL – medium – 1/15/2024 (HCI Abu Dhabi)
+PD/CA/FM/MH/R1467/GENERAL – medium – 1/18/2024 (HCI Al Ain)
+Police Rehabilitation Department – high – 1/15/2024
+Police Heritage Library – medium – 2/1/2024
+Criminal Investigation Department – high – 1/20/2024
+Al Ain Region Police Centers – high – 1/10/2024
+Al Ain Region Police Directorate – high – 1/5/2024
+Al Murabba Police Station – high – 1/25/2024
+Al Maqam Police Station – high – 1/28/2024
+Traffic and Security Patrols Department – high – 1/12/2024
+Traffic Control Department – high – 1/15/2024
+Hili Police Station – high – 1/30/2024
+Hazaa Falaj Police Station – high – 2/2/2024
+Engineering Projects Department – medium – 1/18/2024
+Narcotics Control Department – high – 1/22/2024
+Hazaa Falaj Center – Traffic and Security Patrols Department – high – 2/5/2024
+Zakher Police Station – high – 2/10/2024
+Traffic Training Branch – medium – 2/15/2024
+Zakher Police Station Support Services – medium – 2/18/2024
+Networks Branch – medium – 2/20/2024
+File No. 19 - Hazaa Falaj – medium – 2/22/2024
+Al Ain Corruption Department – high – 1/28/2024
+Security Patrols Parking – medium – 2/1/2024
+Temple Security Point – medium – 1/25/2024
+Yas Police Station – high – 2/5/2024
+Directorate Housing Maintenance – medium – 2/10/2024
+Hoson Al Dhafra Culture & Tourism – medium – 1/22/2024
+Special Tasks Department Store Containers – medium – 2/8/2024
+Al Rahba Police Station Helicopter Landing – high – 2/12/2024
+General HCI – medium – 1/15/2024
+Sports Club - Al Karama – medium – 2/15/2024
+Zayed Cricket Stadium – high – 2/20/2024
+Alaliah Island Police Station – high – 1/30/2024
+Musaffah Police Station Demolition and Interlock – high – 3/10/2024
+Crime Scene Department – high – 1/20/2024
+ADNEC Rehabilitation – medium – 2/25/2024
+YAS Operations Room Electrical Works – high – 3/15/2024
+91-3 / 2024 Al Hewar – medium – 2/28/2024
+Abu Dhabi Police General – high – 1/10/2024
+Security City Parking Technical Landing – medium – 2/18/2024
+Vehicle Inspection Building Evidence Storage – high – 2/22/2024
+Khalifah Bin Zayed School – medium – 2/10/2024
+Site Office Setup Work – medium – 3/1/2024
+Al Rahba Jail Cells Re-innovation – high – 3/20/2024
+AL FALAHIYYA – medium – 2/5/2024
+AL NAHDHA C3 BOYS – medium – 2/12/2024
+HAMDAN BIN ZAYED School – medium – 2/15/2024
+Steel Fence Installation with Footings – medium – 3/25/2024
+Crime Scene Internal Painting Works – medium – 4/1/2024
+BONAT AL GHAD KG – medium – 2/28/2024
+Khalidiya Police Station – high – 1/28/2024
+AL HOSN SCHOOL – medium – 2/20/2024
+AlShabiya Police Station Wall Works – medium – 3/15/2024
+Baniyas Police Station Pavement Painting – medium – 4/5/2024

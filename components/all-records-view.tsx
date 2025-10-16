@@ -286,7 +286,7 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
         </div>
 
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="w-40 border-blue-200 focus:border-blue-500">
+          <SelectTrigger className="w-40 border-blue-200 focus:border-blue-500 text-black">
             <SelectValue placeholder="All Categories" />
           </SelectTrigger>
           <SelectContent>
@@ -300,7 +300,7 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
         </Select>
 
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-32 border-green-200 focus:border-green-500">
+          <SelectTrigger className="w-32 border-green-200 focus:border-green-500 text-black">
             <SelectValue placeholder="All Status" />
           </SelectTrigger>
           <SelectContent>
@@ -311,7 +311,7 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
         </Select>
 
         <Select value={projectFilter} onValueChange={setProjectFilter}>
-          <SelectTrigger className="w-48 border-orange-200 focus:border-orange-500">
+          <SelectTrigger className="w-48 border-orange-200 focus:border-orange-500 text-black">
             <SelectValue placeholder="All Projects" />
           </SelectTrigger>
           <SelectContent>

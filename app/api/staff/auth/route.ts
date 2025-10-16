@@ -199,14 +199,12 @@ export async function POST(request: NextRequest) {
     if (isValidPassword) {
       recordAttempt(ip, true)
 
-      // Get current project assignment from database
-      const { data: assignment } = await supabase
+      const { data: assignments } = await supabase
         .from("assignments")
         .select("project_name")
         .eq("staff_id", staff.file_id)
-        .single()
 
-      const assignedProject = assignment?.project_name || null
+      const assignedProject = assignments && assignments.length > 0 ? assignments[0].project_name : null
 
       const sessionToken = generateSessionToken()
       const now = Date.now()

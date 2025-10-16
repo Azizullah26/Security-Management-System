@@ -26,11 +26,32 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               // Suppress ResizeObserver loop errors (harmless browser quirk)
+              // Method 1: window.onerror handler
+              const originalOnError = window.onerror;
+              window.onerror = function(message, source, lineno, colno, error) {
+                if (typeof message === 'string' && message.includes('ResizeObserver')) {
+                  return true; // Suppress the error
+                }
+                if (originalOnError) {
+                  return originalOnError(message, source, lineno, colno, error);
+                }
+                return false;
+              };
+
+              // Method 2: addEventListener for 'error' events
               window.addEventListener('error', (e) => {
-                if (e.message === 'ResizeObserver loop completed with undelivered notifications.' ||
-                    e.message === 'ResizeObserver loop limit exceeded') {
+                if (e.message && e.message.includes('ResizeObserver')) {
                   e.stopImmediatePropagation();
                   e.preventDefault();
+                  return true;
+                }
+              }, true);
+
+              // Method 3: Catch unhandled promise rejections
+              window.addEventListener('unhandledrejection', (e) => {
+                if (e.reason && e.reason.message && e.reason.message.includes('ResizeObserver')) {
+                  e.preventDefault();
+                  return true;
                 }
               });
             `,
