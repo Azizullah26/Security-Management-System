@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server"
-import { staffSessionStore } from "@/app/api/staff/auth/route"
+import { staffSessionStore } from "@/lib/session-store"
 
 // Shared admin session store (deprecated - using Supabase now)
 export const adminSessionStore = new Map<

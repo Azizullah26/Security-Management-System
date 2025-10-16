@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createServiceRoleClient } from "@/lib/supabase/server"
+import { staffSessionStore } from "@/lib/session-store"
 
 function timingSafeEqual(a: string, b: string): boolean {
   // Ensure both strings are the same length to prevent length-based timing attacks
@@ -20,18 +21,6 @@ function generateSessionToken(): string {
   self.crypto.getRandomValues(array)
   return Array.from(array, (byte) => byte.toString(16).padStart(2, "0")).join("")
 }
-
-// Session storage for staff (in production, use Redis or database)
-export const staffSessionStore = new Map<
-  string,
-  {
-    staffId: string
-    name: string
-    assignedProject: string | null
-    createdAt: number
-    expiresAt: number
-  }
->()
 
 // Rate limiting map
 const rateLimitMap = new Map<string, { attempts: number; lastAttempt: number; lockUntil?: number }>()

@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { staffSessionStore } from "../staff/auth/route"
+import { staffSessionStore } from "@/lib/session-store"
 import { verifyAdminSession } from "@/lib/auth-utils"
 import { supabase } from "@/lib/supabase"
 
