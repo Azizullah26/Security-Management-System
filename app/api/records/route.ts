@@ -190,7 +190,7 @@ export async function POST(request: NextRequest) {
     if (staffSession) {
       // If a security guard is logged in, use their name from the session
       // This will be one of: Mohus, Umair, Salman, Tanweer, Tilak, or Ramesh
-      entryData.created_by = staffSession.name
+      entryData.created_by = staffSession.name ?? null
       console.log("[v0] ✅ Setting created_by to logged-in security guard:", staffSession.name)
 
       if (!staffSession.assignedProject) {
