@@ -2,6 +2,8 @@ import { type NextRequest, NextResponse } from "next/server"
 import { verifyAdminSession, validateEntryRecord, validateRequestSize, verifyStaffSession } from "@/lib/auth-utils"
 import { createServiceRoleClient } from "@/lib/supabase/server"
 
+export const dynamic = "force-dynamic"
+
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
 const RATE_LIMIT_WINDOW = 5 * 60 * 1000
 const MAX_REQUESTS_PER_WINDOW = 100
