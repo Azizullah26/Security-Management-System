@@ -184,7 +184,7 @@ export async function POST(request: NextRequest) {
       duration: recordData.duration || null,
       project_name: recordData.projectName || null,
       status: recordData.status || "active",
-      created_by: null, // Initialize created_by field
+      created_by: null as string | null,
     }
 
     if (staffSession) {
