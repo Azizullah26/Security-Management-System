@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,8 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AdminSidebar } from "@/components/admin-sidebar"
 import { ProjectAssignmentDialog } from "@/components/project-assignment-dialog"
 import { AllRecordsView } from "@/components/all-records-view"
-import { AdminLogin } from "@/components/admin-login"
 import { StaffAssignmentManagement } from "@/components/staff-assignment-management"
+import { StaffManagement } from "@/components/staff-management"
 import {
   BarChart,
   Bar,
@@ -27,9 +28,9 @@ import {
 } from "recharts"
 import { Search, Users, FolderOpen, CheckCircle, AlertTriangle, UserPlus } from "lucide-react"
 import type { Project, SecurityPerson } from "@/lib/types"
-import { StaffManagement } from "@/components/staff-management"
 
 export default function AdminDashboard() {
+  const router = useRouter()
   const [activeSection, setActiveSection] = useState("overview")
   const [projects, setProjects] = useState<Project[]>([])
   const [securityStaff, setSecurityStaff] = useState<SecurityPerson[]>([])
@@ -43,16 +44,20 @@ export default function AdminDashboard() {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
 
   useEffect(() => {
-    // Check if user is already authenticated by checking server
     const checkAuth = async () => {
       try {
-        const response = await fetch('/api/admin/verify', {
-          credentials: 'include' // Include cookies
+        const response = await fetch("/api/admin/verify", {
+          credentials: "include",
         })
-        setIsAuthenticated(response.ok)
+
+        if (response.ok) {
+          setIsAuthenticated(true)
+        } else {
+          router.push("/admin/login")
+        }
       } catch (error) {
-        console.error('Auth check failed:', error)
-        setIsAuthenticated(false)
+        console.error("Auth check failed:", error)
+        router.push("/admin/login")
       } finally {
         setIsCheckingAuth(false)
       }
@@ -74,36 +79,39 @@ export default function AdminDashboard() {
     return () => {
       window.removeEventListener("error", handleResizeObserverError)
     }
-  }, [])
+  }, [router])
 
   useEffect(() => {
-    // Only fetch data if authenticated
     if (isAuthenticated) {
       Promise.all([
         fetch("/api/projects", {
-          credentials: 'include' // Include authentication cookies
-        }).then((res) => {
-          if (!res.ok) {
-            console.error('Failed to fetch projects:', res.status)
+          credentials: "include",
+        })
+          .then((res) => {
+            if (!res.ok) {
+              console.error("Failed to fetch projects:", res.status)
+              return []
+            }
+            return res.json()
+          })
+          .catch((error) => {
+            console.error("Error fetching projects:", error)
             return []
-          }
-          return res.json()
-        }).catch((error) => {
-          console.error('Error fetching projects:', error)
-          return []
-        }),
+          }),
         fetch("/api/security-staff", {
-          credentials: 'include' // Include authentication cookies
-        }).then((res) => {
-          if (!res.ok) {
-            console.error('Failed to fetch security staff:', res.status)
+          credentials: "include",
+        })
+          .then((res) => {
+            if (!res.ok) {
+              console.error("Failed to fetch security staff:", res.status)
+              return []
+            }
+            return res.json()
+          })
+          .catch((error) => {
+            console.error("Error fetching security staff:", error)
             return []
-          }
-          return res.json()
-        }).catch((error) => {
-          console.error('Error fetching security staff:', error)
-          return []
-        }),
+          }),
       ]).then(([projectsData, staffData]) => {
         setProjects(Array.isArray(projectsData) ? projectsData : [])
         setSecurityStaff(Array.isArray(staffData) ? staffData : [])
@@ -111,40 +119,19 @@ export default function AdminDashboard() {
     }
   }, [isAuthenticated])
 
-
-  const handleLogin = () => {
-    setIsAuthenticated(true)
-  }
-
   const handleLogout = async () => {
     try {
-      await fetch('/api/admin/logout', {
-        method: 'POST',
-        credentials: 'include'
+      await fetch("/api/admin/logout", {
+        method: "POST",
+        credentials: "include",
       })
     } catch (error) {
-      console.error('Logout error:', error)
+      console.error("Logout error:", error)
     } finally {
       setIsAuthenticated(false)
       setActiveSection("overview")
+      router.push("/admin/login")
     }
-  }
-
-  // Show loading while checking authentication
-  if (isCheckingAuth) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading admin dashboard...</p>
-        </div>
-      </div>
-    )
-  }
-
-  // Show login if not authenticated
-  if (!isAuthenticated) {
-    return <AdminLogin onLogin={handleLogin} />
   }
 
   const handleAssignProject = async (projectId: string, securityPersonId: string) => {
@@ -152,7 +139,7 @@ export default function AdminDashboard() {
       await fetch("/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: 'include',
+        credentials: "include",
         body: JSON.stringify({ action: "assign", projectId, securityPersonId }),
       })
 
@@ -193,7 +180,7 @@ export default function AdminDashboard() {
   }))
 
   const pieData = [
-    { name: "Active", value: stats.activeProjects, color: "#22c55e" }, // Changed Active color to a brighter green
+    { name: "Active", value: stats.activeProjects, color: "#22c55e" },
     { name: "Completed", value: stats.completedProjects, color: "#3b82f6" },
     { name: "Pending", value: projects.filter((p) => p.status === "pending").length, color: "#f59e0b" },
     { name: "On Hold", value: projects.filter((p) => p.status === "on-hold").length, color: "#ef4444" },
@@ -522,6 +509,28 @@ export default function AdminDashboard() {
       default:
         return renderOverview()
     }
+  }
+
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading admin dashboard...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-600">Redirecting to login...</p>
+        </div>
+      </div>
+    )
   }
 
   return (

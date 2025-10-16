@@ -30,7 +30,7 @@ export function StaffLogin({ onLogin }: StaffLoginProps) {
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include", // Added to ensure cookies are sent and received
+        credentials: "include",
         body: JSON.stringify({ fileId, password }),
       })
 
@@ -39,7 +39,6 @@ export function StaffLogin({ onLogin }: StaffLoginProps) {
       if (response.ok && data.success) {
         if (data.sessionToken) {
           localStorage.setItem("staff-session-token", data.sessionToken)
-          console.log("[v0] Staff session token stored in localStorage")
         }
         onLogin(data.staff)
       } else {

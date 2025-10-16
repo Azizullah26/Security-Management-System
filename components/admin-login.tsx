@@ -29,17 +29,13 @@ export function AdminLogin({ onLogin }: AdminLoginProps) {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({ password }),
       })
 
       const data = await response.json()
 
       if (response.ok && data.success) {
-        // Authentication successful - server set HTTP-only cookie
-        if (data.token) {
-          localStorage.setItem("admin-token", data.token)
-          console.log("[v0] Admin token stored in localStorage")
-        }
         onLogin()
       } else {
         setError(data.error || "Invalid password")
@@ -126,10 +122,10 @@ export function AdminLogin({ onLogin }: AdminLoginProps) {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => (window.location.href = "/")}
+              onClick={() => (window.location.href = "/login")}
               className="text-gray-500 hover:text-gray-700"
             >
-              ← Back to Main Dashboard
+              ← Back to Staff Login
             </Button>
           </div>
         </CardContent>

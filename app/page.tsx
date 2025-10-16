@@ -3,6 +3,7 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -10,7 +11,6 @@ import { Users, HardHat, Wrench, Briefcase, Truck, UserCheck, LogOut } from "luc
 import { EntryForm, type EntryData } from "@/components/entry-form"
 import { RecordsTable } from "@/components/records-table"
 import { TimeTracker } from "@/components/time-tracker"
-import { StaffLogin } from "@/components/staff-login"
 import type { StaffMember } from "@/lib/types"
 
 interface CategoryData {
@@ -22,6 +22,7 @@ interface CategoryData {
 }
 
 export default function SecurityDashboard() {
+  const router = useRouter()
   const [isInitializing, setIsInitializing] = useState(true)
   const [currentStaff, setCurrentStaff] = useState<StaffMember | null>(null)
   const [categories, setCategories] = useState<CategoryData[]>([
@@ -76,9 +77,39 @@ export default function SecurityDashboard() {
   const [viewingMyRecords, setViewingMyRecords] = useState(false)
 
   useEffect(() => {
-    localStorage.removeItem("staff-session-token")
-    setIsInitializing(false)
-  }, [])
+    const checkSession = async () => {
+      const staffToken = localStorage.getItem("staff-session-token")
+
+      if (!staffToken) {
+        router.push("/login")
+        return
+      }
+
+      try {
+        const response = await fetch("/api/staff/verify", {
+          headers: {
+            "x-staff-session-token": staffToken,
+          },
+          credentials: "include",
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          setCurrentStaff(data.staff)
+        } else {
+          localStorage.removeItem("staff-session-token")
+          router.push("/login")
+        }
+      } catch (error) {
+        console.error("Session verification failed:", error)
+        router.push("/login")
+      } finally {
+        setIsInitializing(false)
+      }
+    }
+
+    checkSession()
+  }, [router])
 
   useEffect(() => {
     if (!currentStaff) return
@@ -133,6 +164,7 @@ export default function SecurityDashboard() {
       setEntries([])
       setCategories((prev) => prev.map((cat) => ({ ...cat, count: 0 })))
       localStorage.removeItem("staff-session-token")
+      router.push("/login")
     } catch (error) {
       console.error("Logout failed:", error)
     }
@@ -276,7 +308,14 @@ export default function SecurityDashboard() {
   }
 
   if (!currentStaff) {
-    return <StaffLogin onLogin={handleLogin} />
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-600">Redirecting to login...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
