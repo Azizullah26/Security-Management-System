@@ -2,6 +2,8 @@ import { type NextRequest, NextResponse } from "next/server"
 import { createServiceRoleClient } from "@/lib/supabase/server"
 import { staffSessionStore } from "@/lib/session-store"
 
+export const dynamic = "force-dynamic"
+
 function timingSafeEqual(a: string, b: string): boolean {
   // Ensure both strings are the same length to prevent length-based timing attacks
   if (a.length !== b.length) {
@@ -18,7 +20,7 @@ function timingSafeEqual(a: string, b: string): boolean {
 
 function generateSessionToken(): string {
   const array = new Uint8Array(32)
-  self.crypto.getRandomValues(array)
+  crypto.getRandomValues(array)
   return Array.from(array, (byte) => byte.toString(16).padStart(2, "0")).join("")
 }
 
