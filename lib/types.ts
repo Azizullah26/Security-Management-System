@@ -6,6 +6,9 @@ export interface SecurityPerson {
   phone?: string
   employeeId?: string
   position?: string
+  department?: string
+  status?: string
+  hireDate?: string
 }
 
 export interface Project {
