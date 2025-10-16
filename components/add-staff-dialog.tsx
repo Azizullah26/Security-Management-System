@@ -1,6 +1,7 @@
 "use client"
 
 import type React from "react"
+import type { SecurityPerson, Project } from "@/lib/types"
 
 import { useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -10,13 +11,12 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { UserPlus, X } from "lucide-react"
-import type { SecurityPerson } from "@/lib/types"
 
 interface AddStaffDialogProps {
   isOpen: boolean
   onClose: () => void
   onAddStaff: (staff: Omit<SecurityPerson, "id">) => void
-  projects: any[]
+  projects: Project[]
 }
 
 export function AddStaffDialog({ isOpen, onClose, onAddStaff, projects }: AddStaffDialogProps) {

@@ -9,11 +9,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Search, Mail, Phone, UserPlus, Edit } from "lucide-react"
 import { AddStaffDialog } from "./add-staff-dialog"
-import type { SecurityPerson } from "@/lib/types"
+import type { SecurityPerson, Project } from "@/lib/types"
 
 interface StaffManagementProps {
   securityStaff: SecurityPerson[]
-  projects: any[]
+  projects: Project[]
 }
 
 export function StaffManagement({ securityStaff, projects }: StaffManagementProps) {
