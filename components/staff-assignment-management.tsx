@@ -31,34 +31,9 @@ interface Assignment {
   projectName: string
 }
 
-const staffMembers: StaffMember[] = [
-  { fileId: "3252", name: "Mohus" },
-  { fileId: "3242", name: "Umair" },
-  { fileId: "3253", name: "Salman" },
-  { fileId: "2234", name: "Tanweer" },
-  { fileId: "3245", name: "Tilak" },
-  { fileId: "3248", name: "Ramesh" },
-]
-
-const allProjects = [
-  "Residential Tower A - Phase 1",
-  "Commercial Complex B - Main Building",
-  "Industrial Park C - Warehouse Section",
-  "Office Building D - Corporate Headquarters",
-  "Shopping Mall E - Retail Wing",
-  "Hospital F - Medical Center",
-  "School G - Educational Campus",
-  "Hotel H - Hospitality Project",
-  "Airport I - Terminal Expansion",
-  "Stadium J - Sports Complex",
-  "Bridge K - Infrastructure Project",
-  "Metro Station L - Transit Hub",
-  "Power Plant M - Energy Facility",
-  "Water Treatment N - Utility Project",
-  "Residential Villa O - Luxury Homes",
-]
-
 export function StaffAssignmentManagement() {
+  const [staffMembers, setStaffMembers] = useState<StaffMember[]>([])
+  const [projects, setProjects] = useState<Project[]>([])
   const [assignments, setAssignments] = useState<Assignment[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedProject, setSelectedProject] = useState("")
@@ -72,6 +47,103 @@ export function StaffAssignmentManagement() {
     }
     return null
   }
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        console.log("[v0] Fetching projects from API...")
+        const response = await fetch("/api/projects", {
+          credentials: "include",
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          console.log("[v0] Projects API response:", data)
+
+          let projectsArray: any[]
+
+          if (Array.isArray(data)) {
+            // API returns array directly
+            projectsArray = data
+            console.log("[v0] Response is array directly, length:", projectsArray.length)
+          } else if (data.projects && Array.isArray(data.projects)) {
+            // API returns object with projects property
+            projectsArray = data.projects
+            console.log("[v0] Response has projects property, length:", projectsArray.length)
+          } else {
+            console.error("[v0] Invalid projects response structure:", data)
+            toast.error("Invalid projects data received")
+            setProjects([])
+            return
+          }
+
+          setProjects(projectsArray)
+          console.log("[v0] Projects loaded successfully:", projectsArray.length)
+        } else {
+          console.error("[v0] Failed to fetch projects - HTTP", response.status)
+          toast.error("Failed to load projects")
+          setProjects([])
+        }
+      } catch (error) {
+        console.error("[v0] Failed to fetch projects - Exception:", error)
+        toast.error("Failed to load projects")
+        setProjects([])
+      }
+    }
+
+    fetchProjects()
+  }, [])
+
+  useEffect(() => {
+    const fetchStaffMembers = async () => {
+      try {
+        console.log("[v0] Fetching staff members from security_staff table...")
+        const response = await fetch("/api/security-staff", {
+          credentials: "include",
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          console.log("[v0] Full API response:", data)
+
+          let staffArray: any[]
+
+          if (Array.isArray(data)) {
+            staffArray = data
+            console.log("[v0] Response is array directly, length:", staffArray.length)
+          } else if (data.staff && Array.isArray(data.staff)) {
+            staffArray = data.staff
+            console.log("[v0] Response has staff property, length:", staffArray.length)
+          } else {
+            console.error("[v0] Invalid response structure:", data)
+            toast.error("Invalid staff data received")
+            setStaffMembers([])
+            return
+          }
+
+          const mappedStaff = staffArray.map((staff: any) => ({
+            fileId: staff.employeeId || staff.file_id,
+            name: staff.name || staff.full_name,
+          }))
+
+          setStaffMembers(mappedStaff)
+          console.log("[v0] Staff members loaded successfully:", mappedStaff.length)
+        } else {
+          console.error("[v0] Failed to fetch staff members - HTTP", response.status)
+          const errorText = await response.text()
+          console.error("[v0] Error response:", errorText)
+          toast.error("Failed to load staff members")
+          setStaffMembers([])
+        }
+      } catch (error) {
+        console.error("[v0] Failed to fetch staff members - Exception:", error)
+        toast.error("Failed to load staff members")
+        setStaffMembers([])
+      }
+    }
+
+    fetchStaffMembers()
+  }, [])
 
   useEffect(() => {
     const fetchAssignments = async () => {
@@ -214,7 +286,7 @@ export function StaffAssignmentManagement() {
   }
 
   const getAllProjects = () => {
-    return allProjects
+    return projects.map((p) => p.name)
   }
 
   return (
@@ -264,9 +336,9 @@ export function StaffAssignmentManagement() {
                     <SelectValue placeholder="Select project" />
                   </SelectTrigger>
                   <SelectContent className="max-h-[300px] overflow-y-auto" position="popper">
-                    {allProjects.map((projectName) => (
-                      <SelectItem key={projectName} value={projectName}>
-                        {projectName}
+                    {projects.map((project) => (
+                      <SelectItem key={project.id} value={project.name}>
+                        {project.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -338,7 +410,7 @@ export function StaffAssignmentManagement() {
               </div>
               <div>
                 <p className="text-sm text-purple-700 font-medium">Total Projects</p>
-                <p className="text-xl font-bold text-purple-900">{allProjects.length}</p>
+                <p className="text-xl font-bold text-purple-900">{projects.length}</p>
               </div>
             </div>
           </CardContent>

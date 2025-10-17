@@ -1,6 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { verifyAdminSession } from "@/lib/auth-utils"
 import { createServiceRoleClient } from "@/lib/supabase/server"
+import { ALL_PROJECTS } from "@/lib/all-projects-data"
+
+export const dynamic = "force-dynamic"
 
 interface Project {
   id: string
@@ -18,15 +21,41 @@ export async function GET(request: NextRequest) {
 
     const supabase = await createServiceRoleClient()
 
-    const { data: projects, error } = await supabase.from("projects").select("*").order("name")
+    const { data: dbProjects, error } = await supabase.from("projects").select("*").order("name")
 
     if (error) {
       console.error("[v0] Supabase error fetching projects:", error)
       return NextResponse.json({ error: "Failed to fetch projects", details: error.message }, { status: 500 })
     }
 
-    console.log("[v0] Successfully fetched", projects?.length || 0, "projects from Supabase")
-    return NextResponse.json(projects || [])
+    const existingProjectNames = new Set((dbProjects || []).map((p) => p.name))
+
+    // Create project objects for projects not in database
+    const additionalProjects: Project[] = ALL_PROJECTS.filter(
+      (projectName) => !existingProjectNames.has(projectName),
+    ).map((projectName, index) => ({
+      id: `static-${index + 1}`,
+      name: projectName,
+      description: "Project from master list",
+      status: "planning",
+      assignedTo: null,
+      priority: "medium",
+      startDate: new Date().toISOString(),
+    }))
+
+    // Combine database projects with additional projects
+    const allProjects = [...(dbProjects || []), ...additionalProjects]
+
+    console.log(
+      "[v0] Successfully fetched",
+      allProjects.length,
+      "projects (",
+      dbProjects?.length || 0,
+      "from DB,",
+      additionalProjects.length,
+      "from master list)",
+    )
+    return NextResponse.json(allProjects)
   } catch (error) {
     console.error("[v0] Projects fetch error:", error)
     console.error("[v0] Error details:", error instanceof Error ? error.message : String(error))

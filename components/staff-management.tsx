@@ -1,13 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Search, Mail, Phone, UserPlus, Edit } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Search, UserPlus, Edit, Key, Eye, EyeOff } from "lucide-react"
 import { AddStaffDialog } from "./add-staff-dialog"
 import type { SecurityPerson, Project } from "@/lib/types"
 
@@ -16,23 +17,43 @@ interface StaffManagementProps {
   projects: Project[]
 }
 
-export function StaffManagement({ securityStaff, projects }: StaffManagementProps) {
+interface StaffWithPassword extends SecurityPerson {
+  password?: string
+  passwordHash?: string
+}
+
+export function StaffManagement({ securityStaff: initialStaff, projects }: StaffManagementProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
-  const [staffList, setStaffList] = useState(securityStaff)
+  const [staffList, setStaffList] = useState<StaffWithPassword[]>([])
+  const [showPasswords, setShowPasswords] = useState<{ [key: string]: boolean }>({})
+  const [editingStaff, setEditingStaff] = useState<StaffWithPassword | null>(null)
+  const [changingPassword, setChangingPassword] = useState<StaffWithPassword | null>(null)
+  const [newPassword, setNewPassword] = useState("")
+
+  useEffect(() => {
+    fetchStaffData()
+  }, [])
+
+  const fetchStaffData = async () => {
+    try {
+      const response = await fetch("/api/security-staff", {
+        credentials: "include",
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setStaffList(data)
+      }
+    } catch (error) {
+      console.error("[v0] Error fetching staff data:", error)
+    }
+  }
 
   const filteredStaff = staffList.filter(
     (staff) =>
       staff.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      staff.email.toLowerCase().includes(searchTerm.toLowerCase()),
+      staff.employeeId?.toLowerCase().includes(searchTerm.toLowerCase()),
   )
-
-  const getProjectNames = (projectIds: string[]) => {
-    return projectIds.map((id) => {
-      const project = projects.find((p) => p.id === id)
-      return project ? project.name : "Unknown Project"
-    })
-  }
 
   const handleAddStaff = async (newStaff: Omit<SecurityPerson, "id">) => {
     try {
@@ -41,197 +62,307 @@ export function StaffManagement({ securityStaff, projects }: StaffManagementProp
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify(newStaff),
       })
 
       if (response.ok) {
-        const addedStaff = await response.json()
-        setStaffList((prev) => [...prev, addedStaff])
-        console.log("[v0] Staff member added successfully:", addedStaff)
+        await fetchStaffData()
+        console.log("[v0] Staff member added successfully")
       } else {
         console.error("[v0] Failed to add staff member")
-        // For now, add locally with generated ID
-        const staffWithId = {
-          ...newStaff,
-          id: `staff_${Date.now()}`,
-        }
-        setStaffList((prev) => [...prev, staffWithId])
       }
     } catch (error) {
       console.error("[v0] Error adding staff member:", error)
-      // Fallback: add locally with generated ID
-      const staffWithId = {
-        ...newStaff,
-        id: `staff_${Date.now()}`,
-      }
-      setStaffList((prev) => [...prev, staffWithId])
     }
   }
 
+  const handleUpdateStaff = async () => {
+    if (!editingStaff) return
+
+    try {
+      const response = await fetch("/api/security-staff", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          id: editingStaff.id,
+          name: editingStaff.name,
+          employeeId: editingStaff.employeeId,
+          position: editingStaff.position,
+          department: editingStaff.department,
+        }),
+      })
+
+      if (response.ok) {
+        await fetchStaffData()
+        setEditingStaff(null)
+        console.log("[v0] Staff member updated successfully")
+      } else {
+        console.error("[v0] Failed to update staff member")
+      }
+    } catch (error) {
+      console.error("[v0] Error updating staff member:", error)
+    }
+  }
+
+  const handleChangePassword = async () => {
+    if (!changingPassword || !newPassword) return
+
+    try {
+      const response = await fetch("/api/security-staff", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          id: changingPassword.id,
+          newPassword: newPassword,
+        }),
+      })
+
+      if (response.ok) {
+        await fetchStaffData()
+        setChangingPassword(null)
+        setNewPassword("")
+        console.log("[v0] Password changed successfully")
+      } else {
+        console.error("[v0] Failed to change password")
+      }
+    } catch (error) {
+      console.error("[v0] Error changing password:", error)
+    }
+  }
+
+  const togglePasswordVisibility = (staffId: string) => {
+    setShowPasswords((prev) => ({
+      ...prev,
+      [staffId]: !prev[staffId],
+    }))
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-6 rounded-xl">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Security Staff Management</h1>
-          <p className="text-muted-foreground">Manage security personnel and their assignments</p>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+            Security Staff Management
+          </h1>
+          <p className="text-gray-600 bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent font-medium">
+            Manage security personnel, passwords, and assignments
+          </p>
         </div>
-        <Button onClick={() => setIsAddDialogOpen(true)}>
+        <Button
+          onClick={() => setIsAddDialogOpen(true)}
+          className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
+        >
           <UserPlus className="h-4 w-4 mr-2" />
           Add Staff Member
         </Button>
       </div>
 
-      <div className="flex gap-4 items-center">
+      <div className="flex gap-4 items-center bg-white backdrop-blur-sm p-4 rounded-lg border border-white/50 shadow-md">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-purple-500 h-4 w-4" />
           <Input
-            placeholder="Search staff..."
+            placeholder="Search staff by name or employee ID..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className="pl-10 border-purple-200 focus:border-purple-500"
           />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredStaff.map((staff) => {
-          const projectNames = getProjectNames(staff.assignedProjects)
-          return (
-            <Card
-              key={staff.id}
-              className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 border-2 border-blue-200 hover:border-indigo-300 hover:shadow-lg hover:shadow-indigo-200/50 transition-all duration-300 hover:scale-105"
-            >
-              <CardHeader className="pb-3 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-t-lg">
-                <div className="flex items-center gap-3">
-                  <Avatar className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
-                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold">
-                      {staff.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <CardTitle className="text-lg bg-gradient-to-r from-blue-700 to-purple-700 bg-clip-text text-transparent font-bold">
-                      {staff.name}
-                    </CardTitle>
-                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                      <Badge
-                        variant="secondary"
-                        className="bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 border-green-200"
-                      >
-                        {staff.assignedProjects.length} projects
-                      </Badge>
-                    </div>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="hover:bg-gradient-to-r hover:from-blue-100 hover:to-purple-100 hover:text-blue-700"
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center gap-2 text-sm">
-                  <Mail className="h-4 w-4 text-blue-500" />
-                  <span className="truncate text-gray-700">{staff.email}</span>
-                </div>
-                {staff.phone && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <Phone className="h-4 w-4 text-green-500" />
-                    <span className="text-gray-700">{staff.phone}</span>
-                  </div>
-                )}
-                <div>
-                  <p className="text-sm font-medium mb-2 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                    Assigned Projects:
-                  </p>
-                  {projectNames.length > 0 ? (
-                    <div className="space-y-1">
-                      {projectNames.slice(0, 2).map((name, index) => (
-                        <div
-                          key={index}
-                          className={`text-xs px-2 py-1 rounded-full font-medium ${
-                            index % 3 === 0
-                              ? "bg-gradient-to-r from-orange-100 to-red-100 text-orange-700 border border-orange-200"
-                              : index % 3 === 1
-                                ? "bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 border border-green-200"
-                                : "bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 border border-purple-200"
-                          }`}
-                        >
-                          {name}
-                        </div>
-                      ))}
-                      {projectNames.length > 2 && (
-                        <div className="text-xs text-indigo-600 font-medium">+{projectNames.length - 2} more</div>
-                      )}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-gray-500">No projects assigned</p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )
-        })}
-      </div>
-
-      <Card>
+      <Card className="bg-white/80 backdrop-blur-sm border-white/50 shadow-lg">
         <CardHeader>
-          <CardTitle>Staff Overview Table</CardTitle>
+          <CardTitle className="text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            All Security Staff
+          </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Phone</TableHead>
-                <TableHead>Projects Assigned</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
+              <TableRow className="border-gray-200 bg-gradient-to-r from-blue-100 via-purple-100 to-pink-100">
+                <TableHead className="text-blue-700 font-semibold">Employee ID</TableHead>
+                <TableHead className="text-purple-700 font-semibold">Full Name</TableHead>
+                <TableHead className="text-pink-700 font-semibold">Position</TableHead>
+                <TableHead className="text-indigo-700 font-semibold">Department</TableHead>
+                <TableHead className="bg-gradient-to-r from-blue-600 to-red-600 bg-clip-text text-transparent font-bold">
+                  Password
+                </TableHead>
+                <TableHead className="text-emerald-700 font-semibold">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredStaff.map((staff) => (
-                <TableRow key={staff.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback className="text-xs">
-                          {staff.name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="font-medium">{staff.name}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>{staff.email}</TableCell>
-                  <TableCell>{staff.phone || "N/A"}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{staff.assignedProjects.length}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={staff.assignedProjects.length > 0 ? "default" : "secondary"}>
-                      {staff.assignedProjects.length > 0 ? "Active" : "Available"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Button size="sm" variant="outline">
-                      <Edit className="h-4 w-4 mr-1" />
-                      Edit
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {filteredStaff.map((staff, index) => {
+                const rowBg =
+                  index % 2 === 0
+                    ? "hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50"
+                    : "hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50"
+
+                return (
+                  <TableRow key={staff.id} className={`transition-all duration-300 ${rowBg}`}>
+                    <TableCell className="font-medium text-gray-900">{staff.employeeId}</TableCell>
+                    <TableCell className="font-medium text-gray-900">{staff.name}</TableCell>
+                    <TableCell>
+                      <Badge className="bg-blue-500">{staff.position}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className="bg-purple-500">{staff.department}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <code className="text-sm bg-blue-100 text-red-900 px-2 py-1 rounded font-semibold border border-blue-300">
+                          {showPasswords[staff.id] ? staff.password || staff.employeeId : "••••••••"}
+                        </code>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => togglePasswordVisibility(staff.id)}
+                          className="h-8 w-8 p-0 hover:bg-blue-100"
+                        >
+                          {showPasswords[staff.id] ? (
+                            <EyeOff className="h-4 w-4 text-blue-600" />
+                          ) : (
+                            <Eye className="h-4 w-4 text-blue-600" />
+                          )}
+                        </Button>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setEditingStaff(staff)}
+                          className="border-gray-800 bg-white text-gray-900 hover:bg-gray-900 hover:text-white transition-colors"
+                        >
+                          <Edit className="h-4 w-4 mr-1" />
+                          Edit
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setChangingPassword(staff)}
+                          className="border-blue-500 bg-gradient-to-r from-blue-500 to-green-500 text-white hover:from-blue-600 hover:to-green-600"
+                        >
+                          <Key className="h-4 w-4 mr-1" />
+                          Change Password
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={!!editingStaff} onOpenChange={() => setEditingStaff(null)}>
+        <DialogContent className="bg-gradient-to-br from-blue-500 to-green-500 border-blue-600">
+          <DialogHeader>
+            <DialogTitle className="text-white">Edit Staff Member</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label className="text-white">Employee ID</Label>
+              <Input
+                value={editingStaff?.employeeId || ""}
+                onChange={(e) => setEditingStaff(editingStaff ? { ...editingStaff, employeeId: e.target.value } : null)}
+                className="text-black bg-white"
+              />
+            </div>
+            <div>
+              <Label className="text-white">Full Name</Label>
+              <Input
+                value={editingStaff?.name || ""}
+                onChange={(e) => setEditingStaff(editingStaff ? { ...editingStaff, name: e.target.value } : null)}
+                className="text-black bg-white"
+              />
+            </div>
+            <div>
+              <Label className="text-white">Position</Label>
+              <Input
+                value={editingStaff?.position || ""}
+                onChange={(e) => setEditingStaff(editingStaff ? { ...editingStaff, position: e.target.value } : null)}
+                className="text-black bg-white"
+              />
+            </div>
+            <div>
+              <Label className="text-white">Department</Label>
+              <Input
+                value={editingStaff?.department || ""}
+                onChange={(e) => setEditingStaff(editingStaff ? { ...editingStaff, department: e.target.value } : null)}
+                className="text-black bg-white"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setEditingStaff(null)}
+              className="bg-white text-black hover:bg-gray-100"
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateStaff} className="bg-white text-blue-600 hover:bg-gray-100">
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!changingPassword} onOpenChange={() => setChangingPassword(null)}>
+        <DialogContent className="bg-gradient-to-br from-blue-500 to-green-500 border-blue-600">
+          <DialogHeader>
+            <DialogTitle className="text-white">Change Password</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label className="text-white">Staff Member</Label>
+              <Input value={changingPassword?.name || ""} disabled className="text-black bg-white" />
+            </div>
+            <div>
+              <Label className="text-white">Employee ID (File ID)</Label>
+              <Input value={changingPassword?.employeeId || ""} disabled className="text-black bg-white" />
+            </div>
+            <div>
+              <Label className="text-white">Current Password</Label>
+              <Input
+                value={changingPassword?.password || changingPassword?.employeeId || ""}
+                disabled
+                className="text-black bg-white"
+              />
+            </div>
+            <div>
+              <Label className="text-white">New Password</Label>
+              <Input
+                type="text"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Enter new password"
+                className="text-black bg-white placeholder:text-gray-500"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setChangingPassword(null)}
+              className="bg-white text-black hover:bg-gray-100"
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleChangePassword} className="bg-white text-green-600 hover:bg-gray-100">
+              Change Password
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <AddStaffDialog
         isOpen={isAddDialogOpen}

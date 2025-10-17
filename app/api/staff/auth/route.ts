@@ -120,7 +120,7 @@ async function ensureStaffInDatabase(supabase: any) {
   let successCount = 0
 
   for (const member of staffMembers) {
-    const password = member.name
+    const password = member.fileId
     const passwordHash = await hashPassword(password)
 
     const { error: insertError } = await supabase.from("security_staff").insert({
@@ -134,7 +134,7 @@ async function ensureStaffInDatabase(supabase: any) {
     } else {
       successCount++
       console.log(
-        `[v0] ✅ Staff member ${member.name} (${member.fileId}) added to security_staff table with password: ${member.name}`,
+        `[v0] ✅ Staff member ${member.name} (${member.fileId}) added to security_staff table with password: ${member.fileId}`,
       )
     }
   }
@@ -164,9 +164,9 @@ export async function POST(request: NextRequest) {
 
     const { data: staff, error: fetchError } = await supabase
       .from("security_staff")
-      .select("id, file_id, full_name, password_hash")
+      .select("id, file_id, full_name, password_hash, current_password")
       .eq("file_id", fileId)
-      .single()
+      .maybeSingle()
 
     if (fetchError || !staff) {
       console.log("[v0] Staff not found in security_staff table for file_id:", fileId)
@@ -175,17 +175,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid File ID or Password" }, { status: 401 })
     }
 
-    // Check if password hash exists
-    if (!staff.password_hash) {
-      console.error("[v0] No password hash found for staff:", staff.full_name)
+    let isValidPassword = false
+
+    if (staff.current_password) {
+      // Direct comparison with current_password (plain text)
+      isValidPassword = timingSafeEqual(password, staff.current_password)
+      console.log("[v0] Authenticating using current_password for staff:", staff.full_name)
+    } else if (staff.password_hash) {
+      // Fall back to password_hash comparison for backward compatibility
+      isValidPassword = await verifyPassword(password, staff.password_hash)
+      console.log("[v0] Authenticating using password_hash for staff:", staff.full_name)
+    } else {
+      console.error("[v0] No password or hash found for staff:", staff.full_name)
       return NextResponse.json(
         { error: "Account not properly configured. Please contact administrator." },
         { status: 500 },
       )
     }
-
-    // Verify password against stored hash
-    const isValidPassword = await verifyPassword(password, staff.password_hash)
 
     if (isValidPassword) {
       recordAttempt(ip, true)

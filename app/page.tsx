@@ -297,7 +297,7 @@ export default function SecurityDashboard() {
               </h1>
               <p className="text-sm md:text-base lg:text-lg text-gray-600">Visitor and Personnel Tracking Dashboard</p>
 
-              <div className="mt-2 md:mt-3 flex flex-col sm:flex-row gap-2 md:gap-4 text-xs sm:text-sm md:text-base">
+              <div className="mt-2 md:mt-3 flex flex-col sm:flex-row md:flex-col lg:flex-row gap-2 md:gap-4 text-xs sm:text-sm md:text-base">
                 <div className="flex items-center justify-center md:justify-start gap-2">
                   <span className="font-medium text-blue-600">Staff:</span>
                   <span className="text-gray-700">
@@ -327,14 +327,16 @@ export default function SecurityDashboard() {
                 <Users className="h-4 w-4 md:h-5 md:w-5" />
                 <span className="whitespace-nowrap">My Records Today</span>
               </Button>
-              <Button
-                onClick={() => (window.location.href = "/admin")}
-                variant="outline"
-                className="w-full md:w-auto gap-2 text-sm md:text-base px-4 md:px-5 h-10 md:h-11"
-              >
-                <Users className="h-4 w-4 md:h-5 md:w-5" />
-                <span className="whitespace-nowrap">Admin Dashboard</span>
-              </Button>
+              {currentStaff.fileId === "Admin" && (
+                <Button
+                  onClick={() => (window.location.href = "/admin")}
+                  variant="outline"
+                  className="w-full md:w-auto gap-2 text-sm md:text-base px-4 md:px-5 h-10 md:h-11"
+                >
+                  <Users className="h-4 w-4 md:h-5 md:w-5" />
+                  <span className="whitespace-nowrap">Admin Dashboard</span>
+                </Button>
+              )}
               <Button
                 onClick={handleLogout}
                 variant="outline"

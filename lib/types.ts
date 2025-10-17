@@ -9,6 +9,7 @@ export interface SecurityPerson {
   department?: string
   status?: string
   hireDate?: string
+  password?: string // Added password field for admin viewing
 }
 
 export interface Project {

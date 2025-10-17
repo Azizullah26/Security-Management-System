@@ -46,12 +46,12 @@ export default function AdminDashboard() {
     // Check if user is already authenticated by checking server
     const checkAuth = async () => {
       try {
-        const response = await fetch('/api/admin/verify', {
-          credentials: 'include' // Include cookies
+        const response = await fetch("/api/admin/verify", {
+          credentials: "include", // Include cookies
         })
         setIsAuthenticated(response.ok)
       } catch (error) {
-        console.error('Auth check failed:', error)
+        console.error("Auth check failed:", error)
         setIsAuthenticated(false)
       } finally {
         setIsCheckingAuth(false)
@@ -81,29 +81,33 @@ export default function AdminDashboard() {
     if (isAuthenticated) {
       Promise.all([
         fetch("/api/projects", {
-          credentials: 'include' // Include authentication cookies
-        }).then((res) => {
-          if (!res.ok) {
-            console.error('Failed to fetch projects:', res.status)
+          credentials: "include", // Include authentication cookies
+        })
+          .then((res) => {
+            if (!res.ok) {
+              console.error("Failed to fetch projects:", res.status)
+              return []
+            }
+            return res.json()
+          })
+          .catch((error) => {
+            console.error("Error fetching projects:", error)
             return []
-          }
-          return res.json()
-        }).catch((error) => {
-          console.error('Error fetching projects:', error)
-          return []
-        }),
+          }),
         fetch("/api/security-staff", {
-          credentials: 'include' // Include authentication cookies
-        }).then((res) => {
-          if (!res.ok) {
-            console.error('Failed to fetch security staff:', res.status)
+          credentials: "include", // Include authentication cookies
+        })
+          .then((res) => {
+            if (!res.ok) {
+              console.error("Failed to fetch security staff:", res.status)
+              return []
+            }
+            return res.json()
+          })
+          .catch((error) => {
+            console.error("Error fetching security staff:", error)
             return []
-          }
-          return res.json()
-        }).catch((error) => {
-          console.error('Error fetching security staff:', error)
-          return []
-        }),
+          }),
       ]).then(([projectsData, staffData]) => {
         setProjects(Array.isArray(projectsData) ? projectsData : [])
         setSecurityStaff(Array.isArray(staffData) ? staffData : [])
@@ -111,19 +115,18 @@ export default function AdminDashboard() {
     }
   }, [isAuthenticated])
 
-
   const handleLogin = () => {
     setIsAuthenticated(true)
   }
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/admin/logout', {
-        method: 'POST',
-        credentials: 'include'
+      await fetch("/api/admin/logout", {
+        method: "POST",
+        credentials: "include",
       })
     } catch (error) {
-      console.error('Logout error:', error)
+      console.error("Logout error:", error)
     } finally {
       setIsAuthenticated(false)
       setActiveSection("overview")
@@ -152,7 +155,7 @@ export default function AdminDashboard() {
       await fetch("/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: 'include',
+        credentials: "include",
         body: JSON.stringify({ action: "assign", projectId, securityPersonId }),
       })
 
@@ -214,7 +217,7 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-blue-500 to-cyan-500 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 hover:-translate-y-1">
+        <Card className="bg-gradient-to-br from-blue-500 to-cyan-500 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-blue-100">Total Projects</CardTitle>
             <FolderOpen className="h-4 w-4 text-blue-200" />
@@ -225,7 +228,7 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-green-500 to-emerald-500 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 hover:-translate-y-1">
+        <Card className="bg-gradient-to-br from-green-500 to-emerald-500 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-green-100">Active Projects</CardTitle>
             <CheckCircle className="h-4 w-4 text-green-200" />
@@ -236,7 +239,7 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-orange-500 to-red-500 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 hover:-translate-y-1">
+        <Card className="bg-gradient-to-br from-orange-500 to-red-500 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-orange-100">Unassigned</CardTitle>
             <AlertTriangle className="h-4 w-4 text-orange-200" />
@@ -247,7 +250,7 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-purple-500 to-pink-500 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 hover:-translate-y-1">
+        <Card className="bg-gradient-to-br from-purple-500 to-pink-500 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-purple-100">Security Staff</CardTitle>
             <Users className="h-4 w-4 text-purple-200" />
@@ -352,7 +355,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <div className="flex gap-4 items-center bg-white/70 backdrop-blur-sm p-4 rounded-lg border border-white/50 shadow-sm">
+      <div className="relative z-10 flex gap-4 items-center bg-white backdrop-blur-sm p-4 rounded-lg border border-white/50 shadow-md">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-purple-500 h-4 w-4" />
           <Input
@@ -377,7 +380,7 @@ export default function AdminDashboard() {
         </Select>
       </div>
 
-      <Card className="bg-white/80 backdrop-blur-sm border-white/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
+      <Card className="bg-white/80 backdrop-blur-sm border-white/50 shadow-lg hover:shadow-xl transition-all duration-300">
         <CardContent className="p-0">
           <Table>
             <TableHeader>
