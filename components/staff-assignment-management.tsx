@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Users, UserPlus, Search, Trash2, MapPin } from "lucide-react"
+import { Users, UserPlus, Search, Trash2, MapPin, ChevronDown } from "lucide-react"
 import { toast } from "sonner"
 
 interface StaffMember {
@@ -40,6 +40,8 @@ export function StaffAssignmentManagement() {
   const [selectedStaff, setSelectedStaff] = useState("")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [projectSearchTerm, setProjectSearchTerm] = useState("")
+  const [isProjectDropdownOpen, setIsProjectDropdownOpen] = useState(false)
 
   const getAdminToken = () => {
     if (typeof window !== "undefined") {
@@ -289,6 +291,19 @@ export function StaffAssignmentManagement() {
     return projects.map((p) => p.name)
   }
 
+  const getFilteredProjects = () => {
+    if (!projectSearchTerm.trim()) {
+      return projects
+    }
+    return projects.filter((project) => project.name.toLowerCase().includes(projectSearchTerm.toLowerCase()))
+  }
+
+  const handleProjectSelect = (projectName: string) => {
+    setSelectedProject(projectName)
+    setProjectSearchTerm(projectName)
+    setIsProjectDropdownOpen(false)
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -331,18 +346,42 @@ export function StaffAssignmentManagement() {
 
               <div>
                 <Label htmlFor="project-select">Project</Label>
-                <Select value={selectedProject} onValueChange={setSelectedProject}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Select project" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[300px] overflow-y-auto" position="popper">
-                    {projects.map((project) => (
-                      <SelectItem key={project.id} value={project.name}>
-                        {project.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="relative mt-1">
+                  <div className="relative">
+                    <Input
+                      type="text"
+                      placeholder="Search or select project..."
+                      value={projectSearchTerm}
+                      onChange={(e) => {
+                        setProjectSearchTerm(e.target.value)
+                        setIsProjectDropdownOpen(true)
+                      }}
+                      onFocus={() => setIsProjectDropdownOpen(true)}
+                      className="pr-8 bg-white text-black"
+                    />
+                    <ChevronDown
+                      className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 cursor-pointer"
+                      onClick={() => setIsProjectDropdownOpen(!isProjectDropdownOpen)}
+                    />
+                  </div>
+                  {isProjectDropdownOpen && (
+                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-[300px] overflow-y-auto">
+                      {getFilteredProjects().length === 0 ? (
+                        <div className="px-3 py-2 text-sm text-gray-500">No projects found</div>
+                      ) : (
+                        getFilteredProjects().map((project) => (
+                          <div
+                            key={project.id}
+                            className="px-3 py-2 text-sm text-black hover:bg-gray-100 cursor-pointer"
+                            onClick={() => handleProjectSelect(project.name)}
+                          >
+                            {project.name}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="flex justify-end gap-2 pt-4">
