@@ -219,3 +219,41 @@ export async function PATCH(request: Request) {
     )
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    console.log("[v0] DELETE /api/security-staff - Deleting staff member")
+
+    const body = await request.json()
+
+    if (!body.id) {
+      return NextResponse.json({ error: "Missing staff ID" }, { status: 400 })
+    }
+
+    const supabase = await createServiceRoleClient()
+
+    // First, get the staff member details for logging
+    const { data: staffMember } = await supabase
+      .from("security_staff")
+      .select("full_name, file_id")
+      .eq("id", body.id)
+      .single()
+
+    // Delete the staff member
+    const { error } = await supabase.from("security_staff").delete().eq("id", body.id)
+
+    if (error) {
+      console.error("[v0] Error deleting staff:", error.message)
+      return NextResponse.json({ error: "Failed to delete staff", details: error.message }, { status: 500 })
+    }
+
+    console.log("[v0] ✅ Successfully deleted staff member:", staffMember?.full_name, "(", staffMember?.file_id, ")")
+    return NextResponse.json({ success: true, message: "Staff member deleted successfully" })
+  } catch (error) {
+    console.error("[v0] Error deleting staff:", error)
+    return NextResponse.json(
+      { error: "Internal server error", details: error instanceof Error ? error.message : String(error) },
+      { status: 500 },
+    )
+  }
+}

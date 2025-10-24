@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { Search, UserPlus, Edit, Key, Eye, EyeOff } from "lucide-react"
+import { Search, UserPlus, Edit, Key, Eye, EyeOff, Trash2 } from "lucide-react"
 import { AddStaffDialog } from "./add-staff-dialog"
 import type { SecurityPerson, Project } from "@/lib/types"
 
@@ -137,6 +137,36 @@ export function StaffManagement({ securityStaff: initialStaff, projects }: Staff
     }
   }
 
+  const handleDeleteStaff = async (staff: StaffWithPassword) => {
+    if (!confirm(`Are you sure you want to delete ${staff.name}? This action cannot be undone.`)) {
+      return
+    }
+
+    try {
+      const response = await fetch("/api/security-staff", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          id: staff.id,
+        }),
+      })
+
+      if (response.ok) {
+        await fetchStaffData()
+        console.log("[v0] Staff member deleted successfully")
+      } else {
+        console.error("[v0] Failed to delete staff member")
+        alert("Failed to delete staff member")
+      }
+    } catch (error) {
+      console.error("[v0] Error deleting staff member:", error)
+      alert("Error deleting staff member")
+    }
+  }
+
   const togglePasswordVisibility = (staffId: string) => {
     setShowPasswords((prev) => ({
       ...prev,
@@ -251,6 +281,15 @@ export function StaffManagement({ securityStaff: initialStaff, projects }: Staff
                         >
                           <Key className="h-4 w-4 mr-1" />
                           Change Password
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDeleteStaff(staff)}
+                          className="border-red-500 bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700"
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Delete
                         </Button>
                       </div>
                     </TableCell>
