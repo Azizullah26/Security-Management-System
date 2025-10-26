@@ -54,8 +54,8 @@ export function AdminLogin({ onLogin }: AdminLoginProps) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-4">
-      <Card className="w-full max-w-md bg-white/80 backdrop-blur-sm border-white/50 shadow-xl">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 to-purple-100 p-4">
+      <Card className="w-full max-w-md bg-white shadow-xl">
         <div className="flex justify-center pt-6">
           <Image
             src="/images/design-mode/2025%20LOGO(1).jpeg"
@@ -63,6 +63,7 @@ export function AdminLogin({ onLogin }: AdminLoginProps) {
             width={120}
             height={40}
             className="object-contain"
+            priority
           />
         </div>
 

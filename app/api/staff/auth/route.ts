@@ -93,7 +93,7 @@ async function ensureStaffInDatabase(supabase: any) {
   const { data: existingStaff, error } = await supabase
     .from("security_staff")
     .select("file_id")
-    .in("file_id", ["3252", "3242", "3253", "2234", "3245", "3248"])
+    .in("file_id", ["Admin", "3252", "3242", "3253", "2234", "3245", "3248"])
 
   if (error) {
     console.error("[v0] Error checking staff in database:", error)
@@ -109,24 +109,26 @@ async function ensureStaffInDatabase(supabase: any) {
   console.log("[v0] No staff members found in database. Setting up staff credentials...")
 
   const staffMembers = [
-    { fileId: "3252", name: "Mohus" },
-    { fileId: "3242", name: "Umair" },
-    { fileId: "3253", name: "Salman" },
-    { fileId: "2234", name: "Tanweer" },
-    { fileId: "3245", name: "Tilak" },
-    { fileId: "3248", name: "Ramesh" },
+    { fileId: "Admin", name: "Administrator", password: "RCC0085" },
+    { fileId: "3252", name: "Mohus", password: "3252" },
+    { fileId: "3242", name: "Umair", password: "3242" },
+    { fileId: "3253", name: "Salman", password: "3253" },
+    { fileId: "2234", name: "Tanweer", password: "2234" },
+    { fileId: "3245", name: "Tilak", password: "3245" },
+    { fileId: "3248", name: "Ramesh", password: "3248" },
   ]
 
   let successCount = 0
 
   for (const member of staffMembers) {
-    const password = member.fileId
+    const password = member.password
     const passwordHash = await hashPassword(password)
 
     const { error: insertError } = await supabase.from("security_staff").insert({
       file_id: member.fileId,
       full_name: member.name,
       password_hash: passwordHash,
+      current_password: password,
     })
 
     if (insertError) {
@@ -134,7 +136,7 @@ async function ensureStaffInDatabase(supabase: any) {
     } else {
       successCount++
       console.log(
-        `[v0] ✅ Staff member ${member.name} (${member.fileId}) added to security_staff table with password: ${member.fileId}`,
+        `[v0] ✅ Staff member ${member.name} (${member.fileId}) added to security_staff table with password: ${password}`,
       )
     }
   }
@@ -178,11 +180,9 @@ export async function POST(request: NextRequest) {
     let isValidPassword = false
 
     if (staff.current_password) {
-      // Direct comparison with current_password (plain text)
       isValidPassword = timingSafeEqual(password, staff.current_password)
       console.log("[v0] Authenticating using current_password for staff:", staff.full_name)
     } else if (staff.password_hash) {
-      // Fall back to password_hash comparison for backward compatibility
       isValidPassword = await verifyPassword(password, staff.password_hash)
       console.log("[v0] Authenticating using password_hash for staff:", staff.full_name)
     } else {
@@ -207,7 +207,6 @@ export async function POST(request: NextRequest) {
       const now = Date.now()
       const expiresAt = now + 8 * 60 * 60 * 1000 // 8 hours (work shift)
 
-      // Store session server-side
       staffSessionStore.set(sessionToken, {
         staffId: staff.file_id,
         name: staff.full_name,

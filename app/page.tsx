@@ -123,6 +123,12 @@ export default function SecurityDashboard() {
   }, [currentStaff])
 
   const handleLogin = (staff: StaffMember) => {
+    // Admin user - redirect to admin dashboard
+    if (staff.fileId === "Admin") {
+      window.location.href = "/admin"
+      return
+    }
+    // Regular staff - show staff dashboard
     setCurrentStaff(staff)
   }
 
@@ -327,16 +333,6 @@ export default function SecurityDashboard() {
                 <Users className="h-4 w-4 md:h-5 md:w-5" />
                 <span className="whitespace-nowrap">My Records Today</span>
               </Button>
-              {currentStaff.fileId === "Admin" && (
-                <Button
-                  onClick={() => (window.location.href = "/admin")}
-                  variant="outline"
-                  className="w-full md:w-auto gap-2 text-sm md:text-base px-4 md:px-5 h-10 md:h-11"
-                >
-                  <Users className="h-4 w-4 md:h-5 md:w-5" />
-                  <span className="whitespace-nowrap">Admin Dashboard</span>
-                </Button>
-              )}
               <Button
                 onClick={handleLogout}
                 variant="outline"

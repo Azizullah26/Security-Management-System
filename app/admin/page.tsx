@@ -6,12 +6,12 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { AdminSidebar } from "@/components/admin-sidebar"
 import { ProjectAssignmentDialog } from "@/components/project-assignment-dialog"
 import { AllRecordsView } from "@/components/all-records-view"
 import { AdminLogin } from "@/components/admin-login"
 import { StaffAssignmentManagement } from "@/components/staff-assignment-management"
+import { StaffManagement } from "@/components/staff-management"
 import {
   BarChart,
   Bar,
@@ -27,7 +27,6 @@ import {
 } from "recharts"
 import { Search, Users, FolderOpen, CheckCircle, AlertTriangle, UserPlus } from "lucide-react"
 import type { Project, SecurityPerson } from "@/lib/types"
-import { StaffManagement } from "@/components/staff-management"
 
 export default function AdminDashboard() {
   const [activeSection, setActiveSection] = useState("overview")
@@ -43,13 +42,37 @@ export default function AdminDashboard() {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
 
   useEffect(() => {
-    // Check if user is already authenticated by checking server
     const checkAuth = async () => {
       try {
-        const response = await fetch("/api/admin/verify", {
-          credentials: "include", // Include cookies
+        const adminResponse = await fetch("/api/admin/verify", {
+          credentials: "include",
         })
-        setIsAuthenticated(response.ok)
+
+        if (adminResponse.ok) {
+          setIsAuthenticated(true)
+          setIsCheckingAuth(false)
+          return
+        }
+
+        // If no admin session, check if user has a staff session with fileId="Admin"
+        const staffToken = localStorage.getItem("staff-session-token")
+        if (staffToken) {
+          // Try to auto-authenticate using the new endpoint
+          const autoAuthResponse = await fetch("/api/admin/auto-auth", {
+            method: "POST",
+            credentials: "include",
+          })
+
+          if (autoAuthResponse.ok) {
+            console.log("[v0] Admin session created automatically")
+            setIsAuthenticated(true)
+            setIsCheckingAuth(false)
+            return
+          }
+        }
+
+        // No valid authentication found
+        setIsAuthenticated(false)
       } catch (error) {
         console.error("Auth check failed:", error)
         setIsAuthenticated(false)
@@ -175,9 +198,13 @@ export default function AdminDashboard() {
   }
 
   const filteredProjects = projects.filter((project) => {
+    const searchLower = searchTerm.toLowerCase()
     const matchesSearch =
-      project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      project.description?.toLowerCase().includes(searchTerm.toLowerCase())
+      project.name.toLowerCase().includes(searchLower) ||
+      project.description?.toLowerCase().includes(searchLower) ||
+      project.woNumber?.toLowerCase().includes(searchLower) ||
+      project.client?.toLowerCase().includes(searchLower) ||
+      project.agreement?.toLowerCase().includes(searchLower)
     const matchesStatus = statusFilter === "all" || project.status === statusFilter
     return matchesSearch && matchesStatus
   })
@@ -343,152 +370,147 @@ export default function AdminDashboard() {
   )
 
   const renderProjects = () => (
-    <div className="space-y-6 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-6 rounded-xl">
-      <div className="flex justify-between items-center">
+    <div className="flex flex-col h-[calc(100vh-8rem)] space-y-6 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-6 rounded-xl">
+      <div className="flex-shrink-0">
         <div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
             Project Management
           </h1>
           <p className="text-gray-600 bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent font-medium">
-            Manage security projects and assignments
+            Manage security projects and assignments (Active Projects Only)
           </p>
         </div>
       </div>
 
-      <div className="relative z-10 flex gap-4 items-center bg-white backdrop-blur-sm p-4 rounded-lg border border-white/50 shadow-md">
+      <div className="flex-shrink-0 flex gap-4 items-center bg-white p-4 rounded-lg border border-gray-200 shadow-md">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-purple-500 h-4 w-4" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-purple-500 h-4 w-4 pointer-events-none" />
           <Input
             placeholder="Search projects..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 border-purple-200 focus:border-purple-500 focus:ring-purple-500 transition-colors duration-300"
+            className="pl-10 border-purple-200 focus:border-purple-500 focus:ring-purple-500"
           />
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-40 border-blue-200 focus:border-blue-500 hover:border-blue-400 transition-colors duration-300">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="completed">Completed</SelectItem>
-            <SelectItem value="on-hold">On Hold</SelectItem>
-            <SelectItem value="planning">Planning</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
 
-      <Card className="bg-white/80 backdrop-blur-sm border-white/50 shadow-lg hover:shadow-xl transition-all duration-300">
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow className="border-gray-200 bg-gradient-to-r from-blue-100 via-purple-100 to-pink-100">
-                <TableHead className="text-blue-700 font-semibold">Project Name</TableHead>
-                <TableHead className="text-purple-700 font-semibold">Status</TableHead>
-                <TableHead className="text-pink-700 font-semibold">Assigned To</TableHead>
-                <TableHead className="text-indigo-700 font-semibold">Priority</TableHead>
-                <TableHead className="text-cyan-700 font-semibold">Start Date</TableHead>
-                <TableHead className="text-emerald-700 font-semibold">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredProjects.map((project, index) => {
-                const assignedStaff = securityStaff.find((s) => s.id === project.assignedTo)
-                const rowBg =
-                  index % 2 === 0
-                    ? "hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50"
-                    : "hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50"
+      <div className="flex-1 overflow-auto">
+        <Card className="bg-white/80 backdrop-blur-sm border-white/50 shadow-lg hover:shadow-xl transition-all duration-300">
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow className="border-gray-200 bg-gradient-to-r from-blue-100 via-purple-100 to-pink-100">
+                  <TableHead className="text-blue-700 font-semibold">Project Name</TableHead>
+                  <TableHead className="text-green-700 font-semibold">W.O NO</TableHead>
+                  <TableHead className="text-orange-700 font-semibold">Client</TableHead>
+                  <TableHead className="text-teal-700 font-semibold">Agreement</TableHead>
+                  <TableHead className="text-purple-700 font-semibold">Status</TableHead>
+                  <TableHead className="text-pink-700 font-semibold">Assigned To</TableHead>
+                  <TableHead className="text-indigo-700 font-semibold">Priority</TableHead>
+                  <TableHead className="text-cyan-700 font-semibold">Start Date</TableHead>
+                  <TableHead className="text-emerald-700 font-semibold">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredProjects.map((project, index) => {
+                  const assignedStaff = securityStaff.find((s) => s.id === project.assignedTo)
+                  const rowBg =
+                    index % 2 === 0
+                      ? "hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50"
+                      : "hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50"
 
-                return (
-                  <TableRow
-                    key={project.id}
-                    className={`transition-all duration-300 ${rowBg} hover:shadow-md cursor-pointer active:bg-gradient-to-r active:from-blue-100 active:to-purple-100`}
-                  >
-                    <TableCell>
-                      <div>
-                        <div className="font-medium text-gray-900">{project.name}</div>
-                        <div className="text-sm text-gray-600">{project.description}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          project.status === "active"
-                            ? "default"
-                            : project.status === "completed"
-                              ? "secondary"
-                              : project.status === "pending"
-                                ? "destructive"
-                                : project.status === "on-hold"
-                                  ? "outline"
-                                  : "default"
-                        }
-                        className={`transition-all duration-300 hover:scale-110 ${
-                          project.status === "active"
-                            ? "bg-green-500 hover:bg-green-600"
-                            : project.status === "completed"
-                              ? "bg-blue-500 hover:bg-blue-600"
-                              : project.status === "pending"
-                                ? "bg-orange-500 hover:bg-orange-600"
-                                : project.status === "on-hold"
-                                  ? "bg-red-500 hover:bg-red-600 text-white"
-                                  : "bg-purple-500 hover:bg-purple-600"
-                        }`}
-                      >
-                        {project.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {assignedStaff ? (
+                  return (
+                    <TableRow
+                      key={project.id}
+                      className={`transition-all duration-300 ${rowBg} hover:shadow-md cursor-pointer active:bg-gradient-to-r active:from-blue-100 active:to-purple-100`}
+                    >
+                      <TableCell>
                         <div>
-                          <div className="font-medium text-gray-900">{assignedStaff.name}</div>
-                          <div className="text-sm text-gray-600">{assignedStaff.email}</div>
+                          <div className="font-medium text-gray-900">{project.name}</div>
+                          <div className="text-sm text-gray-600">{project.description}</div>
                         </div>
-                      ) : (
-                        <span className="text-gray-500">Unassigned</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          project.priority === "high"
-                            ? "destructive"
-                            : project.priority === "medium"
-                              ? "default"
-                              : "secondary"
-                        }
-                        className={`transition-all duration-300 hover:scale-110 ${
-                          project.priority === "high"
-                            ? "bg-red-500 hover:bg-red-600"
-                            : project.priority === "medium"
-                              ? "bg-yellow-500 hover:bg-yellow-600"
-                              : "bg-green-500 hover:bg-green-600"
-                        }`}
-                      >
-                        {project.priority}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-gray-700">{new Date(project.startDate).toLocaleDateString()}</TableCell>
-                    <TableCell>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setAssignmentDialog({ isOpen: true, project })}
-                        className="transition-all duration-300 hover:scale-105 hover:shadow-lg border-blue-300 text-blue-600 hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-500 hover:text-white hover:border-transparent active:scale-95 active:bg-gradient-to-r active:from-purple-600 active:to-pink-600"
-                      >
-                        <UserPlus className="h-4 w-4 mr-1" />
-                        {project.assignedTo ? "Reassign" : "Assign"}
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                )
-              })}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                      </TableCell>
+                      <TableCell>
+                        {project.woNumber ? (
+                          <Badge className="bg-green-100 text-green-800 hover:bg-green-200">{project.woNumber}</Badge>
+                        ) : (
+                          <span className="text-gray-400 text-sm">N/A</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {project.client ? (
+                          <div className="font-medium text-gray-900">{project.client}</div>
+                        ) : (
+                          <span className="text-gray-400 text-sm">N/A</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {project.agreement ? (
+                          <div className="font-medium text-gray-900">{project.agreement}</div>
+                        ) : (
+                          <span className="text-gray-400 text-sm">N/A</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="default"
+                          className="transition-all duration-300 hover:scale-110 bg-green-500 hover:bg-green-600"
+                        >
+                          {project.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {assignedStaff ? (
+                          <div>
+                            <div className="font-medium text-gray-900">{assignedStaff.name}</div>
+                            <div className="text-sm text-gray-600">{assignedStaff.email}</div>
+                          </div>
+                        ) : (
+                          <span className="text-gray-500">Unassigned</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            project.priority === "high"
+                              ? "destructive"
+                              : project.priority === "medium"
+                                ? "default"
+                                : "secondary"
+                          }
+                          className={`transition-all duration-300 hover:scale-110 ${
+                            project.priority === "high"
+                              ? "bg-red-500 hover:bg-red-600"
+                              : project.priority === "medium"
+                                ? "bg-yellow-500 hover:bg-yellow-600"
+                                : "bg-green-500 hover:bg-green-600"
+                          }`}
+                        >
+                          {project.priority}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-gray-700">
+                        {new Date(project.startDate).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setAssignmentDialog({ isOpen: true, project })}
+                          className="transition-all duration-300 hover:scale-105 hover:shadow-lg border-blue-300 text-blue-600 hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-500 hover:text-white hover:border-transparent active:scale-95 active:bg-gradient-to-r active:from-purple-600 active:to-pink-600"
+                        >
+                          <UserPlus className="h-4 w-4 mr-1" />
+                          {project.assignedTo ? "Reassign" : "Assign"}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 

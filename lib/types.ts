@@ -21,6 +21,9 @@ export interface Project {
   endDate?: string
   description?: string
   priority: "low" | "medium" | "high"
+  woNumber?: string // Added woNumber field to store Work Order Number
+  client?: string // Added client field to store partner/client name from Odoo
+  agreement?: string // Added agreement field to store agreement name from Odoo
 }
 
 export interface ProjectAssignment {

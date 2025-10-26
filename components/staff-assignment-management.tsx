@@ -23,6 +23,9 @@ interface Project {
   status: string
   priority: string
   description?: string
+  woNumber?: string
+  client?: string
+  agreement?: string
 }
 
 interface Assignment {
@@ -295,7 +298,12 @@ export function StaffAssignmentManagement() {
     if (!projectSearchTerm.trim()) {
       return projects
     }
-    return projects.filter((project) => project.name.toLowerCase().includes(projectSearchTerm.toLowerCase()))
+    const searchLower = projectSearchTerm.toLowerCase()
+    return projects.filter(
+      (project) =>
+        project.name.toLowerCase().includes(searchLower) ||
+        (project.woNumber && project.woNumber.toLowerCase().includes(searchLower)),
+    )
   }
 
   const handleProjectSelect = (projectName: string) => {
@@ -320,7 +328,7 @@ export function StaffAssignmentManagement() {
               New Assignment
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-3xl">
             <DialogHeader>
               <DialogTitle>Assign Project to Staff</DialogTitle>
             </DialogHeader>
@@ -350,7 +358,7 @@ export function StaffAssignmentManagement() {
                   <div className="relative">
                     <Input
                       type="text"
-                      placeholder="Search or select project..."
+                      placeholder="Search by project name, W.O NO, or agreement..."
                       value={projectSearchTerm}
                       onChange={(e) => {
                         setProjectSearchTerm(e.target.value)
@@ -365,17 +373,31 @@ export function StaffAssignmentManagement() {
                     />
                   </div>
                   {isProjectDropdownOpen && (
-                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-[300px] overflow-y-auto">
+                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-[400px] overflow-y-auto">
                       {getFilteredProjects().length === 0 ? (
                         <div className="px-3 py-2 text-sm text-gray-500">No projects found</div>
                       ) : (
                         getFilteredProjects().map((project) => (
                           <div
                             key={project.id}
-                            className="px-3 py-2 text-sm text-black hover:bg-gray-100 cursor-pointer"
+                            className="px-3 py-3 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
                             onClick={() => handleProjectSelect(project.name)}
                           >
-                            {project.name}
+                            <div className="flex flex-col gap-1">
+                              <div className="font-medium text-sm text-black">{project.name}</div>
+                              <div className="flex gap-3 text-xs text-gray-600">
+                                {project.woNumber && (
+                                  <span className="flex items-center gap-1">
+                                    <span className="font-semibold">W.O:</span> {project.woNumber}
+                                  </span>
+                                )}
+                                {project.agreement && (
+                                  <span className="flex items-center gap-1">
+                                    <span className="font-semibold">Agreement:</span> {project.agreement}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
                           </div>
                         ))
                       )}
