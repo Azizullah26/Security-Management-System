@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -45,6 +45,7 @@ export function StaffAssignmentManagement() {
   const [isLoading, setIsLoading] = useState(false)
   const [projectSearchTerm, setProjectSearchTerm] = useState("")
   const [isProjectDropdownOpen, setIsProjectDropdownOpen] = useState(false)
+  const projectDropdownRef = useRef<HTMLDivElement>(null)
 
   const getAdminToken = () => {
     if (typeof window !== "undefined") {
@@ -181,6 +182,22 @@ export function StaffAssignmentManagement() {
     fetchAssignments()
   }, [])
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (projectDropdownRef.current && !projectDropdownRef.current.contains(event.target as Node)) {
+        setIsProjectDropdownOpen(false)
+      }
+    }
+
+    if (isProjectDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [isProjectDropdownOpen])
+
   const handleAssignProject = async () => {
     console.log("[v0] handleAssignProject called")
     console.log("[v0] Selected project:", selectedProject)
@@ -226,9 +243,20 @@ export function StaffAssignmentManagement() {
       if (response.ok) {
         const data = await response.json()
         console.log("[v0] Assignment created successfully:", data)
-        setAssignments((prev) => [...prev, data.assignment])
+
+        const assignmentsResponse = await fetch("/api/assignments", {
+          credentials: "include",
+          headers,
+        })
+
+        if (assignmentsResponse.ok) {
+          const assignmentsData = await assignmentsResponse.json()
+          setAssignments(assignmentsData.assignments || [])
+        }
+
         setSelectedProject("")
         setSelectedStaff("")
+        setProjectSearchTerm("")
         setIsDialogOpen(false)
         toast.success("Project assigned successfully")
       } else {
@@ -238,7 +266,7 @@ export function StaffAssignmentManagement() {
       }
     } catch (error) {
       console.error("[v0] Assignment error:", error)
-      toast.error("Failed to assign project")
+      toast.error("Failed to assign project. Please try again.")
     } finally {
       setIsLoading(false)
     }
@@ -272,7 +300,7 @@ export function StaffAssignmentManagement() {
       }
     } catch (error) {
       console.error("[v0] Remove assignment error:", error)
-      toast.error("Failed to remove assignment")
+      toast.error("Failed to remove assignment. Please try again.")
     } finally {
       setIsLoading(false)
     }
@@ -307,14 +335,16 @@ export function StaffAssignmentManagement() {
   }
 
   const handleProjectSelect = (projectName: string) => {
+    console.log("[v0] Project selected:", projectName)
     setSelectedProject(projectName)
     setProjectSearchTerm(projectName)
-    setIsProjectDropdownOpen(false)
+    setTimeout(() => {
+      setIsProjectDropdownOpen(false)
+    }, 100)
   }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Staff Project Assignments</h2>
@@ -354,7 +384,7 @@ export function StaffAssignmentManagement() {
 
               <div>
                 <Label htmlFor="project-select">Project</Label>
-                <div className="relative mt-1">
+                <div className="relative mt-1" ref={projectDropdownRef}>
                   <div className="relative">
                     <Input
                       type="text"
@@ -382,6 +412,9 @@ export function StaffAssignmentManagement() {
                             key={project.id}
                             className="px-3 py-3 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
                             onClick={() => handleProjectSelect(project.name)}
+                            onMouseDown={(e) => {
+                              e.preventDefault()
+                            }}
                           >
                             <div className="flex flex-col gap-1">
                               <div className="font-medium text-sm text-black">{project.name}</div>
@@ -419,7 +452,6 @@ export function StaffAssignmentManagement() {
         </Dialog>
       </div>
 
-      {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 shadow-lg hover:shadow-xl transition-all duration-300">
           <CardContent className="p-4">
@@ -478,7 +510,6 @@ export function StaffAssignmentManagement() {
         </Card>
       </div>
 
-      {/* Search and Filter */}
       <Card className="bg-gradient-to-br from-slate-50 to-blue-50 border-slate-200 shadow-lg">
         <CardHeader className="bg-gradient-to-r from-blue-100 to-slate-100 border-b border-blue-200">
           <CardTitle className="text-slate-800">Current Assignments</CardTitle>
@@ -496,7 +527,6 @@ export function StaffAssignmentManagement() {
             </div>
           </div>
 
-          {/* Assignments Table */}
           <div className="border-2 border-blue-900 rounded-lg">
             <Table>
               <TableHeader>
@@ -549,7 +579,6 @@ export function StaffAssignmentManagement() {
         </CardContent>
       </Card>
 
-      {/* Unassigned Staff */}
       {getUnassignedStaff().length > 0 && (
         <Card className="bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200 shadow-lg">
           <CardHeader className="bg-gradient-to-r from-orange-100 to-amber-100 border-b border-orange-200">
