@@ -12,13 +12,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized - Admin access required" }, { status: 403 })
     }
 
-    const { data: staffMembers, error: staffError } = await supabase.from("security_staff").select("file_id, full_name")
-
-    if (staffError) {
-      console.error("[v0] Failed to fetch staff members:", staffError.message)
-      return NextResponse.json({ error: "Failed to fetch staff data" }, { status: 500 })
-    }
-
     const { data: assignments, error } = await supabase
       .from("assignments")
       .select("*")
@@ -30,10 +23,9 @@ export async function GET(request: NextRequest) {
     }
 
     const formattedAssignments = (assignments || []).map((assignment) => {
-      const staff = staffMembers?.find((s) => s.file_id === assignment.staff_id)
       return {
         staffId: assignment.staff_id,
-        staffName: staff?.full_name || "Unknown",
+        staffName: assignment.staff_name || "Unknown",
         projectName: assignment.project_name,
       }
     })
@@ -63,32 +55,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Staff ID and Project Name are required" }, { status: 400 })
     }
 
-    const { data: staff, error: staffError } = await supabase
-      .from("security_staff")
-      .select("file_id, full_name")
-      .eq("file_id", staffId)
-      .single()
+    // This handles cases where staff might be from Odoo or other sources
+    const finalStaffName = staffName || "Unknown"
+    console.log("[v0] Using staff name:", finalStaffName)
 
-    if (staffError || !staff) {
-      console.error("[v0] Staff member not found:", staffId, staffError?.message)
-      return NextResponse.json({ error: "Staff member not found" }, { status: 404 })
-    }
-
-    console.log("[v0] Staff member found:", staff)
-
-    const { data: existingAssignment } = await supabase.from("assignments").select("*").eq("staff_id", staffId).single()
-
-    if (existingAssignment) {
-      console.log("[v0] Updating existing assignment for staff:", staffId)
-    } else {
-      console.log("[v0] Creating new assignment for staff:", staffId)
-    }
+    console.log("[v0] Creating/updating assignment for staff:", staffId)
 
     const { data, error } = await supabase
       .from("assignments")
       .upsert(
         {
           staff_id: staffId,
+          staff_name: finalStaffName,
           project_name: projectName,
           updated_at: new Date().toISOString(),
         },
@@ -97,7 +75,6 @@ export async function POST(request: NextRequest) {
         },
       )
       .select()
-      .single()
 
     if (error) {
       console.error("[v0] Supabase insert error:", error)
@@ -117,7 +94,7 @@ export async function POST(request: NextRequest) {
       success: true,
       assignment: {
         staffId,
-        staffName: staff.full_name,
+        staffName: finalStaffName,
         projectName,
       },
     })
@@ -153,6 +130,7 @@ export async function DELETE(request: NextRequest) {
 
     console.log("[v0] Assignment deleted successfully for staff:", staffId)
 
+    // Update staff session to clear assigned project
     for (const [sessionToken, session] of staffSessionStore.entries()) {
       if (session.staffId === staffId) {
         session.assignedProject = null
