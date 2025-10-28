@@ -1,35 +1,45 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { type NextRequest, NextResponse } from "next/server"
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Skip auth check for public routes
-  if (pathname === '/api/admin/auth' || pathname === '/api/admin/verify') {
+  if (pathname === "/api/admin/auth" || pathname === "/api/admin/verify") {
     return NextResponse.next()
   }
 
   // Allow GET requests to projects (admin page handles auth client-side)
-  if (pathname.startsWith('/api/projects') && request.method === 'GET') {
+  if (pathname.startsWith("/api/projects") && request.method === "GET") {
     return NextResponse.next()
   }
 
   // Protect admin API routes and sensitive endpoints
-  if (pathname.startsWith('/api/projects') || 
-      pathname.startsWith('/api/security-staff') ||
-      pathname.startsWith('/api/assignments') ||
-      pathname.startsWith('/api/admin/')) {
-    
-    const authCookie = request.cookies.get('admin-session')
-    
-    if (!authCookie || !authCookie.value) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Authentication required' },
-        { status: 401 }
-      )
+  if (
+    pathname.startsWith("/api/projects") ||
+    pathname.startsWith("/api/security-staff") ||
+    pathname.startsWith("/api/assignments") ||
+    pathname.startsWith("/api/admin/")
+  ) {
+    // Check for Authorization header first (for token-based auth)
+    const authHeader = request.headers.get("authorization")
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const token = authHeader.substring(7)
+      if (token) {
+        // Token is present, allow the request through
+        // Full validation happens in individual route handlers
+        return NextResponse.next()
+      }
     }
-    
+
+    // Fallback to cookie-based auth
+    const authCookie = request.cookies.get("admin-session")
+
+    if (!authCookie || !authCookie.value) {
+      return NextResponse.json({ error: "Unauthorized - Authentication required" }, { status: 401 })
+    }
+
     // Note: Full session validation would require importing sessionStore
-    // For middleware, we do basic cookie presence check
+    // For middleware, we do basic cookie/token presence check
     // Full validation happens in individual route handlers
   }
 
@@ -37,5 +47,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/api/admin/:path*', '/api/projects', '/api/security-staff', '/api/assignments']
+  matcher: ["/api/admin/:path*", "/api/projects", "/api/security-staff", "/api/assignments"],
 }
