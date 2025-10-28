@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { adminSessionStore } from "@/lib/auth-utils"
+import { supabase } from "@/lib/supabase"
 
 // Rate limiting map (in production, use Redis or database)
 const rateLimitMap = new Map<string, { attempts: number; lastAttempt: number; lockUntil?: number }>()
@@ -111,9 +112,23 @@ export async function POST(request: NextRequest) {
         createdAt: now,
         expiresAt: expiresAt,
       })
-      console.log("[v0] Session stored successfully in memory")
+
+      // Store in Supabase for persistence across serverless instances
+      const { error: dbError } = await supabase.from("admin_sessions").insert({
+        session_token: sessionToken,
+        created_at: new Date(now).toISOString(),
+        expires_at: new Date(expiresAt).toISOString(),
+      })
+
+      if (dbError) {
+        console.error("[v0] Failed to store session in Supabase:", dbError)
+        // Continue anyway - session is in memory cache
+      } else {
+        console.log("[v0] Session stored in Supabase successfully")
+      }
+
+      console.log("[v0] Session stored successfully")
       console.log("[v0] Session token:", sessionToken.substring(0, 10) + "...")
-      console.log("[v0] Total sessions in store:", adminSessionStore.size)
 
       const response = NextResponse.json({
         success: true,
