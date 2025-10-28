@@ -95,10 +95,6 @@ export async function GET(request: NextRequest) {
 <value><string>agreement_id</string></value>
 </data></array></value>
 </member>
-<member>
-<name>limit</name>
-<value><int>1000</int></value>
-</member>
 </struct></value></param>
 </params>
 </methodCall>`
