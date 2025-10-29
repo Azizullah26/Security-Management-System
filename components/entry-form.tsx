@@ -34,6 +34,7 @@ export interface EntryData {
   exitTime?: string
   status: "inside" | "exited"
   projectName?: string
+  createdBy?: string // Added createdBy field for staff name tracking
 }
 
 function ErrorFallback({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }): ReactElement {
