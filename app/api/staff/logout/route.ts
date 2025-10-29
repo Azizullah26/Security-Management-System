@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { staffSessionStore } from "@/lib/session-store"
+import { createServiceRoleClient } from "@/lib/supabase/server"
 
 export const dynamic = "force-dynamic"
 
@@ -7,9 +7,10 @@ export async function POST(request: NextRequest) {
   try {
     const sessionCookie = request.cookies.get("staff-session")
 
-    // Remove session from server-side store
     if (sessionCookie && sessionCookie.value) {
-      staffSessionStore.delete(sessionCookie.value)
+      const supabase = await createServiceRoleClient()
+      await supabase.from("staff_sessions").delete().eq("session_token", sessionCookie.value)
+      console.log("[v0] Staff session removed from database")
     }
 
     const response = NextResponse.json({ success: true })

@@ -250,7 +250,11 @@ export async function verifyStaffSession(request: NextRequest): Promise<{
 
   try {
     const supabase = getSupabaseClient()
-    const { data: session, error } = await supabase.from("staff_sessions").select("*").eq("token", token).single()
+    const { data: session, error } = await supabase
+      .from("staff_sessions")
+      .select("*")
+      .eq("session_token", token)
+      .single()
 
     if (error || !session) {
       console.log("[v0] Staff session not found in database:", error?.message)
@@ -264,7 +268,7 @@ export async function verifyStaffSession(request: NextRequest): Promise<{
 
     if (now > expiresAt) {
       console.log("[v0] Staff session expired, removing from database")
-      await supabase.from("staff_sessions").delete().eq("token", token)
+      await supabase.from("staff_sessions").delete().eq("session_token", token)
       return null
     }
 

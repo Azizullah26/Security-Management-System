@@ -185,6 +185,7 @@ export async function POST(request: NextRequest) {
       exit_time: recordData.exitTime || null,
       duration: recordData.duration || null,
       project_name: recordData.projectName || null,
+      site_name: null as string | null,
       status: recordData.status || "active",
       created_by: null as string | null,
     }
@@ -200,6 +201,8 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Staff member has no project assignment" }, { status: 403 })
       }
       entryData.project_name = staffSession.assignedProject
+      entryData.site_name = staffSession.assignedProject
+      console.log("[v0] ✅ Setting site_name to assigned project:", staffSession.assignedProject)
     } else {
       // No security guard logged in - created_by remains null
       console.log("[v0] ⚠️ No security guard logged in - created_by will be null")
@@ -231,6 +234,7 @@ export async function POST(request: NextRequest) {
 
     console.log("[v0] ✅ Successfully saved entry to database:", data.id)
     console.log("[v0] ✅ Entry created_by field:", data.created_by || "null")
+    console.log("[v0] ✅ Entry site_name field:", data.site_name || "null")
 
     return NextResponse.json({
       success: true,

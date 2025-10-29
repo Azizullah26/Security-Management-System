@@ -1,28 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createServiceRoleClient } from "@/lib/supabase/server"
-import { staffSessionStore } from "@/lib/session-store"
-
-export const dynamic = "force-dynamic"
-
-function timingSafeEqual(a: string, b: string): boolean {
-  // Ensure both strings are the same length to prevent length-based timing attacks
-  if (a.length !== b.length) {
-    return false
-  }
-
-  let result = 0
-  for (let i = 0; i < a.length; i++) {
-    result |= a.charCodeAt(i) ^ b.charCodeAt(i)
-  }
-
-  return result === 0
-}
-
-function generateSessionToken(): string {
-  const array = new Uint8Array(32)
-  crypto.getRandomValues(array)
-  return Array.from(array, (byte) => byte.toString(16).padStart(2, "0")).join("")
-}
 
 // Rate limiting map
 const rateLimitMap = new Map<string, { attempts: number; lastAttempt: number; lockUntil?: number }>()
@@ -150,6 +127,26 @@ async function ensureStaffInDatabase(supabase: any) {
   return successCount > 0
 }
 
+function timingSafeEqual(a: string, b: string): boolean {
+  // Ensure both strings are the same length to prevent length-based timing attacks
+  if (a.length !== b.length) {
+    return false
+  }
+
+  let result = 0
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i)
+  }
+
+  return result === 0
+}
+
+function generateSessionToken(): string {
+  const array = new Uint8Array(32)
+  crypto.getRandomValues(array)
+  return Array.from(array, (byte) => byte.toString(16).padStart(2, "0")).join("")
+}
+
 export async function POST(request: NextRequest) {
   try {
     const ip = request.ip || request.headers.get("x-forwarded-for") || "unknown"
@@ -207,16 +204,22 @@ export async function POST(request: NextRequest) {
       const now = Date.now()
       const expiresAt = now + 8 * 60 * 60 * 1000 // 8 hours (work shift)
 
-      staffSessionStore.set(sessionToken, {
-        staffId: staff.file_id,
+      const { error: sessionError } = await supabase.from("staff_sessions").insert({
+        session_token: sessionToken,
+        staff_id: staff.file_id,
         name: staff.full_name,
-        assignedProject: assignedProject,
-        createdAt: now,
-        expiresAt: expiresAt,
+        assigned_project: assignedProject,
+        created_at: now,
+        expires_at: expiresAt,
       })
 
+      if (sessionError) {
+        console.error("[v0] Failed to store staff session in database:", sessionError)
+        return NextResponse.json({ error: "Failed to create session" }, { status: 500 })
+      }
+
       console.log("[v0] Staff session created for:", staff.full_name, "Token:", sessionToken.substring(0, 8) + "...")
-      console.log("[v0] Session stored in memory, expires at:", new Date(expiresAt).toISOString())
+      console.log("[v0] Session stored in database, expires at:", new Date(expiresAt).toISOString())
 
       const response = NextResponse.json({
         success: true,
