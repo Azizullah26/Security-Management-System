@@ -167,6 +167,7 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
       "Company",
       "Purpose",
       "Contact",
+      "Staff", // Added Staff column to CSV export
       "Entry Time",
       "Exit Time",
       "Status",
@@ -178,6 +179,7 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
       entry.company || "N/A",
       entry.purpose || "N/A",
       entry.contactNumber || "N/A",
+      entry.createdBy || "N/A", // Added staff name to CSV data
       formatTime(entry.entryTime),
       entry.exitTime ? formatTime(entry.exitTime) : "N/A",
       entry.status,
@@ -342,6 +344,7 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
                   <TableHead className="min-w-[120px] text-slate-700 font-semibold">Purpose</TableHead>
                   <TableHead className="min-w-[140px] text-slate-700 font-semibold">Contact</TableHead>
                   <TableHead className="min-w-[150px] text-slate-700 font-semibold">Project</TableHead>
+                  <TableHead className="min-w-[140px] text-slate-700 font-semibold">Staff</TableHead>
                   <TableHead className="min-w-[140px] text-slate-700 font-semibold">Entry Time</TableHead>
                   <TableHead className="min-w-[140px] text-slate-700 font-semibold">Exit Time</TableHead>
                   <TableHead className="min-w-[140px] text-slate-700 font-semibold">Status/Duration</TableHead>
@@ -351,7 +354,7 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
               <TableBody>
                 {filteredEntries.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={11} className="text-center py-8 text-slate-500">
+                    <TableCell colSpan={12} className="text-center py-8 text-slate-500">
                       {allEntries.length === 0 ? "No records found" : "No entries match your filters"}
                     </TableCell>
                   </TableRow>
@@ -382,6 +385,15 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
                           </Badge>
                         ) : (
                           <span className="text-slate-400">No project</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-slate-700">
+                        {entry.createdBy ? (
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                            {entry.createdBy}
+                          </Badge>
+                        ) : (
+                          <span className="text-slate-400">Unknown</span>
                         )}
                       </TableCell>
                       <TableCell className="text-slate-700">{formatTime(entry.entryTime)}</TableCell>
@@ -468,6 +480,10 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
                   <div>
                     <span className="font-medium text-pink-700">Contact:</span>
                     <p className="text-gray-700">{selectedEntry.contactNumber || "N/A"}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-cyan-700">Staff:</span>
+                    <p className="text-gray-700">{selectedEntry.createdBy || "Unknown"}</p>
                   </div>
                   <div>
                     <span className="font-medium text-indigo-700">Entry Time:</span>

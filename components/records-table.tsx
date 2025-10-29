@@ -144,6 +144,7 @@ export function RecordsTable({ isOpen, onClose, category, entries, onCheckOut }:
                     <TableHead className="min-w-[150px] text-slate-700 font-semibold">Company</TableHead>
                     <TableHead className="min-w-[120px] text-slate-700 font-semibold">Purpose</TableHead>
                     <TableHead className="min-w-[140px] text-slate-700 font-semibold">Contact</TableHead>
+                    <TableHead className="min-w-[140px] text-slate-700 font-semibold">Staff</TableHead>
                     <TableHead className="min-w-[140px] text-slate-700 font-semibold">Entry Time</TableHead>
                     <TableHead className="min-w-[140px] text-slate-700 font-semibold">Exit Time</TableHead>
                     <TableHead className="min-w-[140px] text-slate-700 font-semibold">Status/Duration</TableHead>
@@ -153,7 +154,7 @@ export function RecordsTable({ isOpen, onClose, category, entries, onCheckOut }:
                 <TableBody>
                   {filteredEntries.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center py-8 text-slate-500">
+                      <TableCell colSpan={10} className="text-center py-8 text-slate-500">
                         No entries found for {category.toLowerCase()}
                       </TableCell>
                     </TableRow>
@@ -177,6 +178,15 @@ export function RecordsTable({ isOpen, onClose, category, entries, onCheckOut }:
                         <TableCell className="text-sm sm:text-base text-slate-700">{entry.purpose || "N/A"}</TableCell>
                         <TableCell className="text-sm sm:text-base text-slate-700">
                           {entry.contactNumber || "N/A"}
+                        </TableCell>
+                        <TableCell className="text-sm sm:text-base text-slate-700">
+                          {entry.createdBy ? (
+                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                              {entry.createdBy}
+                            </Badge>
+                          ) : (
+                            <span className="text-slate-400">Unknown</span>
+                          )}
                         </TableCell>
                         <TableCell className="text-sm sm:text-base text-slate-700">
                           {formatTime(entry.entryTime)}
@@ -297,6 +307,10 @@ export function RecordsTable({ isOpen, onClose, category, entries, onCheckOut }:
                       {calculateDuration(selectedEntry.entryTime, selectedEntry.exitTime)}
                     </span>
                   </div>
+                </div>
+                <div className="col-span-1 sm:col-span-2">
+                  <span className="font-medium text-red-700">Staff:</span>
+                  <p className="text-slate-700">{selectedEntry.createdBy || "Unknown"}</p>
                 </div>
                 {selectedEntry.exitTime && (
                   <div className="col-span-1 sm:col-span-2">

@@ -254,10 +254,10 @@ export async function verifyStaffSession(request: NextRequest): Promise<{
       .from("staff_sessions")
       .select("*")
       .eq("session_token", token)
-      .single()
+      .maybeSingle()
 
     if (error || !session) {
-      console.log("[v0] Staff session not found in database:", error?.message)
+      console.log("[v0] Staff session not found in database:", error?.message || "no session")
       return null
     }
 
