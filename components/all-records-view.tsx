@@ -67,6 +67,12 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
 
   const allEntries = entries ?? localEntries
 
+  const uniqueProjects = Array.from(
+    new Set(
+      allEntries.map((entry) => entry.projectName).filter((projectName): projectName is string => Boolean(projectName)),
+    ),
+  ).sort()
+
   const filteredEntries = allEntries.filter((entry) => {
     const matchesSearch =
       entry.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -411,14 +417,11 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Projects</SelectItem>
-            {projects
-              .filter((project) => project.status === "active")
-              .slice(0, 10)
-              .map((project) => (
-                <SelectItem key={project.id} value={project.name}>
-                  {project.name}
-                </SelectItem>
-              ))}
+            {uniqueProjects.map((projectName) => (
+              <SelectItem key={projectName} value={projectName}>
+                {projectName}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
