@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, Eye, Clock, Download, ChevronLeft, ChevronRight } from "lucide-react"
+import { Search, Eye, Clock, Download } from "lucide-react"
 import type { EntryData } from "./entry-form"
 
 interface AllRecordsViewProps {
@@ -211,18 +211,6 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
     },
   }
 
-  const scrollLeft = () => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({ left: -400, behavior: "smooth" })
-    }
-  }
-
-  const scrollRight = () => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({ left: 400, behavior: "smooth" })
-    }
-  }
-
   return (
     <div className="space-y-6 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-6 rounded-xl border border-white/30 shadow-lg">
       <div className="flex justify-between items-center">
@@ -283,96 +271,6 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
             <p className="text-xs text-purple-100">Entry types</p>
           </CardContent>
         </Card>
-      </div>
-
-      {/* Horizontal Records Slider */}
-      <div className="relative">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-xl font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Recent Records
-          </h2>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={scrollLeft}
-              className="h-8 w-8 rounded-full border-blue-300 hover:bg-blue-50 bg-transparent"
-            >
-              <ChevronLeft className="h-4 w-4 text-blue-600" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={scrollRight}
-              className="h-8 w-8 rounded-full border-blue-300 hover:bg-blue-50 bg-transparent"
-            >
-              <ChevronRight className="h-4 w-4 text-blue-600" />
-            </Button>
-          </div>
-        </div>
-
-        <div
-          ref={scrollContainerRef}
-          className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide"
-          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-        >
-          {filteredEntries.slice(0, 20).map((entry) => (
-            <Card
-              key={entry.id}
-              className="min-w-[320px] snap-start bg-white/90 backdrop-blur-sm border-white/50 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
-              onClick={() => setSelectedEntry(entry)}
-            >
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <Avatar className="h-12 w-12 border-2 border-blue-200 flex-shrink-0">
-                      <AvatarImage
-                        src={entry.photo || "/placeholder.svg?height=48&width=48"}
-                        alt={entry.name}
-                        className="object-cover"
-                      />
-                      <AvatarFallback className="text-sm bg-gradient-to-br from-blue-100 to-purple-100 text-blue-700">
-                        {entry.name.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <CardTitle className="text-base font-semibold text-slate-800 truncate">{entry.name}</CardTitle>
-                      <p className="text-xs text-slate-500 truncate">{entry.company || "N/A"}</p>
-                    </div>
-                  </div>
-                  {getCategoryBadge(entry.category)}
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-600">Contact:</span>
-                  <span className="text-slate-800 font-medium">{entry.contactNumber || "N/A"}</span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-600">Purpose:</span>
-                  <span className="text-slate-800 font-medium truncate ml-2">{entry.purpose || "N/A"}</span>
-                </div>
-                {entry.createdBy && (
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-600">Staff:</span>
-                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
-                      {entry.createdBy.split(" ")[0]}
-                    </Badge>
-                  </div>
-                )}
-                <div className="flex items-center justify-between text-sm pt-2 border-t border-slate-200">
-                  <div className="flex items-center gap-1 text-slate-600">
-                    <Clock className="h-3 w-3" />
-                    <span className="text-xs">
-                      {formatTime(entry.entryTime).split(",")[1]?.trim() || formatTime(entry.entryTime)}
-                    </span>
-                  </div>
-                  {getStatusBadge(entry.status, entry.entryTime)}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 items-center bg-white/70 backdrop-blur-sm p-4 rounded-lg border border-white/50 shadow-sm">
