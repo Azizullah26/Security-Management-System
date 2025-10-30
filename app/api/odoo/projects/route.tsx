@@ -23,59 +23,140 @@ export async function GET(request: NextRequest) {
     console.log("[v0] DB:", ODOO_DB)
     console.log("[v0] Username:", ODOO_USERNAME)
 
-    // Step 1: Authenticate
-    console.log("[v0] Attempting XML-RPC authentication...")
+    async function listDatabases(): Promise<string[]> {
+      try {
+        console.log("[v0] Attempting to list available databases...")
+        const listXml = `<?xml version="1.0"?>
+<methodCall>
+<methodName>list</methodName>
+<params>
+</params>
+</methodCall>`
 
-    const authXml = `<?xml version="1.0"?>
+        const listResponse = await fetch(`${ODOO_URL}/xmlrpc/2/db`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "text/xml",
+          },
+          body: listXml,
+        })
+
+        if (!listResponse.ok) {
+          console.log("[v0] Failed to list databases:", listResponse.status)
+          return []
+        }
+
+        const listResult = await listResponse.text()
+
+        // Parse database names from XML response
+        const dbMatches = listResult.matchAll(/<value><string>([^<]+)<\/string><\/value>/g)
+        const databases: string[] = []
+
+        for (const match of dbMatches) {
+          databases.push(match[1])
+        }
+
+        console.log("[v0] Available databases:", databases)
+        return databases
+      } catch (error) {
+        console.log("[v0] Error listing databases:", error)
+        return []
+      }
+    }
+
+    async function tryAuthenticate(database: string): Promise<number | null> {
+      try {
+        console.log(`[v0] Attempting authentication with database: ${database}`)
+
+        const authXml = `<?xml version="1.0"?>
 <methodCall>
 <methodName>authenticate</methodName>
 <params>
-<param><value><string>${ODOO_DB}</string></value></param>
+<param><value><string>${database}</string></value></param>
 <param><value><string>${ODOO_USERNAME}</string></value></param>
 <param><value><string>${ODOO_PASSWORD}</string></value></param>
 <param><value><struct></struct></value></param>
 </params>
 </methodCall>`
 
-    const authResponse = await fetch(`${ODOO_URL}/xmlrpc/2/common`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "text/xml",
-      },
-      body: authXml,
-    })
+        const authResponse = await fetch(`${ODOO_URL}/xmlrpc/2/common`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "text/xml",
+          },
+          body: authXml,
+        })
 
-    console.log("[v0] Auth response status:", authResponse.status)
+        if (!authResponse.ok) {
+          console.log(`[v0] Auth failed for ${database}: ${authResponse.status}`)
+          return null
+        }
 
-    if (!authResponse.ok) {
-      throw new Error(`Authentication failed: ${authResponse.status}`)
+        const authResult = await authResponse.text()
+
+        if (authResult.includes("<fault>")) {
+          console.log(`[v0] Auth fault for ${database}`)
+          return null
+        }
+
+        const uidMatch = authResult.match(/<value><int>(\d+)<\/int><\/value>/)
+        if (!uidMatch) {
+          console.log(`[v0] No UID returned for ${database}`)
+          return null
+        }
+
+        const uid = Number.parseInt(uidMatch[1])
+        console.log(`[v0] Authentication successful with ${database}, UID: ${uid}`)
+        return uid
+      } catch (error) {
+        console.log(`[v0] Error authenticating with ${database}:`, error)
+        return null
+      }
     }
 
-    const authResult = await authResponse.text()
+    let uid: number | null = null
+    let workingDatabase = ODOO_DB
 
-    if (authResult.includes("<fault>")) {
-      console.log("[v0] Authentication failed - fault in response")
-      const faultMatch = authResult.match(/<string>([^<]+)<\/string>/)
-      const faultMsg = faultMatch ? faultMatch[1] : "Unknown error"
-      throw new Error(`Authentication failed: ${faultMsg}`)
+    // Try the configured database first
+    uid = await tryAuthenticate(ODOO_DB)
+
+    // If configured database fails, try available databases
+    if (uid === null) {
+      console.log("[v0] Configured database failed, trying available databases...")
+      const availableDbs = await listDatabases()
+
+      if (availableDbs.length === 0) {
+        throw new Error(
+          `Database "${ODOO_DB}" not found and unable to list available databases. Please verify the database name with your Odoo administrator.`,
+        )
+      }
+
+      console.log(`[v0] Found ${availableDbs.length} available databases, trying each...`)
+
+      for (const db of availableDbs) {
+        uid = await tryAuthenticate(db)
+        if (uid !== null) {
+          workingDatabase = db
+          console.log(`[v0] Successfully connected to database: ${db}`)
+          break
+        }
+      }
+
+      if (uid === null) {
+        throw new Error(
+          `Unable to authenticate with any available database. Available databases: ${availableDbs.join(", ")}. Please check your credentials.`,
+        )
+      }
     }
 
-    const uidMatch = authResult.match(/<value><int>(\d+)<\/int><\/value>/)
-    if (!uidMatch) {
-      throw new Error("Authentication failed - no UID returned")
-    }
-
-    const uid = Number.parseInt(uidMatch[1])
-    console.log("[v0] Authentication successful, UID:", uid)
-
-    // Step 2: Search for all projects
-    console.log("[v0] Fetching all projects from Odoo...")
+    // Step 2: Search for all projects using the working database
+    console.log(`[v0] Fetching all projects from Odoo using database: ${workingDatabase}...`)
 
     const searchXml = `<?xml version="1.0"?>
 <methodCall>
 <methodName>execute_kw</methodName>
 <params>
-<param><value><string>${ODOO_DB}</string></value></param>
+<param><value><string>${workingDatabase}</string></value></param>
 <param><value><int>${uid}</int></value></param>
 <param><value><string>${ODOO_PASSWORD}</string></value></param>
 <param><value><string>project.project</string></value></param>

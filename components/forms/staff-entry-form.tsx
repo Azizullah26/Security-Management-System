@@ -46,7 +46,7 @@ export function StaffEntryForm({ onSubmit, onCancel }: StaffEntryFormProps): Rea
     purpose: "",
     contactNumber: "",
     email: "",
-    numberOfPersons: 1,
+    numberOfPersons: "", // Changed numberOfPersons default from 0 to empty string
     vehicleNumber: "",
     fileId: "",
   })

@@ -96,8 +96,8 @@ export async function GET(request: NextRequest) {
       console.log("[v0] Admin access - fetching ALL records from database (no filtering)")
       // No filtering for admin - they see everything
     } else if (staffSession) {
-      // Staff members always see only records from their assigned project
-      console.log("[v0] Staff access - filtering records for assigned project:", staffSession.assignedProject)
+      // Staff members see all records from their assigned project, not just their own entries
+      console.log("[v0] Filtering records for project:", staffSession.assignedProject)
       query = query.eq("project_name", staffSession.assignedProject)
     }
 
@@ -117,7 +117,7 @@ export async function GET(request: NextRequest) {
     }
 
     console.log("[v0] Successfully fetched", records?.length || 0, "records")
-    console.log("[v0] Records filtered by project:", staffSession ? staffSession.assignedProject : "N/A (admin)")
+    console.log("[v0] Records include entries from all staff members:", isAdmin ? "YES (admin)" : "NO (staff filtered)")
 
     const transformedRecords = records?.map(transformRecordToFrontend) || []
     console.log(

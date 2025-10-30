@@ -19,7 +19,7 @@ export function ClientEntryForm({ onSubmit, onCancel }: ClientEntryFormProps): R
     name: "",
     company: "",
     purpose: "",
-    numberOfPersons: 1,
+    numberOfPersons: "",
     vehicleNumber: "",
   })
 
@@ -79,7 +79,7 @@ export function ClientEntryForm({ onSubmit, onCancel }: ClientEntryFormProps): R
           min="1"
           max="50"
           value={formData.numberOfPersons}
-          onChange={(e) => setFormData({ ...formData, numberOfPersons: Number.parseInt(e.target.value) || 1 })}
+          onChange={(e) => setFormData({ ...formData, numberOfPersons: e.target.value })}
           placeholder="Enter number of persons"
           className="h-11 text-base bg-white/80 border-2 border-green-200 focus:border-green-400 focus:ring-2 focus:ring-green-200 rounded-lg"
         />

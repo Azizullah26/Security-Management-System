@@ -21,7 +21,7 @@ export function VisitorEntryForm({ onSubmit, onCancel }: VisitorEntryFormProps):
     purpose: "",
     contactNumber: "",
     email: "",
-    numberOfPersons: 1,
+    numberOfPersons: "",
     vehicleNumber: "",
   })
 
@@ -108,7 +108,7 @@ export function VisitorEntryForm({ onSubmit, onCancel }: VisitorEntryFormProps):
           min="1"
           max="50"
           value={formData.numberOfPersons}
-          onChange={(e) => setFormData({ ...formData, numberOfPersons: Number.parseInt(e.target.value) || 1 })}
+          onChange={(e) => setFormData({ ...formData, numberOfPersons: e.target.value })}
           placeholder="Enter number of persons"
           className="h-11 text-base bg-white/80 border-2 border-indigo-200 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200 rounded-lg"
         />
