@@ -29,10 +29,12 @@ export function SupplierEntryForm({ onSubmit, onCancel }: SupplierEntryFormProps
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
+    const { numberOfPersons, ...restFormData } = formData
     const entryData: EntryData = {
       id: crypto.randomUUID(),
       category: "suppliers",
-      ...formData,
+      ...restFormData,
+      numberOfPersons: numberOfPersons ? Number(numberOfPersons) : undefined,
       email: "",
       entryTime: new Date().toISOString(),
       status: "inside",

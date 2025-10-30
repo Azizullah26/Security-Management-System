@@ -28,10 +28,12 @@ export function VisitorEntryForm({ onSubmit, onCancel }: VisitorEntryFormProps):
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
+    const { numberOfPersons, ...restFormData } = formData
     const entryData: EntryData = {
       id: crypto.randomUUID(),
       category: "visitors",
-      ...formData,
+      ...restFormData,
+      numberOfPersons: numberOfPersons ? Number(numberOfPersons) : undefined,
       entryTime: new Date().toISOString(),
       status: "inside",
     }

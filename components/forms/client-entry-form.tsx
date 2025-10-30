@@ -26,10 +26,12 @@ export function ClientEntryForm({ onSubmit, onCancel }: ClientEntryFormProps): R
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
+    const { numberOfPersons, ...restFormData } = formData
     const entryData: EntryData = {
       id: crypto.randomUUID(),
       category: "clients",
-      ...formData,
+      ...restFormData,
+      numberOfPersons: numberOfPersons ? Number(numberOfPersons) : undefined,
       contactNumber: "", // Client forms don't include contact number
       email: "", // Client forms don't include email
       entryTime: new Date().toISOString(),
