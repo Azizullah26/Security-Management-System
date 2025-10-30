@@ -34,6 +34,8 @@ export interface EntryData {
   exitTime?: string
   status: "inside" | "exited"
   projectName?: string
+  createdBy?: string
+  site_name?: string
 }
 
 function ErrorFallback({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }): ReactElement {
@@ -110,6 +112,14 @@ export function EntryForm({ isOpen, onClose, category, onSubmit }: EntryFormProp
             "text-lg sm:text-xl bg-gradient-to-r from-purple-600 to-violet-600 bg-clip-text text-transparent font-bold",
         }
       case "staff":
+        return {
+          content:
+            "w-[95vw] max-w-md sm:max-w-lg max-h-[95vh] overflow-y-auto mx-2 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 border-2 border-blue-200/50 shadow-2xl",
+          header:
+            "bg-gradient-to-r from-blue-100 to-purple-100 -mx-6 -mt-6 px-6 pt-6 pb-4 rounded-t-lg border-b border-blue-200/30",
+          title:
+            "text-lg sm:text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent font-bold",
+        }
       default:
         return {
           content:
