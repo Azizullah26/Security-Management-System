@@ -137,4 +137,28 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+
+  /* Added custom scrollbar styles for table */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    height: 12px;
+    width: 12px;
+  }
+
+  .scrollbar-thumb-purple-400::-webkit-scrollbar-thumb {
+    background-color: rgb(192, 132, 252);
+    border-radius: 6px;
+  }
+
+  .scrollbar-thumb-purple-400::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(168, 85, 247);
+  }
+
+  .scrollbar-track-purple-100::-webkit-scrollbar-track {
+    background-color: rgb(243, 232, 255);
+    border-radius: 6px;
+  }
 }

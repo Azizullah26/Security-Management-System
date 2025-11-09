@@ -137,18 +137,18 @@ export function RecordsTable({ isOpen, onClose, category, entries, onCheckOut }:
           <div className="flex-1 overflow-auto bg-white/60 rounded-lg border border-blue-100">
             <div className="min-w-[1200px]">
               <Table>
-                <TableHeader>
-                  <TableRow className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-100">
+                <TableHeader className="bg-gradient-to-r from-blue-50 to-purple-50">
+                  <TableRow className="border-blue-100">
+                    <TableHead className="w-24 text-slate-700 font-semibold">Actions</TableHead>
+                    <TableHead className="min-w-[140px] text-slate-700 font-semibold">Entry Time</TableHead>
+                    <TableHead className="min-w-[140px] text-slate-700 font-semibold">Exit Time</TableHead>
+                    <TableHead className="min-w-[140px] text-slate-700 font-semibold">Status/Duration</TableHead>
                     <TableHead className="w-16 text-slate-700 font-semibold">Photo</TableHead>
                     <TableHead className="min-w-[150px] text-slate-700 font-semibold">Name</TableHead>
                     <TableHead className="min-w-[150px] text-slate-700 font-semibold">Company</TableHead>
                     <TableHead className="min-w-[120px] text-slate-700 font-semibold">Purpose</TableHead>
                     <TableHead className="min-w-[140px] text-slate-700 font-semibold">Contact</TableHead>
                     <TableHead className="min-w-[140px] text-slate-700 font-semibold">Staff</TableHead>
-                    <TableHead className="min-w-[140px] text-slate-700 font-semibold">Entry Time</TableHead>
-                    <TableHead className="min-w-[140px] text-slate-700 font-semibold">Exit Time</TableHead>
-                    <TableHead className="min-w-[140px] text-slate-700 font-semibold">Status/Duration</TableHead>
-                    <TableHead className="w-24 text-slate-700 font-semibold">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -161,6 +161,39 @@ export function RecordsTable({ isOpen, onClose, category, entries, onCheckOut }:
                   ) : (
                     filteredEntries.map((entry, index) => (
                       <TableRow key={entry.id} className={index % 2 === 0 ? "bg-white/40" : "bg-slate-50/40"}>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => setSelectedEntry(entry)}
+                              className="h-9 w-9 sm:h-10 sm:w-10 border-blue-200 hover:bg-blue-50 hover:border-blue-300"
+                            >
+                              <Eye className="h-4 w-4 text-blue-600" />
+                            </Button>
+                            {entry.status === "inside" && (
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => handleCheckOut(entry)}
+                                className="h-9 w-9 sm:h-10 sm:w-10 border-orange-200 hover:bg-orange-50 hover:border-orange-300"
+                              >
+                                <LogOut className="h-4 w-4 text-orange-600" />
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm sm:text-base text-slate-700">
+                          {formatTime(entry.entryTime)}
+                        </TableCell>
+                        <TableCell className="text-sm sm:text-base">
+                          {entry.exitTime ? (
+                            <span className="text-slate-600">{formatTime(entry.exitTime)}</span>
+                          ) : (
+                            <span className="text-slate-400">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>{getStatusBadge(entry.status, entry.entryTime)}</TableCell>
                         <TableCell>
                           <Avatar className="h-10 w-10 sm:h-12 sm:w-12 border-2 border-blue-200">
                             <AvatarImage
@@ -187,39 +220,6 @@ export function RecordsTable({ isOpen, onClose, category, entries, onCheckOut }:
                           ) : (
                             <span className="text-slate-400">Unknown</span>
                           )}
-                        </TableCell>
-                        <TableCell className="text-sm sm:text-base text-slate-700">
-                          {formatTime(entry.entryTime)}
-                        </TableCell>
-                        <TableCell className="text-sm sm:text-base">
-                          {entry.exitTime ? (
-                            <span className="text-slate-600">{formatTime(entry.exitTime)}</span>
-                          ) : (
-                            <span className="text-slate-400">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell>{getStatusBadge(entry.status, entry.entryTime)}</TableCell>
-                        <TableCell>
-                          <div className="flex gap-1">
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              onClick={() => setSelectedEntry(entry)}
-                              className="h-9 w-9 sm:h-10 sm:w-10 border-blue-200 hover:bg-blue-50 hover:border-blue-300"
-                            >
-                              <Eye className="h-4 w-4 text-blue-600" />
-                            </Button>
-                            {entry.status === "inside" && (
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                onClick={() => handleCheckOut(entry)}
-                                className="h-9 w-9 sm:h-10 sm:w-10 border-orange-200 hover:bg-orange-50 hover:border-orange-300"
-                              >
-                                <LogOut className="h-4 w-4 text-orange-600" />
-                              </Button>
-                            )}
-                          </div>
                         </TableCell>
                       </TableRow>
                     ))
