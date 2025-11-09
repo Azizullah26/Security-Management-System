@@ -73,19 +73,23 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
     if (!tableContainer || !scrollbar) return
 
     const handleTableScroll = () => {
-      if (scrollbar) {
-        scrollbar.scrollLeft = tableContainer.scrollLeft
+      if (scrollbar && tableContainer) {
+        requestAnimationFrame(() => {
+          scrollbar.scrollLeft = tableContainer.scrollLeft
+        })
       }
     }
 
     const handleScrollbarScroll = () => {
-      if (tableContainer) {
-        tableContainer.scrollLeft = scrollbar.scrollLeft
+      if (tableContainer && scrollbar) {
+        requestAnimationFrame(() => {
+          tableContainer.scrollLeft = scrollbar.scrollLeft
+        })
       }
     }
 
-    tableContainer.addEventListener("scroll", handleTableScroll)
-    scrollbar.addEventListener("scroll", handleScrollbarScroll)
+    tableContainer.addEventListener("scroll", handleTableScroll, { passive: true })
+    scrollbar.addEventListener("scroll", handleScrollbarScroll, { passive: true })
 
     return () => {
       tableContainer.removeEventListener("scroll", handleTableScroll)
@@ -103,12 +107,13 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
 
   const filteredEntries = allEntries.filter((entry) => {
     const matchesSearch =
-      entry.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      entry.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      entry.contactNumber.includes(searchTerm) ||
-      entry.purpose.toLowerCase().includes(searchTerm.toLowerCase())
+      (entry.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (entry.company || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (entry.contactNumber || "").includes(searchTerm) ||
+      (entry.purpose || "").toLowerCase().includes(searchTerm.toLowerCase())
 
-    const matchesCategory = categoryFilter === "all" || entry.category.toLowerCase() === categoryFilter.toLowerCase()
+    const matchesCategory =
+      categoryFilter === "all" || (entry.category || "").toLowerCase() === categoryFilter.toLowerCase()
     const matchesStatus = statusFilter === "all" || entry.status === statusFilter
     const matchesProject = projectFilter === "all" || entry.projectName === projectFilter
 
@@ -305,9 +310,13 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-purple-500 h-4 w-4" />
           <Input
+            type="text"
             placeholder="Search by name, company, contact, or purpose..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value || ""
+              setSearchTerm(value)
+            }}
             className="pl-10 border-purple-200 focus:border-purple-500 focus:ring-purple-500"
           />
         </div>
