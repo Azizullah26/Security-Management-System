@@ -5,68 +5,38 @@ interface OdooProject {
   name: string
   wo_ref_no?: string
   project_status?: string
-  partner_id?: string // Added partner_id field for client information
-  agreement_id?: string // Added agreement_id field for agreement information
+  partner_id?: string
+  agreement_id?: string
 }
 
 export async function GET(request: NextRequest) {
   try {
     console.log("[v0] Fetching projects from Odoo...")
 
-    const ODOO_URL = process.env.ODOO_URL || "https://test.elrace.com"
-    const ODOO_DB = process.env.ODOO_DB || "test.elrace.com"
-    const ODOO_USERNAME = process.env.ODOO_USERNAME || "jawad"
-    const ODOO_PASSWORD = process.env.ODOO_PASSWORD || "272127212721"
+    const ODOO_URL = process.env.ODOO_URL
+    const ODOO_DB = process.env.ODOO_DB
+    const ODOO_USERNAME = process.env.ODOO_USERNAME
+    const ODOO_PASSWORD = process.env.ODOO_PASSWORD
+
+    if (!ODOO_URL || !ODOO_DB || !ODOO_USERNAME || !ODOO_PASSWORD) {
+      throw new Error("Missing required Odoo environment variables")
+    }
+
+    // Define URLs to try
+    const urlsToTry = [
+      ODOO_URL,
+      "https://odoo.elrace.com",
+      "https://test.elrace.com"
+    ].filter((url, index, self) => self.indexOf(url) === index) // Remove duplicates
 
     console.log("[v0] Odoo Configuration:")
-    console.log("[v0] URL:", ODOO_URL)
+    console.log("[v0] URLs to try:", urlsToTry)
     console.log("[v0] DB:", ODOO_DB)
     console.log("[v0] Username:", ODOO_USERNAME)
 
-    async function listDatabases(): Promise<string[]> {
+    async function tryAuthenticate(url: string, database: string): Promise<number | null> {
       try {
-        console.log("[v0] Attempting to list available databases...")
-        const listXml = `<?xml version="1.0"?>
-<methodCall>
-<methodName>list</methodName>
-<params>
-</params>
-</methodCall>`
-
-        const listResponse = await fetch(`${ODOO_URL}/xmlrpc/2/db`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "text/xml",
-          },
-          body: listXml,
-        })
-
-        if (!listResponse.ok) {
-          console.log("[v0] Failed to list databases:", listResponse.status)
-          return []
-        }
-
-        const listResult = await listResponse.text()
-
-        // Parse database names from XML response
-        const dbMatches = listResult.matchAll(/<value><string>([^<]+)<\/string><\/value>/g)
-        const databases: string[] = []
-
-        for (const match of dbMatches) {
-          databases.push(match[1])
-        }
-
-        console.log("[v0] Available databases:", databases)
-        return databases
-      } catch (error) {
-        console.log("[v0] Error listing databases:", error)
-        return []
-      }
-    }
-
-    async function tryAuthenticate(database: string): Promise<number | null> {
-      try {
-        console.log(`[v0] Attempting authentication with database: ${database}`)
+        console.log(`[v0] Attempting authentication with database: ${database} at ${url}`)
 
         const authXml = `<?xml version="1.0"?>
 <methodCall>
@@ -79,84 +49,70 @@ export async function GET(request: NextRequest) {
 </params>
 </methodCall>`
 
-        const authResponse = await fetch(`${ODOO_URL}/xmlrpc/2/common`, {
+        const authResponse = await fetch(`${url}/xmlrpc/2/common`, {
           method: "POST",
           headers: {
             "Content-Type": "text/xml",
           },
           body: authXml,
+          signal: AbortSignal.timeout(10000), // 10 second timeout
         })
 
+        console.log(`[v0] Auth response status for ${database} at ${url}:`, authResponse.status)
+
         if (!authResponse.ok) {
-          console.log(`[v0] Auth failed for ${database}: ${authResponse.status}`)
           return null
         }
 
         const authResult = await authResponse.text()
 
         if (authResult.includes("<fault>")) {
-          console.log(`[v0] Auth fault for ${database}`)
+          console.log(`[v0] Auth fault for ${database} at ${url}`)
           return null
         }
 
         const uidMatch = authResult.match(/<value><int>(\d+)<\/int><\/value>/)
         if (!uidMatch) {
-          console.log(`[v0] No UID returned for ${database}`)
           return null
         }
 
         const uid = Number.parseInt(uidMatch[1])
-        console.log(`[v0] Authentication successful with ${database}, UID: ${uid}`)
+        console.log(`[v0] ✅ Authentication successful with ${database} at ${url}, UID: ${uid}`)
         return uid
       } catch (error) {
-        console.log(`[v0] Error authenticating with ${database}:`, error)
+        console.log(`[v0] Error authenticating with ${database} at ${url}:`, error)
         return null
       }
     }
 
     let uid: number | null = null
-    let workingDatabase = ODOO_DB
+    let workingUrl = ""
 
-    // Try the configured database first
-    uid = await tryAuthenticate(ODOO_DB)
-
-    // If configured database fails, try available databases
-    if (uid === null) {
-      console.log("[v0] Configured database failed, trying available databases...")
-      const availableDbs = await listDatabases()
-
-      if (availableDbs.length === 0) {
-        throw new Error(
-          `Database "${ODOO_DB}" not found and unable to list available databases. Please verify the database name with your Odoo administrator.`,
-        )
-      }
-
-      console.log(`[v0] Found ${availableDbs.length} available databases, trying each...`)
-
-      for (const db of availableDbs) {
-        uid = await tryAuthenticate(db)
-        if (uid !== null) {
-          workingDatabase = db
-          console.log(`[v0] Successfully connected to database: ${db}`)
-          break
-        }
-      }
-
-      if (uid === null) {
-        throw new Error(
-          `Unable to authenticate with any available database. Available databases: ${availableDbs.join(", ")}. Please check your credentials.`,
-        )
+    // Try each URL until one works
+    for (const url of urlsToTry) {
+      console.log(`[v0] Trying URL: ${url}`)
+      uid = await tryAuthenticate(url, ODOO_DB)
+      if (uid !== null) {
+        workingUrl = url
+        console.log(`[v0] ✅ Successfully connected with configured database at ${url}`)
+        break
       }
     }
 
-    // Step 2: Search for all projects using the working database
-    console.log(`[v0] Fetching all projects from Odoo using database: ${workingDatabase}...`)
+    if (uid === null || !workingUrl) {
+      throw new Error(
+        `Unable to connect to Odoo server. Tried URLs: ${urlsToTry.join(", ")}. Please verify: 1) The ODOO_URL is correct, 2) The server is accessible, 3) The ODOO_DB value "${ODOO_DB}" is correct.`
+      )
+    }
+
+    // Step 2: Search for all projects using the working URL
+    console.log(`[v0] Fetching all projects from Odoo using: ${workingUrl}...`)
 
     const searchXml = `<?xml version="1.0"?>
 <methodCall>
 <methodName>execute_kw</methodName>
 <params>
-<param><value><string>${workingDatabase}</string></value></param>
+<param><value><string>${ODOO_DB}</string></value></param>
 <param><value><int>${uid}</int></value></param>
 <param><value><string>${ODOO_PASSWORD}</string></value></param>
 <param><value><string>project.project</string></value></param>
@@ -180,12 +136,13 @@ export async function GET(request: NextRequest) {
 </params>
 </methodCall>`
 
-    const searchResponse = await fetch(`${ODOO_URL}/xmlrpc/2/object`, {
+    const searchResponse = await fetch(`${workingUrl}/xmlrpc/2/object`, {
       method: "POST",
       headers: {
         "Content-Type": "text/xml",
       },
       body: searchXml,
+      signal: AbortSignal.timeout(15000), // 15 second timeout
     })
 
     console.log("[v0] Search response status:", searchResponse.status)
@@ -244,7 +201,6 @@ export async function GET(request: NextRequest) {
       structCount++
       const structContent = structMatch[1]
 
-      // Log first struct to see XML structure
       if (structCount === 1) {
         console.log("[v0] First struct content (truncated):", structContent.substring(0, 500))
       }
@@ -295,7 +251,6 @@ export async function GET(request: NextRequest) {
             ? agreementIdStringMatch[1]
             : undefined
 
-        // Collect all statuses for debugging
         if (projectStatus && !allProjectStatuses.includes(projectStatus)) {
           allProjectStatuses.push(projectStatus)
         }
@@ -304,12 +259,11 @@ export async function GET(request: NextRequest) {
           id: `odoo-${idMatch[1]}`,
           name: projectName,
           woNumber: woNumber || undefined,
-          status: "active", // Map all to "active" status for now
-          client: clientName, // Added client field
-          agreement: agreementName, // Added agreement field
+          status: "active",
+          client: clientName,
+          agreement: agreementName,
         })
 
-        // Log first 5 projects for debugging
         if (projects.length <= 5) {
           console.log(
             `[v0] Project ${projects.length}: ${projectName} (W.O: ${woNumber || "N/A"}, Status: ${projectStatus}, Client: ${clientName || "N/A"}, Agreement: ${agreementName || "N/A"})`,
