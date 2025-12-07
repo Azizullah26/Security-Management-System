@@ -12,6 +12,7 @@ import {
   ClipboardList,
   LogOut,
   FileText,
+  AlertCircle,
 } from "lucide-react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
@@ -27,6 +28,12 @@ const sidebarItems = [
     id: "overview",
     label: "Overview",
     icon: LayoutDashboard,
+    category: "MAIN",
+  },
+  {
+    id: "security-reports",
+    label: "Security Reports",
+    icon: AlertCircle,
     category: "MAIN",
   },
   {

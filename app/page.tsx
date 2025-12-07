@@ -6,11 +6,12 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Users, HardHat, Wrench, Briefcase, Truck, UserCheck, LogOut } from "lucide-react"
+import { Users, HardHat, Wrench, Briefcase, Truck, UserCheck, LogOut, FileText } from "lucide-react"
 import { EntryForm, type EntryData } from "@/components/entry-form"
 import { RecordsTable } from "@/components/records-table"
 import { TimeTracker } from "@/components/time-tracker"
 import { StaffLogin } from "@/components/staff-login"
+import { SecurityReportForm } from "@/components/security-report-form"
 import type { StaffMember } from "@/lib/types"
 
 interface CategoryData {
@@ -71,6 +72,7 @@ export default function SecurityDashboard() {
 
   const [isEntryFormOpen, setIsEntryFormOpen] = useState(false)
   const [isRecordsTableOpen, setIsRecordsTableOpen] = useState(false)
+  const [isSecurityReportFormOpen, setIsSecurityReportFormOpen] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<string>("")
   const [entries, setEntries] = useState<EntryData[]>([])
   const [viewingMyRecords, setViewingMyRecords] = useState(false)
@@ -394,6 +396,37 @@ export default function SecurityDashboard() {
                   </Card>
                 )
               })}
+
+              <Card className="hover:shadow-lg transition-shadow bg-gradient-to-br from-white to-gray-50 border-gray-200">
+                <CardHeader className="pb-2 sm:pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm sm:text-base md:text-lg font-semibold text-gray-800">
+                      Security Report
+                    </CardTitle>
+                    <div className="p-2 sm:p-2.5 rounded-lg bg-indigo-100">
+                      <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-gray-700" />
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-2 sm:space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs sm:text-sm text-gray-600">Submit Reports</span>
+                    <Badge variant="secondary" className="text-sm sm:text-base md:text-lg px-2 sm:px-3 py-1">
+                      📝
+                    </Badge>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      onClick={() => setIsSecurityReportFormOpen(true)}
+                      className="w-full text-xs sm:text-sm md:text-base h-9 sm:h-10 md:h-11 bg-indigo-600 hover:bg-indigo-700"
+                      size="default"
+                    >
+                      Add Report
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
 
             <div className="bg-white rounded-lg shadow p-3 sm:p-4 md:p-5 lg:p-6">
@@ -440,6 +473,15 @@ export default function SecurityDashboard() {
         category={selectedCategory}
         entries={entries}
         onCheckOut={handleCheckOut}
+      />
+
+      <SecurityReportForm
+        isOpen={isSecurityReportFormOpen}
+        onClose={() => setIsSecurityReportFormOpen(false)}
+        staffName={currentStaff?.name || ""}
+        onSubmitSuccess={() => {
+          // Optionally refresh or show confirmation
+        }}
       />
     </div>
   )

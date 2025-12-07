@@ -12,6 +12,7 @@ import { AllRecordsView } from "@/components/all-records-view"
 import { AdminLogin } from "@/components/admin-login"
 import { StaffAssignmentManagement } from "@/components/staff-assignment-management"
 import { StaffManagement } from "@/components/staff-management"
+import { SecurityReportsView } from "@/components/security-reports-view"
 import {
   BarChart,
   Bar,
@@ -518,62 +519,26 @@ export default function AdminDashboard() {
 
   const renderAssignments = () => <StaffAssignmentManagement />
 
-  const renderContent = () => {
-    switch (activeSection) {
-      case "overview":
-        return renderOverview()
-      case "projects":
-        return renderProjects()
-      case "assignments":
-        return renderAssignments()
-      case "staff":
-        return renderStaff()
-      case "analytics":
-        return renderOverview()
-      case "all-records":
-        return <AllRecordsView />
-      case "visitors":
-        return (
-          <div className="flex items-center justify-center h-96">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold mb-2">Visitor System</h2>
-              <p className="text-muted-foreground">This will redirect to the main visitor management system</p>
-              <Button className="mt-4" onClick={() => (window.location.href = "/")}>
-                Go to Visitor System
-              </Button>
-            </div>
-          </div>
-        )
-      default:
-        return renderOverview()
-    }
-  }
-
   return (
-    <div className={`flex h-screen bg-gray-50`}>
+    <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <AdminSidebar activeSection={activeSection} onSectionChange={setActiveSection} onLogout={handleLogout} />
-
-      <main className="flex-1 overflow-auto">
-        <div className="p-6 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-full relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-100/20 via-purple-100/20 to-pink-100/20 animate-pulse"></div>
-          <div className="absolute top-10 left-10 w-32 h-32 bg-gradient-to-br from-blue-200/30 to-cyan-200/30 rounded-full blur-2xl animate-bounce"></div>
-          <div className="absolute top-1/4 right-20 w-24 h-24 bg-gradient-to-br from-purple-200/30 to-pink-200/30 rounded-full blur-xl animate-pulse"></div>
-          <div className="absolute bottom-20 left-1/4 w-40 h-40 bg-gradient-to-br from-green-200/30 to-emerald-200/30 rounded-full blur-3xl animate-bounce"></div>
-          <div className="absolute bottom-10 right-10 w-28 h-28 bg-gradient-to-br from-orange-200/30 to-red-200/30 rounded-full blur-2xl animate-pulse"></div>
-
-          <div className="relative z-10 backdrop-blur-sm bg-white/40 rounded-3xl p-8 shadow-xl border border-white/50 transition-all duration-500 hover:shadow-2xl hover:bg-white/50 hover:scale-[1.01]">
-            {renderContent()}
-          </div>
-        </div>
+      <main className="flex-1 p-6 overflow-auto">
+        {activeSection === "overview" && renderOverview()}
+        {activeSection === "security-reports" && <SecurityReportsView />}
+        {activeSection === "all-records" && <AllRecordsView />}
+        {activeSection === "projects" && renderProjects()}
+        {activeSection === "staff" && renderStaff()}
+        {activeSection === "assignments" && renderAssignments()}
       </main>
 
-      <ProjectAssignmentDialog
-        isOpen={assignmentDialog.isOpen}
-        onClose={() => setAssignmentDialog({ isOpen: false, project: null })}
-        project={assignmentDialog.project}
-        securityStaff={securityStaff}
-        onAssign={handleAssignProject}
-      />
+      {assignmentDialog.isOpen && (
+        <ProjectAssignmentDialog
+          project={assignmentDialog.project}
+          securityStaff={securityStaff}
+          onAssign={handleAssignProject}
+          onClose={() => setAssignmentDialog({ isOpen: false, project: null })}
+        />
+      )}
     </div>
   )
 }
