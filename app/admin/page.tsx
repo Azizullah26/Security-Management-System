@@ -533,6 +533,7 @@ export default function AdminDashboard() {
 
       {assignmentDialog.isOpen && (
         <ProjectAssignmentDialog
+          isOpen={assignmentDialog.isOpen}
           project={assignmentDialog.project}
           securityStaff={securityStaff}
           onAssign={handleAssignProject}
