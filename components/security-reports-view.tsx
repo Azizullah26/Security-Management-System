@@ -53,19 +53,23 @@ export function SecurityReportsView() {
 
   const fetchReports = async () => {
     try {
-      console.log("[v0] Security Reports View: Starting fetch")
+      console.log("[v0] Security Reports View: Starting fetch at", new Date().toISOString())
       setLoading(true)
 
       const timestamp = new Date().getTime()
-      const response = await fetch(`/api/security-reports/list?_=${timestamp}`, {
+      const random = Math.random()
+      const response = await fetch(`/api/security-reports/list?_t=${timestamp}&_r=${random}`, {
         credentials: "include",
         cache: "no-store",
         headers: {
-          "Cache-Control": "no-cache",
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
         },
       })
 
       console.log("[v0] Security Reports View: Response status:", response.status)
+      console.log("[v0] Security Reports View: Response headers:", Object.fromEntries(response.headers.entries()))
 
       if (!response.ok) {
         const errorData = await response.json()
@@ -74,17 +78,39 @@ export function SecurityReportsView() {
       }
 
       const data = await response.json()
-      console.log("[v0] Security Reports View: Received", data?.length || 0, "reports")
+      console.log("[v0] Security Reports View: Raw data received:", data)
+      console.log("[v0] Security Reports View: Number of reports:", data?.length || 0)
+      console.log("[v0] Security Reports View: Report IDs:", data?.map((r: SecurityReport) => r.id).join(", "))
 
-      const sortedData = data.sort((a: SecurityReport, b: SecurityReport) => {
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      if (!Array.isArray(data)) {
+        console.error("[v0] Security Reports View: Data is not an array:", typeof data)
+        throw new Error("Invalid data format received from API")
+      }
+
+      const sortedData = [...data].sort((a: SecurityReport, b: SecurityReport) => {
+        const dateA = new Date(a.created_at).getTime()
+        const dateB = new Date(b.created_at).getTime()
+        return dateB - dateA
       })
 
-      console.log("[v0] Security Reports View: First report:", sortedData?.[0])
+      console.log("[v0] Security Reports View: Sorted report IDs:", sortedData.map((r) => r.id).join(", "))
+      console.log("[v0] Security Reports View: First report:", sortedData[0])
+      console.log("[v0] Security Reports View: Last report:", sortedData[sortedData.length - 1])
 
       setReports(sortedData)
+
+      console.log("[v0] Security Reports View: Successfully updated state with", sortedData.length, "reports")
     } catch (error) {
       console.error("[v0] Security Reports View: Caught error:", error)
+      console.error(
+        "[v0] Security Reports View: Error details:",
+        error instanceof Error ? error.message : String(error),
+      )
+      toast({
+        title: "Error",
+        description: "Failed to fetch security reports. Please try again.",
+        variant: "destructive",
+      })
     } finally {
       setLoading(false)
     }
