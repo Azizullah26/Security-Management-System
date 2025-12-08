@@ -212,7 +212,6 @@ export async function verifyAdminSessionInMemory(request: NextRequest): Promise<
   }
 }
 
-// Updated staff session verification to use Supabase instead of in-memory store
 export async function verifyStaffSession(request: NextRequest): Promise<{
   authenticated: boolean
   staffId?: string
@@ -231,10 +230,12 @@ export async function verifyStaffSession(request: NextRequest): Promise<{
   }
 
   // Check localStorage token (sent as header)
-  const localStorageToken = request.headers.get("x-staff-session-token")
-  if (localStorageToken) {
-    console.log("[v0] Staff localStorage token:", localStorageToken ? "present" : "missing")
-    token = localStorageToken
+  if (!token) {
+    const localStorageToken = request.headers.get("x-staff-session-token")
+    if (localStorageToken) {
+      console.log("[v0] Staff localStorage token:", localStorageToken ? "present" : "missing")
+      token = localStorageToken
+    }
   }
 
   // Fallback to cookie-based auth
@@ -250,14 +251,20 @@ export async function verifyStaffSession(request: NextRequest): Promise<{
 
   try {
     const supabase = getSupabaseClient()
+
     const { data: session, error } = await supabase
       .from("staff_sessions")
       .select("*")
       .eq("session_token", token)
       .maybeSingle()
 
-    if (error || !session) {
-      console.log("[v0] Staff session not found in database:", error?.message || "no session")
+    if (error) {
+      console.log("[v0] Database error during staff session verification:", error.message)
+      return null
+    }
+
+    if (!session) {
+      console.log("[v0] Staff session not found in database: no session")
       return null
     }
 

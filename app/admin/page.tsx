@@ -41,6 +41,7 @@ export default function AdminDashboard() {
   }>({ isOpen: false, project: null })
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
+  const [chartReady, setChartReady] = useState(false)
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -98,6 +99,15 @@ export default function AdminDashboard() {
     return () => {
       window.removeEventListener("error", handleResizeObserverError)
     }
+  }, [])
+
+  useEffect(() => {
+    // Wait for DOM to be ready before rendering charts
+    const timer = setTimeout(() => {
+      setChartReady(true)
+    }, 100)
+
+    return () => clearTimeout(timer)
   }, [])
 
   useEffect(() => {
@@ -296,31 +306,36 @@ export default function AdminDashboard() {
             <CardTitle className="text-white">Project Distribution</CardTitle>
           </CardHeader>
           <CardContent className="pt-6">
-            <div style={{ width: "100%", height: "300px" }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e0e7ff" />
-                  <XAxis dataKey="name" stroke="#4f46e5" />
-                  <YAxis stroke="#4f46e5" />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#ffffff",
-                      border: "2px solid #4f46e5",
-                      borderRadius: "12px",
-                      color: "#1e1b4b",
-                      boxShadow: "0 10px 25px rgba(79, 70, 229, 0.2)",
-                    }}
-                  />
-                  <Bar dataKey="projects" fill="url(#colorGradient)" />
-                  <defs>
-                    <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.8} />
-                      <stop offset="95%" stopColor="#7c3aed" stopOpacity={0.8} />
-                    </linearGradient>
-                  </defs>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            {/* Conditional rendering to prevent chart dimension errors */}
+            {chartReady && chartData.length > 0 ? (
+              <div style={{ width: "100%", height: "300px" }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e0e7ff" />
+                    <XAxis dataKey="name" stroke="#4f46e5" />
+                    <YAxis stroke="#4f46e5" />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "#ffffff",
+                        border: "2px solid #4f46e5",
+                        borderRadius: "12px",
+                        color: "#1e1b4b",
+                        boxShadow: "0 10px 25px rgba(79, 70, 229, 0.2)",
+                      }}
+                    />
+                    <Bar dataKey="projects" fill="url(#colorGradient)" />
+                    <defs>
+                      <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.8} />
+                        <stop offset="95%" stopColor="#7c3aed" stopOpacity={0.8} />
+                      </linearGradient>
+                    </defs>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-[300px] text-gray-500">Loading chart...</div>
+            )}
           </CardContent>
         </Card>
 
