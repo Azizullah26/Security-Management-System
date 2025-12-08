@@ -16,7 +16,12 @@ export async function GET() {
       return NextResponse.json({ error: "Supabase configuration missing" }, { status: 500 })
     }
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    })
 
     console.log("[v0] Security Reports API: Querying securityreport table")
 
@@ -27,14 +32,29 @@ export async function GET() {
 
     if (error) {
       console.error("[v0] Security Reports API: Database error:", error)
-      return NextResponse.json({ error: "Failed to fetch security reports", details: error.message }, { status: 500 })
+      return NextResponse.json(
+        {
+          error: "Failed to fetch security reports",
+          details: error.message,
+          hint: error.hint,
+          code: error.code,
+        },
+        { status: 500 },
+      )
     }
 
     console.log("[v0] Security Reports API: Successfully fetched", reports?.length || 0, "reports")
+    console.log("[v0] Security Reports API: Reports data:", JSON.stringify(reports, null, 2))
 
     return NextResponse.json(reports || [])
   } catch (error) {
     console.error("[v0] Security Reports API: Caught exception:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return NextResponse.json(
+      {
+        error: "Internal server error",
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 },
+    )
   }
 }

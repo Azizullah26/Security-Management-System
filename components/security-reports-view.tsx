@@ -5,10 +5,18 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Search, FileText, Calendar, User, Paperclip, Download, Eye } from "lucide-react"
+import { Search, FileText, Calendar, User, Paperclip, Download, Eye, Trash2 } from "lucide-react"
 import { format } from "date-fns"
+import { useToast } from "@/hooks/use-toast"
 
 interface SecurityReport {
   id: number
@@ -25,6 +33,12 @@ export function SecurityReportsView() {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedReport, setSelectedReport] = useState<SecurityReport | null>(null)
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
+  const [deleteDialog, setDeleteDialog] = useState<{ isOpen: boolean; report: SecurityReport | null }>({
+    isOpen: false,
+    report: null,
+  })
+  const [isDeleting, setIsDeleting] = useState(false)
+  const { toast } = useToast()
 
   useEffect(() => {
     fetchReports()
@@ -81,6 +95,52 @@ export function SecurityReportsView() {
   const handleViewDetails = (report: SecurityReport) => {
     setSelectedReport(report)
     setIsDetailsOpen(true)
+  }
+
+  const handleDeleteReport = async (report: SecurityReport) => {
+    setDeleteDialog({ isOpen: true, report })
+  }
+
+  const confirmDelete = async () => {
+    if (!deleteDialog.report) return
+
+    try {
+      setIsDeleting(true)
+      console.log("[v0] Security Reports View: Deleting report ID:", deleteDialog.report.id)
+
+      const response = await fetch(`/api/security-reports/delete?id=${deleteDialog.report.id}`, {
+        method: "DELETE",
+        credentials: "include",
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error("[v0] Security Reports View: Delete error:", errorData)
+        throw new Error(errorData.error || "Failed to delete report")
+      }
+
+      console.log("[v0] Security Reports View: Report deleted successfully")
+
+      toast({
+        title: "Success",
+        description: "Security report deleted successfully",
+      })
+
+      // Refresh the reports list
+      await fetchReports()
+
+      // Close the delete dialog
+      setDeleteDialog({ isOpen: false, report: null })
+    } catch (error) {
+      console.error("[v0] Security Reports View: Delete caught error:", error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete report",
+        variant: "destructive",
+      })
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   if (loading) {
@@ -178,14 +238,24 @@ export function SecurityReportsView() {
                           {format(new Date(report.created_at), "MMM dd, yyyy")}
                         </TableCell>
                         <TableCell className="text-center">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleViewDetails(report)}
-                            className="hover:bg-indigo-100 hover:text-indigo-700"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
+                          <div className="flex items-center justify-center gap-2">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleViewDetails(report)}
+                              className="hover:bg-indigo-100 hover:text-indigo-700"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleDeleteReport(report)}
+                              className="hover:bg-red-100 hover:text-red-700"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     )
@@ -301,6 +371,51 @@ export function SecurityReportsView() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialog.isOpen} onOpenChange={(open) => setDeleteDialog({ isOpen: open, report: null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-red-600">Delete Security Report</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this security report? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          {deleteDialog.report && (
+            <div className="space-y-2 py-4">
+              <p className="text-sm text-gray-600">
+                <span className="font-medium">Report #:</span> {deleteDialog.report.id}
+              </p>
+              <p className="text-sm text-gray-600">
+                <span className="font-medium">Staff:</span> {deleteDialog.report.staff_name}
+              </p>
+              <p className="text-sm text-gray-600">
+                <span className="font-medium">Date:</span>{" "}
+                {deleteDialog.report.Date ? format(new Date(deleteDialog.report.Date), "PPP") : "N/A"}
+              </p>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialog({ isOpen: false, report: null })}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isDeleting ? "Deleting..." : "Delete Report"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
