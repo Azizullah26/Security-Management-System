@@ -22,6 +22,7 @@ interface SecurityReport {
 export function SecurityReportsView() {
   const [reports, setReports] = useState<SecurityReport[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedReport, setSelectedReport] = useState<SecurityReport | null>(null)
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
@@ -33,18 +34,29 @@ export function SecurityReportsView() {
   const fetchReports = async () => {
     try {
       setLoading(true)
-      const response = await fetch("/api/security-reports/list", {
+      setError(null)
+      console.log("[v0] Fetching security reports...")
+      const response = await fetch("/api/security-reports/list?admin=true", {
         credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
       })
 
+      console.log("[v0] Security reports response status:", response.status)
+
       if (!response.ok) {
-        throw new Error("Failed to fetch reports")
+        const errorText = await response.text()
+        console.error("[v0] Security reports fetch error:", errorText)
+        throw new Error(`Failed to fetch reports: ${response.status}`)
       }
 
       const data = await response.json()
+      console.log("[v0] Security reports fetched:", data.length)
       setReports(data)
     } catch (error) {
-      console.error("Error fetching security reports:", error)
+      console.error("[v0] Error fetching security reports:", error)
+      setError(error instanceof Error ? error.message : "Failed to fetch reports")
     } finally {
       setLoading(false)
     }
@@ -80,6 +92,19 @@ export function SecurityReportsView() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-2 border-indigo-600 border-t-transparent mx-auto mb-4"></div>
           <p className="text-gray-600">Loading security reports...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <Button onClick={fetchReports} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+            Retry
+          </Button>
         </div>
       </div>
     )

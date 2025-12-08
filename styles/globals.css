@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@import "tw-animate-css";
+/* Removed tw-animate-css import that was causing syntax error */
 
 @custom-variant dark (&:is(.dark *));
 
@@ -117,7 +117,6 @@
 
 @layer base {
   * {
-    /* Fixed @apply syntax - removed problematic outline-ring/50 that was causing parse errors */
     @apply border-border;
   }
   body {
