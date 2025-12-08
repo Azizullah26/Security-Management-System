@@ -32,19 +32,28 @@ export function SecurityReportsView() {
 
   const fetchReports = async () => {
     try {
+      console.log("[v0] Security Reports View: Starting fetch")
       setLoading(true)
+
       const response = await fetch("/api/security-reports/list", {
         credentials: "include",
       })
 
+      console.log("[v0] Security Reports View: Response status:", response.status)
+
       if (!response.ok) {
+        const errorData = await response.json()
+        console.error("[v0] Security Reports View: API error:", errorData)
         throw new Error("Failed to fetch reports")
       }
 
       const data = await response.json()
+      console.log("[v0] Security Reports View: Received", data?.length || 0, "reports")
+      console.log("[v0] Security Reports View: First report:", data?.[0])
+
       setReports(data)
     } catch (error) {
-      console.error("Error fetching security reports:", error)
+      console.error("[v0] Security Reports View: Caught error:", error)
     } finally {
       setLoading(false)
     }
