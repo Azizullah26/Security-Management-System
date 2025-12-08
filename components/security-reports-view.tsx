@@ -125,6 +125,31 @@ export function SecurityReportsView() {
     )
   })
 
+  useEffect(() => {
+    console.log("[v0] Security Reports View: Total reports in state:", reports.length)
+    console.log("[v0] Security Reports View: Filtered reports:", filteredReports.length)
+    console.log(
+      "[v0] Security Reports View: All report IDs in state:",
+      reports.map((r) => r.id),
+    )
+    console.log(
+      "[v0] Security Reports View: Filtered report IDs:",
+      filteredReports.map((r) => r.id),
+    )
+
+    // Check each report for rendering issues
+    reports.forEach((report, index) => {
+      console.log(`[v0] Security Reports View: Report ${index + 1}/${reports.length}:`, {
+        id: report.id,
+        staff_name: report.staff_name,
+        Date: report.Date,
+        description_length: report.description?.length || 0,
+        attachment: report.attachment,
+        created_at: report.created_at,
+      })
+    })
+  }, [reports, filteredReports])
+
   const parseAttachments = (attachment: string | null): string[] => {
     if (!attachment) return []
     try {
@@ -259,8 +284,10 @@ export function SecurityReportsView() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredReports.map((report) => {
+                  {filteredReports.map((report, index) => {
                     const attachments = parseAttachments(report.attachment)
+
+                    console.log(`[v0] Security Reports View: Rendering row ${index + 1} for report ID:`, report.id)
 
                     return (
                       <TableRow key={report.id} className="hover:bg-indigo-50/50 transition-colors">
