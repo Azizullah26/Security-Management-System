@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { staffSessionStore } from "@/lib/session-store"
 import { adminSessionStore } from "@/lib/auth-utils"
+import { createClient } from "@supabase/supabase-js"
 
 export const dynamic = "force-dynamic"
 
@@ -10,6 +10,17 @@ function generateSessionToken(): string {
   return Array.from(array, (byte) => byte.toString(16).padStart(2, "0")).join("")
 }
 
+function getSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error("Missing Supabase environment variables")
+  }
+
+  return createClient(supabaseUrl, supabaseServiceKey)
+}
+
 export async function POST(request: NextRequest) {
   try {
     console.log("[v0] Auto-auth request received")
@@ -17,41 +28,60 @@ export async function POST(request: NextRequest) {
     const allCookies = request.cookies.getAll()
     console.log("[v0] All cookies received:", allCookies.map((c) => c.name).join(", "))
 
-    // Check if user has a valid staff session
-    const staffSessionCookie = request.cookies.get("staff-session")
-    console.log("[v0] Staff session cookie:", staffSessionCookie ? "found" : "missing")
+    let staffToken = request.headers.get("x-staff-session-token")
+    console.log("[v0] Staff token from header:", staffToken ? "found" : "missing")
 
-    if (staffSessionCookie) {
-      console.log("[v0] Staff session cookie value:", staffSessionCookie.value.substring(0, 8) + "...")
+    // Check if user has a valid staff session from cookie as fallback
+    if (!staffToken) {
+      const staffSessionCookie = request.cookies.get("staff-session")
+      console.log("[v0] Staff session cookie:", staffSessionCookie ? "found" : "missing")
+
+      if (staffSessionCookie) {
+        staffToken = staffSessionCookie.value
+        console.log("[v0] Staff session cookie value:", staffToken.substring(0, 8) + "...")
+      }
     }
 
-    if (!staffSessionCookie || !staffSessionCookie.value) {
-      console.log("[v0] No staff session cookie found")
+    if (!staffToken) {
+      console.log("[v0] No staff session found in header or cookie")
       return NextResponse.json({ error: "No staff session found" }, { status: 401 })
     }
 
-    console.log("[v0] Checking staff session in store...")
-    const staffSession = staffSessionStore.get(staffSessionCookie.value)
-    console.log("[v0] Staff session found in store:", staffSession ? "yes" : "no")
+    console.log("[v0] Checking staff session in database...")
+
+    const supabase = getSupabaseClient()
+    const { data: staffSession, error } = await supabase
+      .from("staff_sessions")
+      .select("*")
+      .eq("session_token", staffToken)
+      .maybeSingle()
+
+    console.log("[v0] Staff session found in database:", staffSession ? "yes" : "no")
+
+    if (error || !staffSession) {
+      console.log("[v0] Staff session not found in database:", error?.message || "no session")
+      return NextResponse.json({ error: "Staff session not found" }, { status: 401 })
+    }
 
     if (staffSession) {
-      console.log("[v0] Staff session details - staffId:", staffSession.staffId, "name:", staffSession.name)
+      console.log("[v0] Staff session details - staffId:", staffSession.staff_id, "name:", staffSession.name)
     }
 
     const now = Date.now()
 
-    if (!staffSession || now > staffSession.expiresAt) {
-      console.log("[v0] Staff session expired or invalid")
-      if (staffSession) {
-        console.log("[v0] Session expired at:", new Date(staffSession.expiresAt).toISOString())
-        console.log("[v0] Current time:", new Date(now).toISOString())
-      }
+    if (now > staffSession.expires_at) {
+      console.log("[v0] Staff session expired")
+      console.log("[v0] Session expired at:", new Date(staffSession.expires_at).toISOString())
+      console.log("[v0] Current time:", new Date(now).toISOString())
+
+      await supabase.from("staff_sessions").delete().eq("session_token", staffToken)
+
       return NextResponse.json({ error: "Staff session expired" }, { status: 401 })
     }
 
     // Check if the staff user is "Admin"
-    if (staffSession.staffId !== "Admin") {
-      console.log("[v0] Staff user is not Admin:", staffSession.staffId)
+    if (staffSession.staff_id !== "Admin") {
+      console.log("[v0] Staff user is not Admin:", staffSession.staff_id)
       return NextResponse.json({ error: "Unauthorized - Admin access required" }, { status: 403 })
     }
 
@@ -60,6 +90,17 @@ export async function POST(request: NextRequest) {
     // Create admin session
     const sessionToken = generateSessionToken()
     const expiresAt = now + 24 * 60 * 60 * 1000 // 24 hours
+
+    const { error: insertError } = await supabase.from("admin_sessions").insert({
+      session_token: sessionToken,
+      created_at: now,
+      expires_at: expiresAt,
+    })
+
+    if (insertError) {
+      console.error("[v0] Failed to store admin session in database:", insertError)
+      return NextResponse.json({ error: "Failed to create admin session" }, { status: 500 })
+    }
 
     adminSessionStore.set(sessionToken, {
       createdAt: now,
@@ -72,6 +113,7 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json({
       success: true,
       message: "Admin session created",
+      token: sessionToken, // Return token to client for localStorage storage
     })
 
     // Set admin session cookie
