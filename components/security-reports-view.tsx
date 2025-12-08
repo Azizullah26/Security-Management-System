@@ -42,6 +42,13 @@ export function SecurityReportsView() {
 
   useEffect(() => {
     fetchReports()
+
+    // Auto-refresh every 30 seconds to get new reports
+    const interval = setInterval(() => {
+      fetchReports()
+    }, 30000)
+
+    return () => clearInterval(interval)
   }, [])
 
   const fetchReports = async () => {
@@ -49,8 +56,13 @@ export function SecurityReportsView() {
       console.log("[v0] Security Reports View: Starting fetch")
       setLoading(true)
 
-      const response = await fetch("/api/security-reports/list", {
+      const timestamp = new Date().getTime()
+      const response = await fetch(`/api/security-reports/list?_=${timestamp}`, {
         credentials: "include",
+        cache: "no-store",
+        headers: {
+          "Cache-Control": "no-cache",
+        },
       })
 
       console.log("[v0] Security Reports View: Response status:", response.status)
@@ -63,9 +75,14 @@ export function SecurityReportsView() {
 
       const data = await response.json()
       console.log("[v0] Security Reports View: Received", data?.length || 0, "reports")
-      console.log("[v0] Security Reports View: First report:", data?.[0])
 
-      setReports(data)
+      const sortedData = data.sort((a: SecurityReport, b: SecurityReport) => {
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      })
+
+      console.log("[v0] Security Reports View: First report:", sortedData?.[0])
+
+      setReports(sortedData)
     } catch (error) {
       console.error("[v0] Security Reports View: Caught error:", error)
     } finally {
