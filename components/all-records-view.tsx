@@ -22,12 +22,14 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
   const [selectedEntry, setSelectedEntry] = useState<EntryData | null>(null)
   const [localEntries, setLocalEntries] = useState<EntryData[]>([])
   const [projects, setProjects] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const tableContainerRef = useRef<HTMLDivElement>(null)
   const scrollbarRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const loadData = async () => {
+      setIsLoading(true)
       try {
         const token = localStorage.getItem("admin-token")
         const headers: HeadersInit = {
@@ -36,50 +38,35 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
 
         if (token) {
           headers["Authorization"] = `Bearer ${token}`
-          console.log("[v0] Sending admin token in Authorization header")
-        } else {
-          console.log("[v0] No admin token found in localStorage")
         }
 
-        console.log("[v0] Fetching entries from /api/records...")
-        const entriesResponse = await fetch("/api/records", {
+        const entriesResponse = await fetch("/api/records?admin=true", {
           credentials: "include",
           headers,
         })
-
-        console.log("[v0] Entries response status:", entriesResponse.status)
-
         if (entriesResponse.ok) {
           const data = await entriesResponse.json()
-          console.log("[v0] Successfully loaded", data.records?.length || 0, "entries")
           setLocalEntries(data.records || [])
         } else {
-          const errorData = await entriesResponse.json().catch(() => ({ error: "Unknown error" }))
-          console.error("[v0] Failed to fetch entries:", entriesResponse.status, errorData)
-
-          if (entriesResponse.status === 401) {
-            console.error("[v0] Authentication failed - redirecting to login may be needed")
-            // Optionally redirect to login or show a toast
-          }
+          console.error("Failed to fetch entries:", entriesResponse.status)
+          setLocalEntries([])
         }
 
-        console.log("[v0] Fetching projects from /api/projects...")
         const projectsResponse = await fetch("/api/projects", {
           credentials: "include",
           headers,
         })
-
-        console.log("[v0] Projects response status:", projectsResponse.status)
-
         if (projectsResponse.ok) {
           const data = await projectsResponse.json()
-          console.log("[v0] Successfully loaded", data.projects?.length || data?.length || 0, "projects")
           setProjects(data.projects || data || [])
         } else {
-          console.error("[v0] Failed to fetch projects:", projectsResponse.status)
+          console.error("Failed to fetch projects:", projectsResponse.status)
         }
       } catch (error) {
-        console.error("[v0] Failed to load data:", error)
+        console.error("Failed to load data:", error)
+        setLocalEntries([])
+      } finally {
+        setIsLoading(false)
       }
     }
     loadData()

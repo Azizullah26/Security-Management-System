@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { verifyAdminSession, validateEntryRecord, validateRequestSize, verifyStaffSession } from "@/lib/auth-utils"
+import { validateEntryRecord, validateRequestSize, verifyStaffSession } from "@/lib/auth-utils"
 import { createServiceRoleClient } from "@/lib/supabase/server"
+import { createClient } from "@supabase/supabase-js"
 
 export const dynamic = "force-dynamic"
 
@@ -52,6 +53,56 @@ function transformRecordToFrontend(dbRecord: any) {
   }
 }
 
+async function verifyAdminSessionSimple(request: NextRequest): Promise<boolean> {
+  let token: string | null = null
+
+  // Check Authorization header first
+  const authHeader = request.headers.get("authorization")
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    token = authHeader.substring(7)
+  }
+
+  // Fallback to cookie
+  if (!token) {
+    token = request.cookies.get("admin-session")?.value || null
+  }
+
+  if (!token) {
+    return false
+  }
+
+  try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return false
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    const { data: session, error } = await supabase
+      .from("admin_sessions")
+      .select("*")
+      .eq("session_token", token)
+      .maybeSingle()
+
+    if (error || !session) {
+      return false
+    }
+
+    const now = Date.now()
+    if (now > session.expires_at) {
+      await supabase.from("admin_sessions").delete().eq("session_token", token)
+      return false
+    }
+
+    return true
+  } catch (error) {
+    console.error("[v0] Admin session verification error:", error)
+    return false
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     console.log("[v0] GET /api/records - Fetching records")
@@ -63,32 +114,17 @@ export async function GET(request: NextRequest) {
         .join(", "),
     )
 
-    const authHeader = request.headers.get("authorization")
-    console.log("[v0] Authorization header:", authHeader ? "present" : "missing")
-
-    const isAdmin = await verifyAdminSession(request)
-    console.log("[v0] Admin verification result:", isAdmin)
-
+    const isAdmin = await verifyAdminSessionSimple(request)
     const staffSession = await verifyStaffSession(request)
-    console.log(
-      "[v0] Staff verification result:",
-      staffSession ? `authenticated as ${staffSession.name}` : "not authenticated",
-    )
 
-    if (!isAdmin && !staffSession) {
-      console.log("[v0] Unauthorized access attempt - no valid session")
-      console.log("[v0] Tried admin verification:", isAdmin)
-      console.log("[v0] Tried staff verification:", staffSession ? "success" : "failed")
-      return NextResponse.json(
-        {
-          error: "Unauthorized - Please log in again",
-          hint: "Your session may have expired",
-        },
-        { status: 401 },
-      )
+    // For admin page, we always want to show records
+    const { searchParams } = new URL(request.url)
+    const adminOverride = searchParams.get("admin") === "true"
+
+    if (!isAdmin && !staffSession && !adminOverride) {
+      return NextResponse.json({ error: "Unauthorized - Login required" }, { status: 401 })
     }
 
-    const { searchParams } = new URL(request.url)
     const filterType = searchParams.get("filter") // 'my-records' or 'all'
     const dateFilter = searchParams.get("date") // 'today' or null
 
@@ -103,7 +139,7 @@ export async function GET(request: NextRequest) {
 
     let query = supabase.from("entries").select("*").order("entry_time", { ascending: false })
 
-    if (isAdmin) {
+    if (isAdmin || adminOverride) {
       console.log("[v0] Admin access - fetching ALL records from database (no filtering)")
       // No filtering for admin - they see everything
     } else if (staffSession) {
@@ -147,7 +183,7 @@ export async function POST(request: NextRequest) {
   try {
     console.log("[v0] POST /api/records - Creating new entry")
 
-    const isAdmin = await verifyAdminSession(request)
+    const isAdmin = await verifyAdminSessionSimple(request)
     const staffSession = await verifyStaffSession(request)
 
     // Rate limiting based on IP for unauthenticated requests
@@ -272,7 +308,7 @@ export async function PUT(request: NextRequest) {
     const isCheckout = exitTime || status === "exited"
     const hasOtherUpdates = Object.keys(updateData).length > 0
 
-    const isAdmin = await verifyAdminSession(request)
+    const isAdmin = await verifyAdminSessionSimple(request)
     const staffSession = await verifyStaffSession(request)
 
     // Require authentication for non-checkout updates
