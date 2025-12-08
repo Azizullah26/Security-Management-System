@@ -63,6 +63,9 @@ export async function GET(request: NextRequest) {
         .join(", "),
     )
 
+    const authHeader = request.headers.get("authorization")
+    console.log("[v0] Authorization header:", authHeader ? "present" : "missing")
+
     const isAdmin = await verifyAdminSession(request)
     console.log("[v0] Admin verification result:", isAdmin)
 
@@ -74,7 +77,15 @@ export async function GET(request: NextRequest) {
 
     if (!isAdmin && !staffSession) {
       console.log("[v0] Unauthorized access attempt - no valid session")
-      return NextResponse.json({ error: "Unauthorized - Login required" }, { status: 401 })
+      console.log("[v0] Tried admin verification:", isAdmin)
+      console.log("[v0] Tried staff verification:", staffSession ? "success" : "failed")
+      return NextResponse.json(
+        {
+          error: "Unauthorized - Please log in again",
+          hint: "Your session may have expired",
+        },
+        { status: 401 },
+      )
     }
 
     const { searchParams } = new URL(request.url)

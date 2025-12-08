@@ -36,31 +36,50 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
 
         if (token) {
           headers["Authorization"] = `Bearer ${token}`
+          console.log("[v0] Sending admin token in Authorization header")
+        } else {
+          console.log("[v0] No admin token found in localStorage")
         }
 
+        console.log("[v0] Fetching entries from /api/records...")
         const entriesResponse = await fetch("/api/records", {
           credentials: "include",
           headers,
         })
+
+        console.log("[v0] Entries response status:", entriesResponse.status)
+
         if (entriesResponse.ok) {
           const data = await entriesResponse.json()
+          console.log("[v0] Successfully loaded", data.records?.length || 0, "entries")
           setLocalEntries(data.records || [])
         } else {
-          console.error("Failed to fetch entries:", entriesResponse.status)
+          const errorData = await entriesResponse.json().catch(() => ({ error: "Unknown error" }))
+          console.error("[v0] Failed to fetch entries:", entriesResponse.status, errorData)
+
+          if (entriesResponse.status === 401) {
+            console.error("[v0] Authentication failed - redirecting to login may be needed")
+            // Optionally redirect to login or show a toast
+          }
         }
 
+        console.log("[v0] Fetching projects from /api/projects...")
         const projectsResponse = await fetch("/api/projects", {
           credentials: "include",
           headers,
         })
+
+        console.log("[v0] Projects response status:", projectsResponse.status)
+
         if (projectsResponse.ok) {
           const data = await projectsResponse.json()
+          console.log("[v0] Successfully loaded", data.projects?.length || data?.length || 0, "projects")
           setProjects(data.projects || data || [])
         } else {
-          console.error("Failed to fetch projects:", projectsResponse.status)
+          console.error("[v0] Failed to fetch projects:", projectsResponse.status)
         }
       } catch (error) {
-        console.error("Failed to load data:", error)
+        console.error("[v0] Failed to load data:", error)
       }
     }
     loadData()
