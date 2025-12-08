@@ -29,7 +29,6 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
   useEffect(() => {
     const loadData = async () => {
       try {
-        console.log("[v0] All Records View: Starting data load")
         const token = localStorage.getItem("admin-token")
         const headers: HeadersInit = {
           "Content-Type": "application/json",
@@ -39,22 +38,15 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
           headers["Authorization"] = `Bearer ${token}`
         }
 
-        console.log("[v0] All Records View: Fetching entries...")
         const entriesResponse = await fetch("/api/records", {
           credentials: "include",
           headers,
         })
-        console.log("[v0] All Records View: Response status:", entriesResponse.status)
-
         if (entriesResponse.ok) {
           const data = await entriesResponse.json()
-          console.log("[v0] All Records View: Received data:", data)
-          console.log("[v0] All Records View: Number of records:", data.records?.length || 0)
-          console.log("[v0] All Records View: Record IDs:", data.records?.map((r: any) => r.id).join(", ") || "none")
           setLocalEntries(data.records || [])
-          console.log("[v0] All Records View: State updated with", data.records?.length || 0, "records")
         } else {
-          console.error("[v0] All Records View: Failed to fetch entries:", entriesResponse.status)
+          console.error("Failed to fetch entries:", entriesResponse.status)
         }
 
         const projectsResponse = await fetch("/api/projects", {
@@ -65,10 +57,10 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
           const data = await projectsResponse.json()
           setProjects(data.projects || data || [])
         } else {
-          console.error("[v0] All Records View: Failed to fetch projects:", projectsResponse.status)
+          console.error("Failed to fetch projects:", projectsResponse.status)
         }
       } catch (error) {
-        console.error("[v0] All Records View: Failed to load data:", error)
+        console.error("Failed to load data:", error)
       }
     }
     loadData()

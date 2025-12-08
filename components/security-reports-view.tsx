@@ -5,18 +5,10 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Search, FileText, Calendar, User, Paperclip, Download, Eye, Trash2 } from "lucide-react"
+import { Search, FileText, Calendar, User, Paperclip, Download, Eye } from "lucide-react"
 import { format } from "date-fns"
-import { useToast } from "@/hooks/use-toast"
 
 interface SecurityReport {
   id: number
@@ -33,84 +25,26 @@ export function SecurityReportsView() {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedReport, setSelectedReport] = useState<SecurityReport | null>(null)
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
-  const [deleteDialog, setDeleteDialog] = useState<{ isOpen: boolean; report: SecurityReport | null }>({
-    isOpen: false,
-    report: null,
-  })
-  const [isDeleting, setIsDeleting] = useState(false)
-  const { toast } = useToast()
 
   useEffect(() => {
     fetchReports()
-
-    // Auto-refresh every 30 seconds to get new reports
-    const interval = setInterval(() => {
-      fetchReports()
-    }, 30000)
-
-    return () => clearInterval(interval)
   }, [])
 
   const fetchReports = async () => {
     try {
-      console.log("[v0] Security Reports View: Starting fetch at", new Date().toISOString())
       setLoading(true)
-
-      const timestamp = new Date().getTime()
-      const random = Math.random()
-      const response = await fetch(`/api/security-reports/list?_t=${timestamp}&_r=${random}`, {
+      const response = await fetch("/api/security-reports/list", {
         credentials: "include",
-        cache: "no-store",
-        headers: {
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-          Pragma: "no-cache",
-          Expires: "0",
-        },
       })
 
-      console.log("[v0] Security Reports View: Response status:", response.status)
-      console.log("[v0] Security Reports View: Response headers:", Object.fromEntries(response.headers.entries()))
-
       if (!response.ok) {
-        const errorData = await response.json()
-        console.error("[v0] Security Reports View: API error:", errorData)
         throw new Error("Failed to fetch reports")
       }
 
       const data = await response.json()
-      console.log("[v0] Security Reports View: Raw data received:", data)
-      console.log("[v0] Security Reports View: Number of reports:", data?.length || 0)
-      console.log("[v0] Security Reports View: Report IDs:", data?.map((r: SecurityReport) => r.id).join(", "))
-
-      if (!Array.isArray(data)) {
-        console.error("[v0] Security Reports View: Data is not an array:", typeof data)
-        throw new Error("Invalid data format received from API")
-      }
-
-      const sortedData = [...data].sort((a: SecurityReport, b: SecurityReport) => {
-        const dateA = new Date(a.created_at).getTime()
-        const dateB = new Date(b.created_at).getTime()
-        return dateB - dateA
-      })
-
-      console.log("[v0] Security Reports View: Sorted report IDs:", sortedData.map((r) => r.id).join(", "))
-      console.log("[v0] Security Reports View: First report:", sortedData[0])
-      console.log("[v0] Security Reports View: Last report:", sortedData[sortedData.length - 1])
-
-      setReports(sortedData)
-
-      console.log("[v0] Security Reports View: Successfully updated state with", sortedData.length, "reports")
+      setReports(data)
     } catch (error) {
-      console.error("[v0] Security Reports View: Caught error:", error)
-      console.error(
-        "[v0] Security Reports View: Error details:",
-        error instanceof Error ? error.message : String(error),
-      )
-      toast({
-        title: "Error",
-        description: "Failed to fetch security reports. Please try again.",
-        variant: "destructive",
-      })
+      console.error("Error fetching security reports:", error)
     } finally {
       setLoading(false)
     }
@@ -125,31 +59,6 @@ export function SecurityReportsView() {
     )
   })
 
-  useEffect(() => {
-    console.log("[v0] Security Reports View: Total reports in state:", reports.length)
-    console.log("[v0] Security Reports View: Filtered reports:", filteredReports.length)
-    console.log(
-      "[v0] Security Reports View: All report IDs in state:",
-      reports.map((r) => r.id),
-    )
-    console.log(
-      "[v0] Security Reports View: Filtered report IDs:",
-      filteredReports.map((r) => r.id),
-    )
-
-    // Check each report for rendering issues
-    reports.forEach((report, index) => {
-      console.log(`[v0] Security Reports View: Report ${index + 1}/${reports.length}:`, {
-        id: report.id,
-        staff_name: report.staff_name,
-        Date: report.Date,
-        description_length: report.description?.length || 0,
-        attachment: report.attachment,
-        created_at: report.created_at,
-      })
-    })
-  }, [reports, filteredReports])
-
   const parseAttachments = (attachment: string | null): string[] => {
     if (!attachment) return []
     try {
@@ -163,52 +72,6 @@ export function SecurityReportsView() {
   const handleViewDetails = (report: SecurityReport) => {
     setSelectedReport(report)
     setIsDetailsOpen(true)
-  }
-
-  const handleDeleteReport = async (report: SecurityReport) => {
-    setDeleteDialog({ isOpen: true, report })
-  }
-
-  const confirmDelete = async () => {
-    if (!deleteDialog.report) return
-
-    try {
-      setIsDeleting(true)
-      console.log("[v0] Security Reports View: Deleting report ID:", deleteDialog.report.id)
-
-      const response = await fetch(`/api/security-reports/delete?id=${deleteDialog.report.id}`, {
-        method: "DELETE",
-        credentials: "include",
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        console.error("[v0] Security Reports View: Delete error:", errorData)
-        throw new Error(errorData.error || "Failed to delete report")
-      }
-
-      console.log("[v0] Security Reports View: Report deleted successfully")
-
-      toast({
-        title: "Success",
-        description: "Security report deleted successfully",
-      })
-
-      // Refresh the reports list
-      await fetchReports()
-
-      // Close the delete dialog
-      setDeleteDialog({ isOpen: false, report: null })
-    } catch (error) {
-      console.error("[v0] Security Reports View: Delete caught error:", error)
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to delete report",
-        variant: "destructive",
-      })
-    } finally {
-      setIsDeleting(false)
-    }
   }
 
   if (loading) {
@@ -284,10 +147,8 @@ export function SecurityReportsView() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredReports.map((report, index) => {
+                  {filteredReports.map((report) => {
                     const attachments = parseAttachments(report.attachment)
-
-                    console.log(`[v0] Security Reports View: Rendering row ${index + 1} for report ID:`, report.id)
 
                     return (
                       <TableRow key={report.id} className="hover:bg-indigo-50/50 transition-colors">
@@ -308,24 +169,14 @@ export function SecurityReportsView() {
                           {format(new Date(report.created_at), "MMM dd, yyyy")}
                         </TableCell>
                         <TableCell className="text-center">
-                          <div className="flex items-center justify-center gap-2">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleViewDetails(report)}
-                              className="hover:bg-indigo-100 hover:text-indigo-700"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleDeleteReport(report)}
-                              className="hover:bg-red-100 hover:text-red-700"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleViewDetails(report)}
+                            className="hover:bg-indigo-100 hover:text-indigo-700"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
                         </TableCell>
                       </TableRow>
                     )
@@ -441,51 +292,6 @@ export function SecurityReportsView() {
               </div>
             </div>
           )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialog.isOpen} onOpenChange={(open) => setDeleteDialog({ isOpen: open, report: null })}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="text-red-600">Delete Security Report</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this security report? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-
-          {deleteDialog.report && (
-            <div className="space-y-2 py-4">
-              <p className="text-sm text-gray-600">
-                <span className="font-medium">Report #:</span> {deleteDialog.report.id}
-              </p>
-              <p className="text-sm text-gray-600">
-                <span className="font-medium">Staff:</span> {deleteDialog.report.staff_name}
-              </p>
-              <p className="text-sm text-gray-600">
-                <span className="font-medium">Date:</span>{" "}
-                {deleteDialog.report.Date ? format(new Date(deleteDialog.report.Date), "PPP") : "N/A"}
-              </p>
-            </div>
-          )}
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setDeleteDialog({ isOpen: false, report: null })}
-              disabled={isDeleting}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={confirmDelete}
-              disabled={isDeleting}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              {isDeleting ? "Deleting..." : "Delete Report"}
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

@@ -54,8 +54,7 @@ function transformRecordToFrontend(dbRecord: any) {
 
 export async function GET(request: NextRequest) {
   try {
-    console.log("[v0] ========== GET /api/records - START ==========")
-    console.log("[v0] Request URL:", request.url)
+    console.log("[v0] GET /api/records - Fetching records")
     console.log(
       "[v0] Request cookies:",
       request.cookies
@@ -110,14 +109,6 @@ export async function GET(request: NextRequest) {
       query = query.gte("created_at", todayISO)
     }
 
-    const { count, error: countError } = await supabase.from("entries").select("*", { count: "exact", head: true })
-
-    if (countError) {
-      console.error("[v0] Failed to get count:", countError)
-    } else {
-      console.log("[v0] Total records in database (before filtering):", count)
-    }
-
     const { data: records, error } = await query
 
     if (error) {
@@ -125,22 +116,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Failed to fetch records" }, { status: 500 })
     }
 
-    console.log("[v0] Successfully fetched", records?.length || 0, "records from database")
-    console.log("[v0] Record IDs:", records?.map((r) => r.id).join(", ") || "none")
-    console.log(
-      "[v0] First 3 records:",
-      records?.slice(0, 3).map((r) => ({
-        id: r.id,
-        name: r.name,
-        category: r.category,
-        entry_time: r.entry_time,
-      })) || [],
-    )
+    console.log("[v0] Successfully fetched", records?.length || 0, "records")
+    console.log("[v0] Records include entries from all staff members:", isAdmin ? "YES (admin)" : "NO (staff filtered)")
 
     const transformedRecords = records?.map(transformRecordToFrontend) || []
-
-    console.log("[v0] ========== GET /api/records - END ==========")
-    console.log("[v0] Returning", transformedRecords.length, "records to client")
+    console.log(
+      "[v0] Sample transformed record:",
+      transformedRecords[0] ? JSON.stringify(transformedRecords[0], null, 2) : "No records",
+    )
 
     return NextResponse.json({ records: transformedRecords })
   } catch (error) {

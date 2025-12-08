@@ -35,8 +35,9 @@ export function AdminLogin({ onLogin }: AdminLoginProps) {
       const data = await response.json()
 
       if (response.ok && data.success) {
+        // Authentication successful - server set HTTP-only cookie
         if (data.token) {
-          localStorage.setItem("admin-session-token", data.token)
+          localStorage.setItem("admin-token", data.token)
           console.log("[v0] Admin token stored in localStorage")
         }
         onLogin()

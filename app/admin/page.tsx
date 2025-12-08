@@ -45,29 +45,6 @@ export default function AdminDashboard() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const adminToken = localStorage.getItem("admin-session-token")
-
-        if (adminToken) {
-          console.log("[v0] Found admin token in localStorage, verifying...")
-          const adminResponse = await fetch("/api/admin/verify", {
-            credentials: "include",
-            headers: {
-              Authorization: `Bearer ${adminToken}`,
-            },
-          })
-
-          if (adminResponse.ok) {
-            console.log("[v0] Admin token verified successfully")
-            setIsAuthenticated(true)
-            setIsCheckingAuth(false)
-            return
-          } else {
-            console.log("[v0] Admin token invalid, removing from localStorage")
-            localStorage.removeItem("admin-session-token")
-          }
-        }
-
-        // Check admin session cookie
         const adminResponse = await fetch("/api/admin/verify", {
           credentials: "include",
         })
@@ -81,29 +58,17 @@ export default function AdminDashboard() {
         // If no admin session, check if user has a staff session with fileId="Admin"
         const staffToken = localStorage.getItem("staff-session-token")
         if (staffToken) {
-          console.log("[v0] Found staff token in localStorage, attempting auto-auth...")
           // Try to auto-authenticate using the new endpoint
           const autoAuthResponse = await fetch("/api/admin/auto-auth", {
             method: "POST",
             credentials: "include",
-            headers: {
-              "x-staff-session-token": staffToken,
-            },
           })
 
           if (autoAuthResponse.ok) {
-            const data = await autoAuthResponse.json()
             console.log("[v0] Admin session created automatically")
-
-            if (data.token) {
-              localStorage.setItem("admin-session-token", data.token)
-            }
-
             setIsAuthenticated(true)
             setIsCheckingAuth(false)
             return
-          } else {
-            console.log("[v0] Auto-auth failed:", await autoAuthResponse.text())
           }
         }
 
