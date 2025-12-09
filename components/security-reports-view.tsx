@@ -7,8 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Search, FileText, Calendar, User, Paperclip, Download, Eye } from "lucide-react"
-import { format } from "date-fns"
+import { Eye, Download, FileText, ImageIcon, Video } from "lucide-react"
 import jsPDF from "jspdf"
 
 interface SecurityReport {
@@ -18,6 +17,16 @@ interface SecurityReport {
   description: string
   attachment: string | null
   created_at: string
+}
+
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const day = String(date.getDate()).padStart(2, "0")
+  const hours = String(date.getHours()).padStart(2, "0")
+  const minutes = String(date.getMinutes()).padStart(2, "0")
+  return `${year}-${month}-${day} ${hours}:${minutes}`
 }
 
 export function SecurityReportsView() {
@@ -87,126 +96,75 @@ export function SecurityReportsView() {
     setIsDetailsOpen(true)
   }
 
-  const handleDownloadPDF = async (report: SecurityReport) => {
+  const downloadPDF = async (report: SecurityReport) => {
     try {
-      const pdf = new jsPDF("p", "mm", "a4")
-      const pageWidth = pdf.internal.pageSize.getWidth()
-      const pageHeight = pdf.internal.pageSize.getHeight()
-      let yPosition = 20
+      const pdf = new jsPDF()
 
-      // Header
-      pdf.setFillColor(79, 70, 229) // Indigo color
-      pdf.rect(0, 0, pageWidth, 40, "F")
-      pdf.setTextColor(255, 255, 255)
-      pdf.setFontSize(24)
-      pdf.setFont("helvetica", "bold")
-      pdf.text("Security Report", pageWidth / 2, 20, { align: "center" })
+      // Add title
+      pdf.setFontSize(20)
+      pdf.text("Security Report", 105, 20, { align: "center" })
+
+      // Add report details
       pdf.setFontSize(12)
-      pdf.setFont("helvetica", "normal")
-      pdf.text(`Report #${report.id}`, pageWidth / 2, 30, { align: "center" })
+      let yPos = 40
 
-      yPosition = 50
+      pdf.text(`Report #: ${report.id}`, 20, yPos)
+      yPos += 10
 
-      // Staff Name
-      pdf.setTextColor(0, 0, 0)
-      pdf.setFontSize(11)
-      pdf.setFont("helvetica", "bold")
-      pdf.text("Staff Member:", 20, yPosition)
-      pdf.setFont("helvetica", "normal")
-      pdf.text(report.staff_name, 60, yPosition)
-      yPosition += 10
+      pdf.text(`Staff Name: ${report.staff_name}`, 20, yPos)
+      yPos += 10
 
-      // Report Date & Time
-      pdf.setFont("helvetica", "bold")
-      pdf.text("Report Date & Time:", 20, yPosition)
-      pdf.setFont("helvetica", "normal")
-      const reportDate = report.Date ? format(new Date(report.Date), "PPpp") : "N/A"
-      pdf.text(reportDate, 60, yPosition)
-      yPosition += 10
+      pdf.text(`Description:`, 20, yPos)
+      yPos += 10
 
-      // Submission Date
-      pdf.setFont("helvetica", "bold")
-      pdf.text("Submitted On:", 20, yPosition)
-      pdf.setFont("helvetica", "normal")
-      const submittedDate = format(new Date(report.created_at), "PPpp")
-      pdf.text(submittedDate, 60, yPosition)
-      yPosition += 15
+      // Split description into lines
+      const splitDescription = pdf.splitTextToSize(report.description, 170)
+      pdf.text(splitDescription, 20, yPos)
+      yPos += splitDescription.length * 7 + 10
 
-      // Description
-      pdf.setFont("helvetica", "bold")
-      pdf.setFontSize(12)
-      pdf.text("Description:", 20, yPosition)
-      yPosition += 7
-
-      pdf.setFont("helvetica", "normal")
-      pdf.setFontSize(10)
-      const splitDescription = pdf.splitTextToSize(report.description, pageWidth - 40)
-      pdf.text(splitDescription, 20, yPosition)
-      yPosition += splitDescription.length * 5 + 10
-
-      // Attachments
-      const attachments = parseAttachments(report.attachment)
+      // Add attachments info
+      const attachments = JSON.parse(report.attachment || "[]")
       if (attachments.length > 0) {
-        pdf.setFont("helvetica", "bold")
-        pdf.setFontSize(12)
-        pdf.text(`Attachments (${attachments.length}):`, 20, yPosition)
-        yPosition += 10
+        pdf.text(`Attachments (${attachments.length}):`, 20, yPos)
+        yPos += 10
 
-        // Add images to PDF
+        // Load and embed images
         for (let i = 0; i < attachments.length; i++) {
           const url = attachments[i]
-          const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(url)
-
-          if (isImage) {
+          if (url.match(/\.(jpg|jpeg|png|gif)$/i)) {
             try {
-              // Check if we need a new page
-              if (yPosition > pageHeight - 80) {
+              // Add image to PDF
+              const img = await loadImage(url)
+              const imgWidth = 170
+              const imgHeight = (img.height * imgWidth) / img.width
+
+              if (yPos + imgHeight > 280) {
                 pdf.addPage()
-                yPosition = 20
+                yPos = 20
               }
 
-              // Load image and add to PDF
-              const imgData = await loadImageAsDataURL(url)
-              const imgWidth = 80
-              const imgHeight = 60
-              pdf.addImage(imgData, "JPEG", 20, yPosition, imgWidth, imgHeight)
-
-              // Add image caption
-              pdf.setFont("helvetica", "italic")
-              pdf.setFontSize(9)
-              pdf.text(`Attachment ${i + 1}`, 20, yPosition + imgHeight + 5)
-
-              yPosition += imgHeight + 10
+              pdf.addImage(img.src, "JPEG", 20, yPos, imgWidth, imgHeight)
+              yPos += imgHeight + 10
             } catch (error) {
-              console.error("[v0] Error loading image for PDF:", error)
-              pdf.setFont("helvetica", "normal")
-              pdf.setFontSize(9)
-              pdf.text(`[Image ${i + 1} - Unable to load]`, 20, yPosition)
-              yPosition += 7
+              console.error("Error loading image:", error)
+              pdf.text(`Image ${i + 1}: ${url}`, 20, yPos)
+              yPos += 7
             }
           } else {
-            pdf.setFont("helvetica", "normal")
-            pdf.setFontSize(9)
-            pdf.text(`Attachment ${i + 1}: ${url.substring(url.lastIndexOf("/") + 1)}`, 20, yPosition)
-            yPosition += 7
+            pdf.text(`Attachment ${i + 1}: ${url}`, 20, yPos)
+            yPos += 7
           }
         }
       }
 
-      // Footer
-      const footerY = pageHeight - 15
-      pdf.setDrawColor(79, 70, 229)
-      pdf.line(20, footerY - 5, pageWidth - 20, footerY - 5)
-      pdf.setFontSize(8)
-      pdf.setTextColor(100, 100, 100)
-      pdf.text("Generated from Security Management System", pageWidth / 2, footerY, { align: "center" })
-      pdf.text(format(new Date(), "PPpp"), pageWidth / 2, footerY + 4, { align: "center" })
+      // Add footer
+      pdf.setFontSize(10)
+      pdf.text(`Generated on: ${new Date().toLocaleString()}`, 105, 285, { align: "center" })
 
       // Save the PDF
-      pdf.save(`security-report-${report.id}-${format(new Date(), "yyyy-MM-dd")}.pdf`)
+      pdf.save(`security-report-${report.id}.pdf`)
     } catch (error) {
-      console.error("[v0] Error generating PDF:", error)
-      alert("Failed to generate PDF. Please try again.")
+      console.error("Error generating PDF:", error)
     }
   }
 
@@ -226,6 +184,16 @@ export function SecurityReportsView() {
           reject(new Error("Failed to get canvas context"))
         }
       }
+      img.onerror = () => reject(new Error("Failed to load image"))
+      img.src = url
+    })
+  }
+
+  const loadImage = async (url: string): Promise<HTMLImageElement> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image()
+      img.crossOrigin = "anonymous"
+      img.onload = () => resolve(img)
       img.onerror = () => reject(new Error("Failed to load image"))
       img.src = url
     })
@@ -277,7 +245,7 @@ export function SecurityReportsView() {
       {/* Search Bar */}
       <div className="flex gap-4 items-center bg-white p-4 rounded-lg border border-gray-200 shadow-md">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-purple-500 h-4 w-4 pointer-events-none" />
+          <Eye className="absolute left-3 top-1/2 -translate-y-1/2 text-purple-500 h-4 w-4 pointer-events-none" />
           <Input
             placeholder="Search by staff name, description, or date..."
             value={searchTerm}
@@ -309,7 +277,6 @@ export function SecurityReportsView() {
                   <TableRow>
                     <TableHead className="font-semibold text-indigo-900">Report #</TableHead>
                     <TableHead className="font-semibold text-indigo-900">Staff Name</TableHead>
-                    <TableHead className="font-semibold text-indigo-900">Date & Time</TableHead>
                     <TableHead className="font-semibold text-indigo-900">Description</TableHead>
                     <TableHead className="font-semibold text-indigo-900">Attachments</TableHead>
                     <TableHead className="font-semibold text-indigo-900">Created</TableHead>
@@ -324,9 +291,6 @@ export function SecurityReportsView() {
                       <TableRow key={report.id} className="hover:bg-indigo-50/50 transition-colors">
                         <TableCell className="font-medium text-indigo-700">#{report.id}</TableCell>
                         <TableCell className="font-medium">{report.staff_name}</TableCell>
-                        <TableCell>
-                          {report.Date ? format(new Date(report.Date), "MMM dd, yyyy HH:mm") : "N/A"}
-                        </TableCell>
                         <TableCell className="max-w-xs">
                           <p className="truncate text-gray-600">{report.description}</p>
                         </TableCell>
@@ -335,9 +299,7 @@ export function SecurityReportsView() {
                             {attachments.length} {attachments.length === 1 ? "file" : "files"}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-gray-600">
-                          {format(new Date(report.created_at), "MMM dd, yyyy")}
-                        </TableCell>
+                        <TableCell className="text-gray-600">{formatDate(report.created_at)}</TableCell>
                         <TableCell className="text-center">
                           <div className="flex items-center justify-center gap-1">
                             <Button
@@ -352,7 +314,7 @@ export function SecurityReportsView() {
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => handleDownloadPDF(report)}
+                              onClick={() => downloadPDF(report)}
                               className="hover:bg-green-100 hover:text-green-700"
                               title="Download PDF"
                             >
@@ -384,7 +346,7 @@ export function SecurityReportsView() {
               {/* Staff Name */}
               <div className="flex items-center gap-3 p-4 bg-purple-50 rounded-lg">
                 <div className="bg-purple-100 p-2 rounded-lg">
-                  <User className="h-5 w-5 text-purple-600" />
+                  <Eye className="h-5 w-5 text-purple-600" />
                 </div>
                 <div>
                   <p className="text-sm text-gray-500 font-medium">Staff Member</p>
@@ -395,13 +357,11 @@ export function SecurityReportsView() {
               {/* Report Date */}
               <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg">
                 <div className="bg-blue-100 p-2 rounded-lg">
-                  <Calendar className="h-5 w-5 text-blue-600" />
+                  <Eye className="h-5 w-5 text-blue-600" />
                 </div>
                 <div>
                   <p className="text-sm text-gray-500 font-medium">Report Date & Time</p>
-                  <p className="text-lg font-semibold text-gray-900">
-                    {selectedReport.Date ? format(new Date(selectedReport.Date), "PPpp") : "N/A"}
-                  </p>
+                  <p className="text-lg font-semibold text-gray-900">{formatDate(selectedReport.Date)}</p>
                 </div>
               </div>
 
@@ -415,7 +375,7 @@ export function SecurityReportsView() {
               {parseAttachments(selectedReport.attachment).length > 0 && (
                 <div>
                   <div className="flex items-center gap-2 mb-3">
-                    <Paperclip className="h-4 w-4 text-gray-500" />
+                    <ImageIcon className="h-4 w-4 text-gray-500" />
                     <p className="text-sm text-gray-500 font-medium">
                       Attachments ({parseAttachments(selectedReport.attachment).length})
                     </p>
@@ -444,9 +404,7 @@ export function SecurityReportsView() {
                               <video src={url} className="w-full h-full object-cover" controls={false} />
                               <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                                 <div className="bg-white/90 rounded-full p-3">
-                                  <svg className="w-6 h-6 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
-                                  </svg>
+                                  <Video className="w-6 h-6 text-indigo-600" />
                                 </div>
                               </div>
                             </a>
@@ -470,11 +428,11 @@ export function SecurityReportsView() {
                 <div>
                   <span className="text-sm text-gray-500">Report Submitted:</span>
                   <span className="text-sm font-medium text-gray-900 ml-2">
-                    {format(new Date(selectedReport.created_at), "PPpp")}
+                    {formatDate(selectedReport.created_at)}
                   </span>
                 </div>
                 <Button
-                  onClick={() => handleDownloadPDF(selectedReport)}
+                  onClick={() => downloadPDF(selectedReport)}
                   className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white"
                 >
                   <Download className="h-4 w-4 mr-2" />
