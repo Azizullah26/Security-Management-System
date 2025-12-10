@@ -101,92 +101,154 @@ export function SecurityReportsView() {
 
   const downloadPDF = async (report: SecurityReport) => {
     try {
-      // Create a temporary container for rendering
-      const tempDiv = document.createElement("div")
-      tempDiv.style.position = "absolute"
-      tempDiv.style.left = "-9999px"
-      tempDiv.style.width = "800px"
-      tempDiv.style.padding = "40px"
-      tempDiv.style.backgroundColor = "white"
-      tempDiv.style.fontFamily = "Arial, sans-serif"
+      const iframe = document.createElement("iframe")
+      iframe.style.position = "absolute"
+      iframe.style.left = "-9999px"
+      iframe.style.width = "800px"
+      iframe.style.height = "1px"
+      document.body.appendChild(iframe)
 
-      // Build HTML content with proper Arabic text support
-      tempDiv.innerHTML = `
-        <div style="color: black;">
-          <h1 style="text-align: center; margin-bottom: 30px; font-size: 24px;">Security Report</h1>
+      const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document
+      if (!iframeDoc) throw new Error("Failed to create iframe document")
+
+      // Write a complete HTML document with only standard colors
+      iframeDoc.open()
+      iframeDoc.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
+            body {
+              font-family: Arial, sans-serif;
+              background-color: #ffffff;
+              color: #000000;
+              padding: 40px;
+              width: 800px;
+            }
+            h1 {
+              text-align: center;
+              margin-bottom: 30px;
+              font-size: 24px;
+              color: #1f2937;
+            }
+            .field {
+              margin-bottom: 15px;
+              color: #000000;
+            }
+            .label {
+              font-weight: bold;
+              color: #374151;
+            }
+            .description-box {
+              margin-bottom: 20px;
+              padding: 10px;
+              background-color: #f9fafb;
+              border-radius: 5px;
+              word-wrap: break-word;
+              color: #1f2937;
+              border: 1px solid #e5e7eb;
+            }
+            .attachments-container {
+              margin-bottom: 20px;
+            }
+            .attachments-container img {
+              max-width: 100%;
+              margin-bottom: 10px;
+              border: 1px solid #dddddd;
+              border-radius: 5px;
+              background-color: #ffffff;
+            }
+            .footer {
+              text-align: center;
+              margin-top: 30px;
+              font-size: 12px;
+              color: #6b7280;
+            }
+          </style>
+        </head>
+        <body>
+          <h1>Security Report</h1>
           
-          <div style="margin-bottom: 15px;">
-            <strong>Report #:</strong> ${report.id}
+          <div class="field">
+            <span class="label">Report #:</span> ${report.id}
           </div>
           
-          <div style="margin-bottom: 15px;">
-            <strong>Staff Name:</strong> ${report.staff_name}
+          <div class="field">
+            <span class="label">Staff Name:</span> ${report.staff_name}
           </div>
           
-          <div style="margin-bottom: 15px; word-wrap: break-word;">
-            <strong>Project:</strong> ${report.project_name || "N/A"}
+          <div class="field" style="word-wrap: break-word;">
+            <span class="label">Project:</span> ${report.project_name || "N/A"}
           </div>
           
-          <div style="margin-bottom: 15px;">
-            <strong>Date:</strong> ${formatDate(report.Date)}
+          <div class="field">
+            <span class="label">Date:</span> ${formatDate(report.Date)}
           </div>
           
-          <div style="margin-bottom: 15px;">
-            <strong>Description:</strong>
+          <div class="field">
+            <span class="label">Description:</span>
           </div>
           
-          <div style="margin-bottom: 20px; padding: 10px; background: #f5f5f5; border-radius: 5px; word-wrap: break-word;">
+          <div class="description-box">
             ${report.description}
           </div>
           
-          <div style="margin-bottom: 10px;">
-            <strong>Attachments (${JSON.parse(report.attachment || "[]").length}):</strong>
+          <div class="field">
+            <span class="label">Attachments (${JSON.parse(report.attachment || "[]").length}):</span>
           </div>
           
-          <div id="attachments-container" style="margin-bottom: 20px;">
-            <!-- Images will be added here -->
+          <div class="attachments-container" id="attachments-container">
           </div>
           
-          <div style="text-align: center; margin-top: 30px; font-size: 12px; color: #666;">
+          <div class="footer">
             Generated on: ${new Date().toLocaleString()}
           </div>
-        </div>
-      `
+        </body>
+        </html>
+      `)
+      iframeDoc.close()
 
-      document.body.appendChild(tempDiv)
+      // Wait for iframe to be ready
+      await new Promise((resolve) => setTimeout(resolve, 100))
 
-      // Load and add images
+      // Load and add images to iframe
       const attachments = JSON.parse(report.attachment || "[]")
-      const attachmentsContainer = tempDiv.querySelector("#attachments-container")
+      const attachmentsContainer = iframeDoc.getElementById("attachments-container")
 
       for (const url of attachments) {
         if (url.match(/\.(jpg|jpeg|png|gif)$/i)) {
-          const img = document.createElement("img")
+          const img = iframeDoc.createElement("img")
           img.src = url
-          img.style.maxWidth = "100%"
-          img.style.marginBottom = "10px"
-          img.style.border = "1px solid #ddd"
-          img.style.borderRadius = "5px"
           attachmentsContainer?.appendChild(img)
 
           // Wait for image to load
           await new Promise((resolve) => {
             img.onload = resolve
             img.onerror = resolve
+            setTimeout(resolve, 3000) // timeout after 3s
           })
         }
       }
 
-      // Use html2canvas to convert HTML to canvas
-      const canvas = await html2canvas(tempDiv, {
+      // Wait a bit more for rendering
+      await new Promise((resolve) => setTimeout(resolve, 200))
+
+      // Capture the iframe body with html2canvas
+      const canvas = await html2canvas(iframeDoc.body, {
         scale: 2,
         useCORS: true,
         allowTaint: true,
         backgroundColor: "#ffffff",
+        logging: false,
       })
 
-      // Remove temp div
-      document.body.removeChild(tempDiv)
+      // Remove iframe
+      document.body.removeChild(iframe)
 
       // Create PDF from canvas
       const pdf = new jsPDF({
@@ -448,7 +510,7 @@ export function SecurityReportsView() {
                   <div className="flex items-center gap-2 mb-3">
                     <ImageIcon className="h-4 w-4 text-gray-500" />
                     <p className="text-sm text-gray-500 font-medium">
-                      Attachments ({parseAttachments(selectedReport.attachment).length})
+                      Attachments (${parseAttachments(selectedReport.attachment).length})
                     </p>
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
