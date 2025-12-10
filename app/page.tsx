@@ -479,6 +479,7 @@ export default function SecurityDashboard() {
         isOpen={isSecurityReportFormOpen}
         onClose={() => setIsSecurityReportFormOpen(false)}
         staffName={currentStaff?.name || ""}
+        assignedProject={currentStaff?.assignedProject || ""}
         onSubmitSuccess={() => {
           // Optionally refresh or show confirmation
         }}

@@ -15,23 +15,24 @@ export async function POST(request: NextRequest) {
     })
 
     const body = await request.json()
-    const { staff_name, date, description, attachment } = body
+    const { staff_name, project_name, date, description, attachment } = body
 
     console.log("[v0] Creating security report:", {
       staff_name,
+      project_name,
       date,
       description,
       attachmentCount: attachment?.length,
     })
 
-    // Insert the security report into the database
     const { data, error } = await supabase
       .from("securityreport")
       .insert({
         staff_name,
+        project_name,
         Date: date,
         description,
-        attachment: JSON.stringify(attachment), // Store array of URLs as JSON string
+        attachment: JSON.stringify(attachment),
         created_at: new Date().toISOString(),
       })
       .select()

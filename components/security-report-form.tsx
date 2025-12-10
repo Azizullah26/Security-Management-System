@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,32 +15,48 @@ interface SecurityReportFormProps {
   isOpen: boolean
   onClose: () => void
   staffName?: string
+  assignedProject?: string
   onSubmitSuccess?: () => void
 }
 
-export function SecurityReportForm({ isOpen, onClose, staffName = "", onSubmitSuccess }: SecurityReportFormProps) {
+export function SecurityReportForm({
+  isOpen,
+  onClose,
+  staffName = "",
+  assignedProject = "",
+  onSubmitSuccess,
+}: SecurityReportFormProps) {
   const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [uploadingFiles, setUploadingFiles] = useState(false)
   const [formData, setFormData] = useState({
     staff_name: staffName,
+    project_name: assignedProject,
     date: new Date().toISOString().split("T")[0],
     time: new Date().toTimeString().slice(0, 5),
     description: "",
   })
-  const [attachments, setAttachments] = useState<string[]>([])
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const files = Array.from(e.target.files)
-      setSelectedFiles((prev) => [...prev, ...files])
+      setSelectedFiles(Array.from(e.target.files))
     }
   }
 
   const handleRemoveFile = (index: number) => {
-    setSelectedFiles((prev) => prev.filter((_, i) => i !== index))
+    setSelectedFiles(selectedFiles.filter((_, i) => i !== index))
   }
+
+  useEffect(() => {
+    if (isOpen) {
+      setFormData((prev) => ({
+        ...prev,
+        staff_name: staffName,
+        project_name: assignedProject,
+      }))
+    }
+  }, [isOpen, staffName, assignedProject])
 
   const uploadFiles = async () => {
     const uploadedUrls: string[] = []
@@ -86,7 +102,6 @@ export function SecurityReportForm({ isOpen, onClose, staffName = "", onSubmitSu
       // Combine date and time
       const dateTime = `${formData.date}T${formData.time}:00`
 
-      // Submit the report
       const response = await fetch("/api/security-reports", {
         method: "POST",
         headers: {
@@ -94,6 +109,7 @@ export function SecurityReportForm({ isOpen, onClose, staffName = "", onSubmitSu
         },
         body: JSON.stringify({
           staff_name: formData.staff_name,
+          project_name: formData.project_name,
           date: dateTime,
           description: formData.description,
           attachment: uploadedUrls,
@@ -108,12 +124,12 @@ export function SecurityReportForm({ isOpen, onClose, staffName = "", onSubmitSu
         // Reset form
         setFormData({
           staff_name: staffName,
+          project_name: assignedProject,
           date: new Date().toISOString().split("T")[0],
           time: new Date().toTimeString().slice(0, 5),
           description: "",
         })
         setSelectedFiles([])
-        setAttachments([])
         onSubmitSuccess?.()
         onClose()
       } else {
@@ -143,13 +159,12 @@ export function SecurityReportForm({ isOpen, onClose, staffName = "", onSubmitSu
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="staff_name">Security Staff Name *</Label>
-            <Input
-              id="staff_name"
-              value={formData.staff_name}
-              onChange={(e) => setFormData({ ...formData, staff_name: e.target.value })}
-              placeholder="Enter staff name"
-              required
-            />
+            <Input id="staff_name" value={formData.staff_name} disabled className="bg-gray-50" />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="project_name">Project Name *</Label>
+            <Input id="project_name" value={formData.project_name} disabled className="bg-gray-50" />
           </div>
 
           <div className="grid grid-cols-2 gap-4">

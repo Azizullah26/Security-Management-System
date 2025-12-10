@@ -34,7 +34,21 @@ export function StaffLogin({ onLogin }: StaffLoginProps) {
         body: JSON.stringify({ fileId, password }),
       })
 
-      const data = await response.json()
+      let data
+      const contentType = response.headers.get("content-type")
+
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json()
+      } else {
+        // Response is not JSON, likely a server error
+        const textError = await response.text()
+        console.error("[v0] Non-JSON response from server:", textError)
+        setError("Server error occurred. Please try again later.")
+        setFileId("")
+        setPassword("")
+        setIsLoading(false)
+        return
+      }
 
       if (response.ok && data.success) {
         if (data.sessionToken) {
@@ -48,8 +62,8 @@ export function StaffLogin({ onLogin }: StaffLoginProps) {
         setPassword("")
       }
     } catch (error) {
-      console.error("Login error:", error)
-      setError("Authentication failed. Please try again.")
+      console.error("[v0] Login error:", error)
+      setError("Authentication failed. Please check your connection and try again.")
     } finally {
       setIsLoading(false)
     }

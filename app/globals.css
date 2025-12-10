@@ -1,10 +1,9 @@
 @import "tailwindcss";
-/* Removed tw-animate-css import that was causing syntax error */
+@import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Updated to light theme with white/light gray backgrounds instead of dark */
   --background: oklch(0.98 0 0);
   --foreground: oklch(0.15 0 0);
   --card: oklch(1 0 0);
@@ -38,10 +37,6 @@
   --sidebar-accent-foreground: oklch(0.9 0 0);
   --sidebar-border: oklch(0.18 0 0);
   --sidebar-ring: oklch(0.65 0.2 240);
-
-  /* Font family variables */
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
 .dark {
@@ -117,10 +112,6 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-
-  /* Added animation keyframes for dialogs and modals */
-  --animate-accordion-down: accordion-down 0.2s ease-out;
-  --animate-accordion-up: accordion-up 0.2s ease-out;
 }
 
 @layer base {
@@ -132,7 +123,6 @@
   }
 }
 
-/* Added animation keyframes for UI components */
 @keyframes accordion-down {
   from {
     height: 0;
@@ -151,7 +141,22 @@
   }
 }
 
-/* Hide scrollbar for horizontal slider */
+@keyframes enter {
+  from {
+    opacity: var(--tw-enter-opacity, 1);
+    transform: translate3d(var(--tw-enter-translate-x, 0), var(--tw-enter-translate-y, 0), 0)
+      scale3d(var(--tw-enter-scale, 1), var(--tw-enter-scale, 1), var(--tw-enter-scale, 1));
+  }
+}
+
+@keyframes exit {
+  to {
+    opacity: var(--tw-exit-opacity, 1);
+    transform: translate3d(var(--tw-exit-translate-x, 0), var(--tw-exit-translate-y, 0), 0)
+      scale3d(var(--tw-exit-scale, 1), var(--tw-exit-scale, 1), var(--tw-exit-scale, 1));
+  }
+}
+
 @layer utilities {
   .scrollbar-hide {
     -ms-overflow-style: none;
@@ -161,7 +166,6 @@
     display: none;
   }
 
-  /* Added custom scrollbar styles for table */
   .scrollbar-thin {
     scrollbar-width: thin;
   }
@@ -185,7 +189,6 @@
     border-radius: 6px;
   }
 
-  /* Added animation utility classes */
   .animate-in {
     animation-name: enter;
     animation-duration: 150ms;
@@ -222,21 +225,5 @@
 
   .slide-in-from-bottom-2 {
     --tw-enter-translate-y: 0.5rem;
-  }
-}
-
-@keyframes enter {
-  from {
-    opacity: var(--tw-enter-opacity, 1);
-    transform: translate3d(var(--tw-enter-translate-x, 0), var(--tw-enter-translate-y, 0), 0)
-      scale3d(var(--tw-enter-scale, 1), var(--tw-enter-scale, 1), var(--tw-enter-scale, 1));
-  }
-}
-
-@keyframes exit {
-  to {
-    opacity: var(--tw-exit-opacity, 1);
-    transform: translate3d(var(--tw-exit-translate-x, 0), var(--tw-exit-translate-y, 0), 0)
-      scale3d(var(--tw-exit-scale, 1), var(--tw-exit-scale, 1), var(--tw-exit-scale, 1));
   }
 }

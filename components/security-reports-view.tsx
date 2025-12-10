@@ -9,10 +9,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Eye, Download, FileText, ImageIcon, Video } from "lucide-react"
 import jsPDF from "jspdf"
+import html2canvas from "html2canvas"
 
 interface SecurityReport {
   id: number
   staff_name: string
+  project_name: string
   Date: string
   description: string
   attachment: string | null
@@ -76,6 +78,7 @@ export function SecurityReportsView() {
     const searchLower = searchTerm.toLowerCase()
     return (
       (report.staff_name || "").toLowerCase().includes(searchLower) ||
+      (report.project_name || "").toLowerCase().includes(searchLower) ||
       (report.description || "").toLowerCase().includes(searchLower) ||
       (report.Date || "").toLowerCase().includes(searchLower)
     )
@@ -98,76 +101,124 @@ export function SecurityReportsView() {
 
   const downloadPDF = async (report: SecurityReport) => {
     try {
-      const pdf = new jsPDF()
+      // Create a temporary container for rendering
+      const tempDiv = document.createElement("div")
+      tempDiv.style.position = "absolute"
+      tempDiv.style.left = "-9999px"
+      tempDiv.style.width = "800px"
+      tempDiv.style.padding = "40px"
+      tempDiv.style.backgroundColor = "white"
+      tempDiv.style.fontFamily = "Arial, sans-serif"
 
-      // Add title
-      pdf.setFontSize(20)
-      pdf.text("Security Report", 105, 20, { align: "center" })
+      // Build HTML content with proper Arabic text support
+      tempDiv.innerHTML = `
+        <div style="color: black;">
+          <h1 style="text-align: center; margin-bottom: 30px; font-size: 24px;">Security Report</h1>
+          
+          <div style="margin-bottom: 15px;">
+            <strong>Report #:</strong> ${report.id}
+          </div>
+          
+          <div style="margin-bottom: 15px;">
+            <strong>Staff Name:</strong> ${report.staff_name}
+          </div>
+          
+          <div style="margin-bottom: 15px; word-wrap: break-word;">
+            <strong>Project:</strong> ${report.project_name || "N/A"}
+          </div>
+          
+          <div style="margin-bottom: 15px;">
+            <strong>Date:</strong> ${formatDate(report.Date)}
+          </div>
+          
+          <div style="margin-bottom: 15px;">
+            <strong>Description:</strong>
+          </div>
+          
+          <div style="margin-bottom: 20px; padding: 10px; background: #f5f5f5; border-radius: 5px; word-wrap: break-word;">
+            ${report.description}
+          </div>
+          
+          <div style="margin-bottom: 10px;">
+            <strong>Attachments (${JSON.parse(report.attachment || "[]").length}):</strong>
+          </div>
+          
+          <div id="attachments-container" style="margin-bottom: 20px;">
+            <!-- Images will be added here -->
+          </div>
+          
+          <div style="text-align: center; margin-top: 30px; font-size: 12px; color: #666;">
+            Generated on: ${new Date().toLocaleString()}
+          </div>
+        </div>
+      `
 
-      // Add report details
-      pdf.setFontSize(12)
-      let yPos = 40
+      document.body.appendChild(tempDiv)
 
-      pdf.text(`Report #: ${report.id}`, 20, yPos)
-      yPos += 10
-
-      pdf.text(`Staff Name: ${report.staff_name}`, 20, yPos)
-      yPos += 10
-
-      pdf.text(`Date: ${formatDate(report.Date)}`, 20, yPos)
-      yPos += 10
-
-      pdf.text(`Description:`, 20, yPos)
-      yPos += 10
-
-      // Split description into lines
-      const splitDescription = pdf.splitTextToSize(report.description, 170)
-      pdf.text(splitDescription, 20, yPos)
-      yPos += splitDescription.length * 7 + 10
-
-      // Add attachments info
+      // Load and add images
       const attachments = JSON.parse(report.attachment || "[]")
-      if (attachments.length > 0) {
-        pdf.text(`Attachments (${attachments.length}):`, 20, yPos)
-        yPos += 10
+      const attachmentsContainer = tempDiv.querySelector("#attachments-container")
 
-        // Load and embed images
-        for (let i = 0; i < attachments.length; i++) {
-          const url = attachments[i]
-          if (url.match(/\.(jpg|jpeg|png|gif)$/i)) {
-            try {
-              // Add image to PDF
-              const img = await loadImage(url)
-              const imgWidth = 170
-              const imgHeight = (img.height * imgWidth) / img.width
+      for (const url of attachments) {
+        if (url.match(/\.(jpg|jpeg|png|gif)$/i)) {
+          const img = document.createElement("img")
+          img.src = url
+          img.style.maxWidth = "100%"
+          img.style.marginBottom = "10px"
+          img.style.border = "1px solid #ddd"
+          img.style.borderRadius = "5px"
+          attachmentsContainer?.appendChild(img)
 
-              if (yPos + imgHeight > 280) {
-                pdf.addPage()
-                yPos = 20
-              }
-
-              pdf.addImage(img.src, "JPEG", 20, yPos, imgWidth, imgHeight)
-              yPos += imgHeight + 10
-            } catch (error) {
-              console.error("Error loading image:", error)
-              pdf.text(`Image ${i + 1}: ${url}`, 20, yPos)
-              yPos += 7
-            }
-          } else {
-            pdf.text(`Attachment ${i + 1}: ${url}`, 20, yPos)
-            yPos += 7
-          }
+          // Wait for image to load
+          await new Promise((resolve) => {
+            img.onload = resolve
+            img.onerror = resolve
+          })
         }
       }
 
-      // Add footer
-      pdf.setFontSize(10)
-      pdf.text(`Generated on: ${new Date().toLocaleString()}`, 105, 285, { align: "center" })
+      // Use html2canvas to convert HTML to canvas
+      const canvas = await html2canvas(tempDiv, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: "#ffffff",
+      })
+
+      // Remove temp div
+      document.body.removeChild(tempDiv)
+
+      // Create PDF from canvas
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      })
+
+      const imgWidth = 210 // A4 width in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width
+      const pageHeight = 297 // A4 height in mm
+
+      let heightLeft = imgHeight
+      let position = 0
+
+      // Add first page
+      pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, position, imgWidth, imgHeight)
+      heightLeft -= pageHeight
+
+      // Add additional pages if needed
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight
+        pdf.addPage()
+        pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, position, imgWidth, imgHeight)
+        heightLeft -= pageHeight
+      }
 
       // Save the PDF
       pdf.save(`security-report-${report.id}.pdf`)
     } catch (error) {
       console.error("Error generating PDF:", error)
+      alert("Failed to generate PDF. Please try again.")
     }
   }
 
@@ -280,6 +331,7 @@ export function SecurityReportsView() {
                   <TableRow>
                     <TableHead className="font-semibold text-indigo-900">Report #</TableHead>
                     <TableHead className="font-semibold text-indigo-900">Staff Name</TableHead>
+                    <TableHead className="font-semibold text-indigo-900">Project</TableHead>
                     <TableHead className="font-semibold text-indigo-900">Date & Time</TableHead>
                     <TableHead className="font-semibold text-indigo-900">Description</TableHead>
                     <TableHead className="font-semibold text-indigo-900">Attachments</TableHead>
@@ -295,6 +347,9 @@ export function SecurityReportsView() {
                       <TableRow key={report.id} className="hover:bg-indigo-50/50 transition-colors">
                         <TableCell className="font-medium text-indigo-700">#{report.id}</TableCell>
                         <TableCell className="font-medium">{report.staff_name}</TableCell>
+                        <TableCell className="max-w-xs">
+                          <p className="truncate text-gray-700 font-medium">{report.project_name || "N/A"}</p>
+                        </TableCell>
                         <TableCell className="px-4 py-3 text-sm">{formatDate(report.Date)}</TableCell>
                         <TableCell className="max-w-xs">
                           <p className="truncate text-gray-600">{report.description}</p>
@@ -356,6 +411,17 @@ export function SecurityReportsView() {
                 <div>
                   <p className="text-sm text-gray-500 font-medium">Staff Member</p>
                   <p className="text-lg font-semibold text-gray-900">{selectedReport.staff_name}</p>
+                </div>
+              </div>
+
+              {/* Project Name */}
+              <div className="flex items-center gap-3 p-4 bg-indigo-50 rounded-lg">
+                <div className="bg-indigo-100 p-2 rounded-lg">
+                  <FileText className="h-5 w-5 text-indigo-600" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm text-gray-500 font-medium">Project</p>
+                  <p className="text-lg font-semibold text-gray-900">{selectedReport.project_name || "N/A"}</p>
                 </div>
               </div>
 
