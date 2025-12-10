@@ -114,6 +114,9 @@ export function SecurityReportsView() {
       pdf.text(`Staff Name: ${report.staff_name}`, 20, yPos)
       yPos += 10
 
+      pdf.text(`Date: ${formatDate(report.Date)}`, 20, yPos)
+      yPos += 10
+
       pdf.text(`Description:`, 20, yPos)
       yPos += 10
 
@@ -277,6 +280,7 @@ export function SecurityReportsView() {
                   <TableRow>
                     <TableHead className="font-semibold text-indigo-900">Report #</TableHead>
                     <TableHead className="font-semibold text-indigo-900">Staff Name</TableHead>
+                    <TableHead className="font-semibold text-indigo-900">Date & Time</TableHead>
                     <TableHead className="font-semibold text-indigo-900">Description</TableHead>
                     <TableHead className="font-semibold text-indigo-900">Attachments</TableHead>
                     <TableHead className="font-semibold text-indigo-900">Created</TableHead>
@@ -291,6 +295,7 @@ export function SecurityReportsView() {
                       <TableRow key={report.id} className="hover:bg-indigo-50/50 transition-colors">
                         <TableCell className="font-medium text-indigo-700">#{report.id}</TableCell>
                         <TableCell className="font-medium">{report.staff_name}</TableCell>
+                        <TableCell className="px-4 py-3 text-sm">{formatDate(report.Date)}</TableCell>
                         <TableCell className="max-w-xs">
                           <p className="truncate text-gray-600">{report.description}</p>
                         </TableCell>
