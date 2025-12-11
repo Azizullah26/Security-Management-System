@@ -7,44 +7,58 @@ export async function POST(request: NextRequest) {
   try {
     const { username, password, source } = await request.json()
 
-    console.log("[v0] External login attempt:", { username, source })
+    console.log("[v0] External login attempt:", {
+      username,
+      source,
+      receivedPassword: password ? `${password.substring(0, 3)}***` : "none",
+      adminPasswordSet: !!process.env.ADMIN_PASSWORD,
+      adminPasswordPrefix: process.env.ADMIN_PASSWORD ? `${process.env.ADMIN_PASSWORD.substring(0, 3)}***` : "not set",
+    })
 
     if (!username || !password) {
+      console.log("[v0] Missing credentials")
       return NextResponse.json({ success: false, error: "Username and password are required" }, { status: 400 })
     }
 
     const supabase = await createServiceRoleClient()
 
-    // Check if it's an admin login
-    if (username === "admin" && password === process.env.ADMIN_PASSWORD) {
-      // Generate session token
-      const sessionToken = crypto.randomBytes(32).toString("hex")
-      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+    if (username.toLowerCase() === "admin") {
+      console.log("[v0] Admin login attempt - comparing passwords")
+      console.log("[v0] Password match:", password === process.env.ADMIN_PASSWORD)
 
-      // Store admin session
-      const { error: sessionError } = await supabase.from("admin_sessions").insert({
-        session_token: sessionToken,
-        expires_at: expiresAt.toISOString(),
-        source: source || "external_hub",
-      })
+      if (password === process.env.ADMIN_PASSWORD) {
+        // Generate session token
+        const sessionToken = crypto.randomBytes(32).toString("hex")
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
 
-      if (sessionError) {
-        console.error("[v0] Admin session creation error:", sessionError)
-        return NextResponse.json({ success: false, error: "Failed to create session" }, { status: 500 })
+        // Store admin session
+        const { error: sessionError } = await supabase.from("admin_sessions").insert({
+          session_token: sessionToken,
+          expires_at: expiresAt.toISOString(),
+          source: source || "external_hub",
+        })
+
+        if (sessionError) {
+          console.error("[v0] Admin session creation error:", sessionError)
+          return NextResponse.json({ success: false, error: "Failed to create session" }, { status: 500 })
+        }
+
+        console.log("[v0] Admin login successful, token generated")
+        return NextResponse.json({
+          success: true,
+          user: {
+            id: "admin",
+            username: "admin",
+            role: "admin",
+            name: "Administrator",
+          },
+          token: sessionToken,
+          expiresAt: expiresAt.toISOString(),
+          dashboardUrl: `/admin?token=${sessionToken}`,
+        })
+      } else {
+        console.log("[v0] Admin password mismatch")
       }
-
-      return NextResponse.json({
-        success: true,
-        user: {
-          id: "admin",
-          username: "admin",
-          role: "admin",
-          name: "Administrator",
-        },
-        token: sessionToken,
-        expiresAt: expiresAt.toISOString(),
-        dashboardUrl: `/admin?token=${sessionToken}`,
-      })
     }
 
     // Check if it's a staff member
