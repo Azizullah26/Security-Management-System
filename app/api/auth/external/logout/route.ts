@@ -1,13 +1,25 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createServiceRoleClient } from "@/lib/supabase/server"
 
+function getCorsHeaders() {
+  return {
+    "Access-Control-Allow-Origin": "https://elracehub.vercel.app",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Max-Age": "86400",
+  }
+}
+
 // Logout and invalidate external session token
 export async function POST(request: NextRequest) {
   try {
     const { token } = await request.json()
 
     if (!token) {
-      return NextResponse.json({ success: false, error: "Token is required" }, { status: 400 })
+      return NextResponse.json(
+        { success: false, error: "Token is required" },
+        { status: 400, headers: getCorsHeaders() },
+      ) // Added CORS headers to error response
     }
 
     const supabase = await createServiceRoleClient()
@@ -18,12 +30,22 @@ export async function POST(request: NextRequest) {
     // Delete from staff sessions
     await supabase.from("staff_sessions").delete().eq("session_token", token)
 
-    return NextResponse.json({
-      success: true,
-      message: "Session invalidated successfully",
-    })
+    return NextResponse.json(
+      {
+        success: true,
+        message: "Session invalidated successfully",
+      },
+      { headers: getCorsHeaders() },
+    ) // Added CORS headers to success response
   } catch (error) {
     console.error("[v0] Logout error:", error)
-    return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 })
+    return NextResponse.json(
+      { success: false, error: "Internal server error" },
+      { status: 500, headers: getCorsHeaders() },
+    ) // Added CORS headers to error response
   }
+}
+
+export async function OPTIONS() {
+  return NextResponse.json({}, { headers: getCorsHeaders() })
 }

@@ -44,18 +44,21 @@ export async function POST(request: NextRequest) {
         }
 
         console.log("[v0] Admin login successful, token generated")
-        return NextResponse.json({
-          success: true,
-          user: {
-            id: "admin",
-            username: "admin",
-            role: "admin",
-            name: "Administrator",
+        return NextResponse.json(
+          {
+            success: true,
+            user: {
+              id: "admin",
+              username: "admin",
+              role: "admin",
+              name: "Administrator",
+            },
+            token: sessionToken,
+            expiresAt: expiresAt.toISOString(),
+            dashboardUrl: `/admin?token=${sessionToken}`,
           },
-          token: sessionToken,
-          expiresAt: expiresAt.toISOString(),
-          dashboardUrl: `/admin?token=${sessionToken}`,
-        })
+          { headers: getCorsHeaders() },
+        ) // Added CORS headers
       } else {
         console.log("[v0] Admin password mismatch")
       }
@@ -75,7 +78,10 @@ export async function POST(request: NextRequest) {
 
       if (staffError || !staffData) {
         console.error("[v0] Staff lookup error:", staffError)
-        return NextResponse.json({ success: false, error: "Invalid credentials" }, { status: 401 })
+        return NextResponse.json(
+          { success: false, error: "Invalid credentials" },
+          { status: 401, headers: getCorsHeaders() },
+        ) // Added CORS headers
       }
 
       // Generate session token
@@ -93,28 +99,53 @@ export async function POST(request: NextRequest) {
 
       if (sessionError) {
         console.error("[v0] Staff session creation error:", sessionError)
-        return NextResponse.json({ success: false, error: "Failed to create session" }, { status: 500 })
+        return NextResponse.json(
+          { success: false, error: "Failed to create session" },
+          { status: 500, headers: getCorsHeaders() },
+        ) // Added CORS headers
       }
 
-      return NextResponse.json({
-        success: true,
-        user: {
-          id: staffData.file_id,
-          username: staffData.file_id,
-          role: "staff",
-          name: staffData.name,
-          assignedProject: staffData.assigned_project,
+      return NextResponse.json(
+        {
+          success: true,
+          user: {
+            id: staffData.file_id,
+            username: staffData.file_id,
+            role: "staff",
+            name: staffData.name,
+            assignedProject: staffData.assigned_project,
+          },
+          token: sessionToken,
+          expiresAt: expiresAt.toISOString(),
+          dashboardUrl: `/?token=${sessionToken}`,
         },
-        token: sessionToken,
-        expiresAt: expiresAt.toISOString(),
-        dashboardUrl: `/?token=${sessionToken}`,
-      })
+        { headers: getCorsHeaders() },
+      ) // Added CORS headers
     }
 
     // Invalid credentials
-    return NextResponse.json({ success: false, error: "Invalid credentials" }, { status: 401 })
+    return NextResponse.json(
+      { success: false, error: "Invalid credentials" },
+      { status: 401, headers: getCorsHeaders() },
+    ) // Added CORS headers
   } catch (error) {
     console.error("[v0] External login error:", error)
-    return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 })
+    return NextResponse.json(
+      { success: false, error: "Internal server error" },
+      { status: 500, headers: getCorsHeaders() },
+    ) // Added CORS headers
   }
+}
+
+function getCorsHeaders() {
+  return {
+    "Access-Control-Allow-Origin": "https://elracehub.vercel.app",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Max-Age": "86400",
+  }
+}
+
+export async function OPTIONS() {
+  return NextResponse.json({}, { headers: getCorsHeaders() })
 }
