@@ -78,8 +78,51 @@ export default function SecurityDashboard() {
   const [viewingMyRecords, setViewingMyRecords] = useState(false)
 
   useEffect(() => {
-    localStorage.removeItem("staff-session-token")
-    setIsInitializing(false)
+    const checkTokenAuth = async () => {
+      const urlParams = new URLSearchParams(window.location.search)
+      const token = urlParams.get("token")
+
+      if (token) {
+        console.log("[v0] Token found in URL, verifying with API...")
+        try {
+          const response = await fetch("/api/auth/external/verify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token }),
+          })
+
+          if (response.ok) {
+            const data = await response.json()
+            console.log("[v0] Token verified successfully:", data.user)
+
+            // Store the session token
+            localStorage.setItem("staff-session-token", token)
+
+            // Set current staff from token data
+            setCurrentStaff({
+              fileId: data.user.id,
+              name: data.user.name,
+              assignedProject: data.user.assignedProject || "",
+            })
+
+            // Clean URL to remove token parameter
+            window.history.replaceState({}, document.title, window.location.pathname)
+            setIsInitializing(false)
+            return
+          } else {
+            console.error("[v0] Token verification failed")
+          }
+        } catch (error) {
+          console.error("[v0] Error verifying token:", error)
+        }
+      }
+
+      // No token or verification failed - clear existing session
+      localStorage.removeItem("staff-session-token")
+      setIsInitializing(false)
+    }
+
+    checkTokenAuth()
   }, [])
 
   useEffect(() => {

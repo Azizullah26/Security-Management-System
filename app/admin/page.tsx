@@ -46,6 +46,48 @@ export default function AdminDashboard() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        const urlParams = new URLSearchParams(window.location.search)
+        const token = urlParams.get("token")
+
+        if (token) {
+          console.log("[v0] Token found in URL, verifying with API...")
+          try {
+            const verifyResponse = await fetch("/api/auth/external/verify", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ token }),
+            })
+
+            if (verifyResponse.ok) {
+              const data = await verifyResponse.json()
+              console.log("[v0] Token verified successfully:", data.user)
+
+              if (data.user.role === "admin") {
+                // Create admin session using the token
+                const sessionResponse = await fetch("/api/admin/create-session", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ token }),
+                  credentials: "include",
+                })
+
+                if (sessionResponse.ok) {
+                  console.log("[v0] Admin session created from external token")
+                  // Clean URL to remove token parameter
+                  window.history.replaceState({}, document.title, window.location.pathname)
+                  setIsAuthenticated(true)
+                  setIsCheckingAuth(false)
+                  return
+                }
+              } else {
+                console.error("[v0] Token is for staff user, not admin")
+              }
+            }
+          } catch (error) {
+            console.error("[v0] Error verifying token:", error)
+          }
+        }
+
         const adminResponse = await fetch("/api/admin/verify", {
           credentials: "include",
         })
