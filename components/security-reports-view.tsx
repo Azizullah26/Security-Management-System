@@ -113,6 +113,7 @@ export function SecurityReportsView() {
 
       // Write a complete HTML document with only standard colors
       iframeDoc.open()
+      const attachments = parseAttachments(report.attachment)
       iframeDoc.write(`
         <!DOCTYPE html>
         <html>
@@ -128,85 +129,117 @@ export function SecurityReportsView() {
               background-color: #ffffff;
               color: #000000;
               padding: 40px;
-              width: 800px;
             }
-            h1 {
+            .header {
               text-align: center;
               margin-bottom: 30px;
-              font-size: 24px;
-              color: #1f2937;
+              padding-bottom: 20px;
+              border-bottom: 2px solid #4f46e5;
             }
-            .field {
-              margin-bottom: 15px;
-              color: #000000;
+            .title {
+              font-size: 24px;
+              font-weight: bold;
+              color: #4f46e5;
+              margin-bottom: 10px;
+            }
+            .info-section {
+              margin-bottom: 20px;
+            }
+            .info-row {
+              margin-bottom: 12px;
+              line-height: 1.6;
             }
             .label {
-              font-weight: bold;
+              font-weight: 600;
               color: #374151;
+              display: inline-block;
+              min-width: 120px;
             }
-            .description-box {
-              margin-bottom: 20px;
-              padding: 10px;
+            .value {
+              color: #000000;
+            }
+            .description {
               background-color: #f9fafb;
-              border-radius: 5px;
-              word-wrap: break-word;
-              color: #1f2937;
+              padding: 15px;
+              border-radius: 8px;
+              margin: 20px 0;
               border: 1px solid #e5e7eb;
             }
-            .attachments-container {
-              margin-bottom: 20px;
-            }
-            .attachments-container img {
-              max-width: 100%;
-              margin-bottom: 10px;
-              border: 1px solid #dddddd;
-              border-radius: 5px;
-              background-color: #ffffff;
+            .attachments {
+              margin-top: 20px;
             }
             .footer {
+              margin-top: 40px;
+              padding-top: 20px;
+              border-top: 1px solid #e5e7eb;
               text-align: center;
-              margin-top: 30px;
               font-size: 12px;
               color: #6b7280;
             }
           </style>
         </head>
         <body>
-          <h1>Security Report</h1>
-          
-          <div class="field">
-            <span class="label">Report #:</span> ${report.id}
+          <div class="header">
+            <div class="title">Security Report</div>
           </div>
           
-          <div class="field">
-            <span class="label">Staff Name:</span> ${report.staff_name}
+          <div class="info-section">
+            <div class="info-row">
+              <span class="label">Report #:</span>
+              <span class="value">${report.id}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Staff Name:</span>
+              <span class="value">${report.staff_name}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Project:</span>
+              <span class="value">${report.project_name || "N/A"}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Created:</span>
+              <span class="value">${formatDate(report.created_at)}</span>
+            </div>
           </div>
           
-          <div class="field" style="word-wrap: break-word;">
-            <span class="label">Project:</span> ${report.project_name || "N/A"}
+          <div class="description">
+            <div style="font-weight: 600; margin-bottom: 10px; color: #374151;">Description:</div>
+            <div>${report.description}</div>
           </div>
           
-          <div class="field">
-            <span class="label">Date:</span> ${formatDate(report.Date)}
+          ${
+            attachments.length > 0
+              ? `
+          <div class="attachments">
+            <div style="font-weight: 600; margin-bottom: 10px; color: #374151;">Attachments (${attachments.length}):</div>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 15px;">
+              ${attachments
+                .map((url, index) => {
+                  const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(url)
+                  if (isImage) {
+                    return `
+                      <div style="border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+                        <img src="${url}" alt="Attachment ${index + 1}" style="width: 100%; height: 200px; object-fit: cover;" />
+                      </div>
+                    `
+                  }
+                  return `
+                    <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; text-align: center;">
+                      <div style="color: #6b7280;">Video Attachment ${index + 1}</div>
+                      <a href="${url}" style="color: #4f46e5; text-decoration: none; font-size: 12px;">View Video</a>
+                    </div>
+                  `
+                })
+                .join("")}
+            </div>
           </div>
-          
-          <div class="field">
-            <span class="label">Description:</span>
-          </div>
-          
-          <div class="description-box">
-            ${report.description}
-          </div>
-          
-          <div class="field">
-            <span class="label">Attachments (${JSON.parse(report.attachment || "[]").length}):</span>
-          </div>
-          
-          <div class="attachments-container" id="attachments-container">
-          </div>
+          `
+              : ""
+          }
           
           <div class="footer">
-            Generated on: ${new Date().toLocaleString()}
+            <div>Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</div>
+            <div style="margin-top: 5px;">Security Management System</div>
           </div>
         </body>
         </html>
@@ -217,7 +250,6 @@ export function SecurityReportsView() {
       await new Promise((resolve) => setTimeout(resolve, 100))
 
       // Load and add images to iframe
-      const attachments = JSON.parse(report.attachment || "[]")
       const attachmentsContainer = iframeDoc.getElementById("attachments-container")
 
       for (const url of attachments) {
@@ -394,7 +426,6 @@ export function SecurityReportsView() {
                     <TableHead className="font-semibold text-indigo-900">Report #</TableHead>
                     <TableHead className="font-semibold text-indigo-900">Staff Name</TableHead>
                     <TableHead className="font-semibold text-indigo-900">Project</TableHead>
-                    <TableHead className="font-semibold text-indigo-900">Date & Time</TableHead>
                     <TableHead className="font-semibold text-indigo-900">Description</TableHead>
                     <TableHead className="font-semibold text-indigo-900">Attachments</TableHead>
                     <TableHead className="font-semibold text-indigo-900">Created</TableHead>
@@ -412,7 +443,6 @@ export function SecurityReportsView() {
                         <TableCell className="max-w-xs">
                           <p className="truncate text-gray-700 font-medium">{report.project_name || "N/A"}</p>
                         </TableCell>
-                        <TableCell className="px-4 py-3 text-sm">{formatDate(report.Date)}</TableCell>
                         <TableCell className="max-w-xs">
                           <p className="truncate text-gray-600">{report.description}</p>
                         </TableCell>
@@ -493,7 +523,7 @@ export function SecurityReportsView() {
                   <Eye className="h-5 w-5 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500 font-medium">Report Date & Time</p>
+                  <p className="text-sm text-gray-500 font-medium">Created</p>
                   <p className="text-lg font-semibold text-gray-900">{formatDate(selectedReport.Date)}</p>
                 </div>
               </div>
