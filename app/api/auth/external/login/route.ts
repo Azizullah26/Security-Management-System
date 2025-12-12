@@ -7,13 +7,20 @@ export async function POST(request: NextRequest) {
   try {
     const { username, password, source } = await request.json()
 
-    console.log("[v0] External login attempt:", {
-      username,
-      source,
-      receivedPassword: password ? `${password.substring(0, 3)}***` : "none",
-      adminPasswordSet: !!process.env.ADMIN_PASSWORD,
-      adminPasswordPrefix: process.env.ADMIN_PASSWORD ? `${process.env.ADMIN_PASSWORD.substring(0, 3)}***` : "not set",
-    })
+    console.log("[v0] ===== External Login Debug =====")
+    console.log("[v0] Received username:", username)
+    console.log("[v0] Username type:", typeof username)
+    console.log("[v0] Username length:", username?.length)
+    console.log("[v0] Username lowercase:", username?.toLowerCase())
+    console.log("[v0] Received password length:", password?.length)
+    console.log("[v0] Password first 4 chars:", password ? password.substring(0, 4) : "none")
+    console.log("[v0] Source:", source)
+    console.log("[v0] ADMIN_PASSWORD exists:", !!process.env.ADMIN_PASSWORD)
+    console.log("[v0] ADMIN_PASSWORD length:", process.env.ADMIN_PASSWORD?.length)
+    console.log("[v0] ADMIN_PASSWORD first 4 chars:", process.env.ADMIN_PASSWORD?.substring(0, 4))
+    console.log("[v0] Passwords match:", password === process.env.ADMIN_PASSWORD)
+    console.log("[v0] Username is 'admin':", username?.toLowerCase() === "admin")
+    console.log("[v0] ================================")
 
     if (!username || !password) {
       console.log("[v0] Missing credentials")
@@ -23,8 +30,7 @@ export async function POST(request: NextRequest) {
     const supabase = await createServiceRoleClient()
 
     if (username.toLowerCase() === "admin") {
-      console.log("[v0] Admin login attempt - comparing passwords")
-      console.log("[v0] Password match:", password === process.env.ADMIN_PASSWORD)
+      console.log("[v0] Admin login path taken")
 
       if (password === process.env.ADMIN_PASSWORD) {
         // Generate session token
@@ -43,7 +49,7 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ success: false, error: "Failed to create session" }, { status: 500 })
         }
 
-        console.log("[v0] Admin login successful, token generated")
+        console.log("[v0] Admin login SUCCESSFUL, token generated")
         return NextResponse.json(
           {
             success: true,
@@ -58,10 +64,14 @@ export async function POST(request: NextRequest) {
             dashboardUrl: `/admin?token=${sessionToken}`,
           },
           { headers: getCorsHeaders() },
-        ) // Added CORS headers
+        )
       } else {
-        console.log("[v0] Admin password mismatch")
+        console.log("[v0] Admin password MISMATCH")
+        console.log("[v0] Expected:", process.env.ADMIN_PASSWORD)
+        console.log("[v0] Received:", password)
       }
+    } else {
+      console.log("[v0] Not admin, checking staff credentials")
     }
 
     // Check if it's a staff member
@@ -81,7 +91,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           { success: false, error: "Invalid credentials" },
           { status: 401, headers: getCorsHeaders() },
-        ) // Added CORS headers
+        )
       }
 
       // Generate session token
@@ -102,7 +112,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           { success: false, error: "Failed to create session" },
           { status: 500, headers: getCorsHeaders() },
-        ) // Added CORS headers
+        )
       }
 
       return NextResponse.json(
@@ -120,20 +130,20 @@ export async function POST(request: NextRequest) {
           dashboardUrl: `/?token=${sessionToken}`,
         },
         { headers: getCorsHeaders() },
-      ) // Added CORS headers
+      )
     }
 
     // Invalid credentials
     return NextResponse.json(
       { success: false, error: "Invalid credentials" },
       { status: 401, headers: getCorsHeaders() },
-    ) // Added CORS headers
+    )
   } catch (error) {
     console.error("[v0] External login error:", error)
     return NextResponse.json(
       { success: false, error: "Internal server error" },
       { status: 500, headers: getCorsHeaders() },
-    ) // Added CORS headers
+    )
   }
 }
 
