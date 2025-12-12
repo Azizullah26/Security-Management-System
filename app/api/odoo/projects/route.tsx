@@ -23,11 +23,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Define URLs to try
-    const urlsToTry = [
-      ODOO_URL,
-      "https://odoo.elrace.com",
-      "https://test.elrace.com"
-    ].filter((url, index, self) => self.indexOf(url) === index) // Remove duplicates
+    const urlsToTry = [ODOO_URL, "https://odoo.elrace.com", "https://test.elrace.com"].filter(
+      (url, index, self) => self.indexOf(url) === index,
+    ) // Remove duplicates
 
     console.log("[v0] Odoo Configuration:")
     console.log("[v0] URLs to try:", urlsToTry)
@@ -101,7 +99,7 @@ export async function GET(request: NextRequest) {
 
     if (uid === null || !workingUrl) {
       throw new Error(
-        `Unable to connect to Odoo server. Tried URLs: ${urlsToTry.join(", ")}. Please verify: 1) The ODOO_URL is correct, 2) The server is accessible, 3) The ODOO_DB value "${ODOO_DB}" is correct.`
+        `Unable to connect to Odoo server. Tried URLs: ${urlsToTry.join(", ")}. Please verify: 1) The ODOO_URL is correct, 2) The server is accessible, 3) The ODOO_DB value "${ODOO_DB}" is correct.`,
       )
     }
 
@@ -158,10 +156,10 @@ export async function GET(request: NextRequest) {
       console.log("[v0] Search failed - fault in response")
 
       const faultStringMatch = searchResult.match(
-        /<member>\s*<name>faultString<\/name>\s*<value><string>([^<]+)<\/string><\/value>/s,
+        /<member>[\s\S]*?<name>faultString<\/name>[\s\S]*?<value><string>([^<]+)<\/string><\/value>/,
       )
       const faultCodeMatch = searchResult.match(
-        /<member>\s*<name>faultCode<\/name>\s*<value><int>(\d+)<\/int><\/value>/s,
+        /<member>[\s\S]*?<name>faultCode<\/name>[\s\S]*?<value><int>(\d+)<\/int><\/value>/,
       )
 
       const faultMsg = faultStringMatch ? faultStringMatch[1] : "Unknown error"
