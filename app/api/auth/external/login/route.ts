@@ -7,41 +7,23 @@ export async function POST(request: NextRequest) {
   try {
     const { username, password, source } = await request.json()
 
-    console.log("[v0] ===== External Login Debug =====")
-    console.log("[v0] Received username:", username)
-    console.log("[v0] Username type:", typeof username)
-    console.log("[v0] Username length:", username?.length)
-    console.log("[v0] Username lowercase:", username?.toLowerCase())
-    console.log("[v0] Received password length:", password?.length)
-    console.log("[v0] Password first 4 chars:", password ? password.substring(0, 4) : "none")
-    console.log("[v0] Source:", source)
-    console.log("[v0] ADMIN_PASSWORD exists:", !!process.env.ADMIN_PASSWORD)
-    console.log("[v0] ADMIN_PASSWORD length:", process.env.ADMIN_PASSWORD?.length)
-    console.log("[v0] ADMIN_PASSWORD first 4 chars:", process.env.ADMIN_PASSWORD?.substring(0, 4))
-    console.log("[v0] Passwords match:", password === process.env.ADMIN_PASSWORD)
-    console.log("[v0] Username is 'admin':", username?.toLowerCase() === "admin")
-    console.log("[v0] ================================")
+    console.log("[v0] External login attempt - Username:", username, "Source:", source)
 
     if (!username || !password) {
-      console.log("[v0] Missing credentials")
       return NextResponse.json({ success: false, error: "Username and password are required" }, { status: 400 })
     }
 
     const supabase = await createServiceRoleClient()
 
     if (username.toLowerCase() === "admin") {
-      console.log("[v0] Admin login path taken")
-
       if (password === process.env.ADMIN_PASSWORD) {
-        // Generate session token
         const sessionToken = crypto.randomBytes(32).toString("hex")
-        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+        const expiresAt = Date.now() + 24 * 60 * 60 * 1000 // 24 hours in milliseconds
 
-        // Store admin session
         const { error: sessionError } = await supabase.from("admin_sessions").insert({
           session_token: sessionToken,
-          expires_at: expiresAt.toISOString(),
-          source: source || "external_hub",
+          created_at: Date.now(),
+          expires_at: expiresAt,
         })
 
         if (sessionError) {
@@ -49,7 +31,7 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ success: false, error: "Failed to create session" }, { status: 500 })
         }
 
-        console.log("[v0] Admin login SUCCESSFUL, token generated")
+        console.log("[v0] Admin login successful, token:", sessionToken.substring(0, 8) + "...")
         return NextResponse.json(
           {
             success: true,
@@ -60,21 +42,16 @@ export async function POST(request: NextRequest) {
               name: "Administrator",
             },
             token: sessionToken,
-            expiresAt: expiresAt.toISOString(),
+            expiresAt: new Date(expiresAt).toISOString(),
             dashboardUrl: `/admin?token=${sessionToken}`,
           },
           { headers: getCorsHeaders() },
         )
       } else {
-        console.log("[v0] Admin password MISMATCH")
-        console.log("[v0] Expected:", process.env.ADMIN_PASSWORD)
-        console.log("[v0] Received:", password)
+        console.log("[v0] Admin password mismatch")
       }
-    } else {
-      console.log("[v0] Not admin, checking staff credentials")
     }
 
-    // Check if it's a staff member
     const staffPasswordEnvKey = `STAFF_${username.toUpperCase()}_PASSWORD`
     const staffPassword = process.env[staffPasswordEnvKey]
 
@@ -94,17 +71,16 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      // Generate session token
       const sessionToken = crypto.randomBytes(32).toString("hex")
-      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+      const expiresAt = Date.now() + 24 * 60 * 60 * 1000
 
-      // Store staff session with assigned project
       const { error: sessionError } = await supabase.from("staff_sessions").insert({
         staff_id: staffData.file_id,
+        name: staffData.name,
         session_token: sessionToken,
         assigned_project: staffData.assigned_project,
-        expires_at: expiresAt.toISOString(),
-        source: source || "external_hub",
+        created_at: Date.now(),
+        expires_at: expiresAt,
       })
 
       if (sessionError) {
@@ -115,6 +91,7 @@ export async function POST(request: NextRequest) {
         )
       }
 
+      console.log("[v0] Staff login successful:", staffData.name)
       return NextResponse.json(
         {
           success: true,
@@ -126,7 +103,7 @@ export async function POST(request: NextRequest) {
             assignedProject: staffData.assigned_project,
           },
           token: sessionToken,
-          expiresAt: expiresAt.toISOString(),
+          expiresAt: new Date(expiresAt).toISOString(),
           dashboardUrl: `/?token=${sessionToken}`,
         },
         { headers: getCorsHeaders() },
@@ -134,6 +111,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Invalid credentials
+    console.log("[v0] Invalid credentials for username:", username)
     return NextResponse.json(
       { success: false, error: "Invalid credentials" },
       { status: 401, headers: getCorsHeaders() },
