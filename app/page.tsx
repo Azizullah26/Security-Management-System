@@ -83,7 +83,9 @@ export default function SecurityDashboard() {
       const token = urlParams.get("token")
 
       if (token) {
-        console.log("[v0] Token found in URL, verifying and creating session...")
+        console.log("[v0] Token found in URL:", token.substring(0, 20) + "...")
+        console.log("[v0] Calling /api/staff/sso-login to verify token...")
+
         try {
           const response = await fetch("/api/staff/sso-login", {
             method: "POST",
@@ -91,34 +93,39 @@ export default function SecurityDashboard() {
             body: JSON.stringify({ token }),
           })
 
-          if (response.ok) {
-            const data = await response.json()
-            console.log("[v0] SSO login successful:", data)
+          console.log("[v0] Response status:", response.status)
+          const data = await response.json()
+          console.log("[v0] Response data:", data)
 
-            // Check if user is admin - redirect to admin dashboard
-            if (data.user.role === "admin" || data.user.fileId === "Admin") {
+          if (response.ok && data.success) {
+            console.log("[v0] SSO login successful")
+
+            if (data.user.role === "admin" || data.user.fileId === "Admin" || data.user.file_id === "Admin") {
               console.log("[v0] Admin user detected, redirecting to admin dashboard")
               window.location.href = "/admin?token=" + token
               return
             }
 
             // Store the session token for staff
-            localStorage.setItem("staff-session-token", data.sessionToken || token)
+            const sessionToken = data.sessionToken || token
+            localStorage.setItem("staff-session-token", sessionToken)
+            console.log("[v0] Stored session token in localStorage")
 
-            // Set current staff from token data
             setCurrentStaff({
-              fileId: data.user.fileId || data.user.id,
-              name: data.user.name,
-              assignedProject: data.user.assignedProject || "",
+              fileId: data.user.fileId || data.user.file_id || data.user.id,
+              name: data.user.name || data.user.fullname,
+              assignedProject: data.user.assignedProject || data.user.assigned_project || "",
             })
+
+            console.log("[v0] Current staff set, cleaning URL...")
 
             // Clean URL to remove token parameter
             window.history.replaceState({}, document.title, window.location.pathname)
             setIsInitializing(false)
+            console.log("[v0] SSO auto-login complete!")
             return
           } else {
-            const errorData = await response.json()
-            console.error("[v0] Token verification failed:", errorData)
+            console.error("[v0] Token verification failed:", data)
           }
         } catch (error) {
           console.error("[v0] Error verifying token:", error)

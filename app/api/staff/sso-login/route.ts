@@ -54,9 +54,12 @@ export async function POST(request: NextRequest) {
       user: {
         id: staff.uuid,
         fileId: staff.file_id,
+        file_id: staff.file_id, // Include both for compatibility
         name: staff.name,
+        fullname: staff.name, // Include both for compatibility
         role: "staff",
         assignedProject: staff.assigned_project || "",
+        assigned_project: staff.assigned_project || "",
       },
     })
   } catch (error) {
