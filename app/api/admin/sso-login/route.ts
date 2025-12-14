@@ -6,7 +6,7 @@ export async function POST(request: NextRequest) {
     const { token } = await request.json()
 
     if (!token) {
-      console.log("[v0] SSO token missing")
+      console.log("[v0] Admin SSO: Token missing from request")
       return NextResponse.json({ success: false, error: "Token is required" }, { status: 400 })
     }
 
@@ -20,6 +20,8 @@ export async function POST(request: NextRequest) {
       .eq("session_token", token)
       .maybeSingle()
 
+    console.log("[v0] Admin SSO: Session query result:", { session, error: sessionError })
+
     if (sessionError) {
       console.error("[v0] Admin SSO: Error querying admin_sessions:", sessionError)
       return NextResponse.json({ success: false, error: "Database error" }, { status: 500 })
@@ -27,6 +29,13 @@ export async function POST(request: NextRequest) {
 
     if (!session) {
       console.log("[v0] Admin SSO: Token not found in admin_sessions table")
+
+      const { data: allSessions } = await supabase
+        .from("admin_sessions")
+        .select("session_token, created_at, expires_at")
+        .limit(5)
+      console.log("[v0] Admin SSO: Recent admin_sessions in DB:", allSessions)
+
       return NextResponse.json({ success: false, error: "Invalid token" }, { status: 401 })
     }
 
@@ -55,7 +64,7 @@ export async function POST(request: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 60 * 60 * 24, // 24 hours
+      maxAge: 60 * 60 * 24,
       path: "/",
     })
 
@@ -71,7 +80,7 @@ export async function OPTIONS() {
     {},
     {
       headers: {
-        "Access-Control-Allow-Origin": "https://elracehub.vercel.app",
+        "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "POST, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type",
       },

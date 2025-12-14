@@ -1,5 +1,5 @@
-@import "tailwindcss";
-/* Removed tw-animate-css import that was causing syntax error */
+@import 'tailwindcss';
+@import 'tw-animate-css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -74,7 +74,7 @@
   --sidebar-ring: oklch(0.439 0 0);
 }
 
-@theme {
+@theme inline {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --color-background: var(--background);
@@ -117,7 +117,7 @@
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-border outline-ring/50;
   }
   body {
     @apply bg-background text-foreground;
