@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     if (username.toLowerCase() === "admin") {
       if (password === process.env.ADMIN_PASSWORD) {
         const sessionToken = crypto.randomBytes(32).toString("hex")
-        const expiresAt = Date.now() + 24 * 60 * 60 * 1000 // 24 hours in milliseconds
+        const expiresAt = Date.now() + 24 * 60 * 60 * 1000
 
         const { error: sessionError } = await supabase.from("admin_sessions").insert({
           session_token: sessionToken,
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ success: false, error: "Failed to create session" }, { status: 500 })
         }
 
-        console.log("[v0] Admin login successful, token:", sessionToken.substring(0, 8) + "...")
+        console.log("[v0] Admin login successful")
         return NextResponse.json(
           {
             success: true,
@@ -47,38 +47,26 @@ export async function POST(request: NextRequest) {
           },
           { headers: getCorsHeaders() },
         )
-      } else {
-        console.log("[v0] Admin password mismatch")
       }
     }
 
-    const staffPasswordEnvKey = `STAFF_${username.toUpperCase()}_PASSWORD`
-    const staffPassword = process.env[staffPasswordEnvKey]
+    const { data: staffData, error: staffError } = await supabase
+      .from("security_staff")
+      .select("*")
+      .eq("file_id", username)
+      .eq("current_password", password)
+      .single()
 
-    if (staffPassword && password === staffPassword) {
-      // Get staff details from database
-      const { data: staffData, error: staffError } = await supabase
-        .from("securitystaff")
-        .select("*")
-        .eq("file_id", username)
-        .single()
-
-      if (staffError || !staffData) {
-        console.error("[v0] Staff lookup error:", staffError)
-        return NextResponse.json(
-          { success: false, error: "Invalid credentials" },
-          { status: 401, headers: getCorsHeaders() },
-        )
-      }
-
+    if (staffData && !staffError) {
+      // Staff found with matching credentials
       const sessionToken = crypto.randomBytes(32).toString("hex")
       const expiresAt = Date.now() + 24 * 60 * 60 * 1000
 
       const { error: sessionError } = await supabase.from("staff_sessions").insert({
         staff_id: staffData.file_id,
-        name: staffData.name,
+        name: staffData.full_name,
         session_token: sessionToken,
-        assigned_project: staffData.assigned_project,
+        assigned_project: staffData.department_staff || "",
         created_at: Date.now(),
         expires_at: expiresAt,
       })
@@ -91,7 +79,7 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      console.log("[v0] Staff login successful:", staffData.name)
+      console.log("[v0] Staff login successful from database:", staffData.full_name)
       return NextResponse.json(
         {
           success: true,
@@ -99,8 +87,65 @@ export async function POST(request: NextRequest) {
             id: staffData.file_id,
             username: staffData.file_id,
             role: "staff",
-            name: staffData.name,
-            assignedProject: staffData.assigned_project,
+            name: staffData.full_name,
+            assignedProject: staffData.department_staff,
+          },
+          token: sessionToken,
+          expiresAt: new Date(expiresAt).toISOString(),
+          dashboardUrl: `/?token=${sessionToken}`,
+        },
+        { headers: getCorsHeaders() },
+      )
+    }
+
+    const staffPasswordEnvKey = `STAFF_${username.toUpperCase()}_PASSWORD`
+    const staffPassword = process.env[staffPasswordEnvKey]
+
+    if (staffPassword && password === staffPassword) {
+      const { data: staffEnvData, error: staffEnvError } = await supabase
+        .from("securitystaff")
+        .select("*")
+        .eq("file_id", username)
+        .single()
+
+      if (staffEnvError || !staffEnvData) {
+        console.error("[v0] Staff lookup error:", staffEnvError)
+        return NextResponse.json(
+          { success: false, error: "Invalid credentials" },
+          { status: 401, headers: getCorsHeaders() },
+        )
+      }
+
+      const sessionToken = crypto.randomBytes(32).toString("hex")
+      const expiresAt = Date.now() + 24 * 60 * 60 * 1000
+
+      const { error: sessionError } = await supabase.from("staff_sessions").insert({
+        staff_id: staffEnvData.file_id,
+        name: staffEnvData.name,
+        session_token: sessionToken,
+        assigned_project: staffEnvData.assigned_project,
+        created_at: Date.now(),
+        expires_at: expiresAt,
+      })
+
+      if (sessionError) {
+        console.error("[v0] Staff session creation error:", sessionError)
+        return NextResponse.json(
+          { success: false, error: "Failed to create session" },
+          { status: 500, headers: getCorsHeaders() },
+        )
+      }
+
+      console.log("[v0] Staff login successful (env var):", staffEnvData.name)
+      return NextResponse.json(
+        {
+          success: true,
+          user: {
+            id: staffEnvData.file_id,
+            username: staffEnvData.file_id,
+            role: "staff",
+            name: staffEnvData.name,
+            assignedProject: staffEnvData.assigned_project,
           },
           token: sessionToken,
           expiresAt: new Date(expiresAt).toISOString(),
