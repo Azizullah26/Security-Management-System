@@ -3,9 +3,300 @@
 ## Overview
 This guide explains how the RCC Hub should integrate with the Security System to provide seamless Single Sign-On (SSO) access.
 
+**IMPORTANT**: RCC Hub and Security System share the same Supabase database, which simplifies authentication significantly.
+
 ## Security System URLs
 - **Production**: `https://elracesecurity.vercel.app`
 - **Hub Production**: `https://elracehub.vercel.app`
+- **Shared Database**: Both systems use the same Supabase instance
+
+---
+
+## Simplified Integration Flow (Using Shared Database)
+
+Since the RCC Hub has direct access to the same database, the integration is much simpler:
+
+### Step 1: User Logs into RCC Hub
+When a user successfully logs into the RCC Hub, check the `security_staff` table directly in your shared Supabase database.
+
+### Step 2: Check Security System Access (Direct Database Query)
+Instead of calling an API, query the database directly:
+
+\`\`\`typescript
+// Hub-side code - Direct database query
+const checkSecurityAccess = async (fileId: string) => {
+  try {
+    // Query the security_staff table directly
+    const { data: staffUser, error } = await supabase
+      .from('security_staff')
+      .select('*')
+      .eq('file_id', fileId)
+      .single()
+    
+    if (staffUser && !error) {
+      return {
+        hasSecurityAccess: true,
+        role: 'staff',
+        fileId: staffUser.file_id,
+        name: staffUser.name,
+        email: staffUser.email
+      }
+    }
+    
+    // Also check if user is admin in profiles table
+    const { data: adminUser } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('email', userEmail)
+      .eq('role', 'admin')
+      .single()
+    
+    if (adminUser) {
+      return {
+        hasSecurityAccess: true,
+        role: 'admin',
+        email: adminUser.email,
+        name: adminUser.full_name
+      }
+    }
+    
+    return { hasSecurityAccess: false }
+  } catch (error) {
+    console.error('[Hub] Security access check failed:', error)
+    return { hasSecurityAccess: false }
+  }
+}
+\`\`\`
+
+### Step 3: Authenticate User (Direct Database Query)
+When the user enters their credentials, verify against the database:
+
+\`\`\`typescript
+// Hub-side code - Direct authentication
+const authenticateSecurityUser = async (fileId: string, password: string) => {
+  try {
+    // Query security_staff table with file_id and password
+    const { data: staffUser, error } = await supabase
+      .from('security_staff')
+      .select('*')
+      .eq('file_id', fileId)
+      .eq('current_password', password)
+      .single()
+    
+    if (staffUser && !error) {
+      console.log('[Hub] Staff authentication successful:', staffUser.name)
+      return {
+        success: true,
+        role: 'staff',
+        user: staffUser
+      }
+    }
+    
+    // Check admin authentication
+    // Admin username is "admin" or "Admin" and password is in ADMIN_PASSWORD env var
+    if (fileId.toLowerCase() === 'admin') {
+      // You need to check admin password against your environment variable
+      // or implement admin auth check
+      return {
+        success: true,
+        role: 'admin',
+        user: { fileId: 'admin', name: 'Administrator' }
+      }
+    }
+    
+    return { success: false, error: 'Invalid credentials' }
+  } catch (error) {
+    console.error('[Hub] Authentication error:', error)
+    return { success: false, error: 'Authentication failed' }
+  }
+}
+\`\`\`
+
+### Step 4: Generate SSO Token and Redirect
+After successful database authentication, call the SSO API to get a redirect URL:
+
+\`\`\`typescript
+const handleSecuritySystemClick = async (userEmail: string) => {
+  try {
+    console.log('[Hub] Generating SSO token for:', userEmail)
+    
+    const response = await fetch('https://elracesecurity.vercel.app/api/auth/external/sso', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        email: userEmail,
+        source: 'rcc_hub'
+      })
+    })
+    
+    const result = await response.json()
+    
+    if (result.success) {
+      console.log('[Hub] SSO token generated successfully')
+      console.log('[Hub] Redirecting to:', result.redirectUrl)
+      
+      // ✅ CORRECT: Use the redirectUrl from the response
+      window.location.href = result.redirectUrl
+      // This will be either:
+      // - https://elracesecurity.vercel.app/?token=xxx (for staff)
+      // - https://elracesecurity.vercel.app/admin?token=xxx (for admin)
+      
+    } else {
+      console.error('[Hub] SSO token generation failed:', result.error)
+      alert('Failed to access Security System. Please contact support.')
+    }
+  } catch (error) {
+    console.error('[Hub] Security System authentication error:', error)
+    alert('Connection error. Please try again.')
+  }
+}
+\`\`\`
+
+---
+
+## Complete Hub Implementation Example (With Shared Database)
+
+\`\`\`typescript
+// Hub Dashboard Component
+import { useState, useEffect } from 'react'
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
+
+export function HubDashboard({ user }: { user: { fileId: string, email: string, name: string } }) {
+  const [hasSecurityAccess, setHasSecurityAccess] = useState(false)
+  const [securityUserRole, setSecurityUserRole] = useState<'admin' | 'staff' | null>(null)
+  const [isCheckingAccess, setIsCheckingAccess] = useState(true)
+
+  // Check security access on component mount using direct database query
+  useEffect(() => {
+    const checkAccess = async () => {
+      try {
+        // Check if user exists in security_staff table
+        const { data: staffUser } = await supabase
+          .from('security_staff')
+          .select('*')
+          .eq('file_id', user.fileId)
+          .single()
+        
+        if (staffUser) {
+          setHasSecurityAccess(true)
+          setSecurityUserRole('staff')
+          console.log('[Hub] User has security system access: staff')
+          setIsCheckingAccess(false)
+          return
+        }
+        
+        // Check if user is admin
+        const { data: adminUser } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('email', user.email)
+          .eq('role', 'admin')
+          .single()
+        
+        if (adminUser) {
+          setHasSecurityAccess(true)
+          setSecurityUserRole('admin')
+          console.log('[Hub] User has security system access: admin')
+        } else {
+          setHasSecurityAccess(false)
+          console.log('[Hub] User does not have security system access')
+        }
+      } catch (error) {
+        console.error('[Hub] Failed to check security access:', error)
+        setHasSecurityAccess(false)
+      } finally {
+        setIsCheckingAccess(false)
+      }
+    }
+
+    checkAccess()
+  }, [user.fileId, user.email])
+
+  // Handle security system icon click
+  const handleSecurityClick = async () => {
+    try {
+      console.log('[Hub] Authenticating to Security System for:', user.email)
+      
+      // Call SSO API to generate token
+      const response = await fetch('https://elracesecurity.vercel.app/api/auth/external/sso', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          email: user.email,
+          source: 'rcc_hub'
+        })
+      })
+      
+      const result = await response.json()
+      
+      if (result.success) {
+        console.log('[Hub] Security System auth successful')
+        console.log('[Hub] Redirecting to:', result.redirectUrl)
+        
+        // Redirect to Security System with auto-login
+        window.location.href = result.redirectUrl
+        
+      } else {
+        console.error('[Hub] Security System API returned error:', result.error)
+        alert('Failed to access Security System: ' + result.error)
+      }
+    } catch (error) {
+      console.error('[Hub] Security System authentication error:', error)
+      alert('Connection error. Please try again.')
+    }
+  }
+
+  return (
+    <div className="dashboard">
+      <h1>Good morning, {user.name}</h1>
+      
+      {/* Security System Icon - Only shown if user has access */}
+      {!isCheckingAccess && hasSecurityAccess && (
+        <div className="dashboard-item" onClick={handleSecurityClick}>
+          <div className="icon">
+            <img src="/security-icon.png" alt="Security" />
+          </div>
+          <div className="label">
+            SECURITY SYSTEM
+            {securityUserRole === 'admin' && <span className="badge">Admin</span>}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+\`\`\`
+
+---
+
+## Database Tables Reference
+
+### `security_staff` Table
+Contains all security staff members with their credentials:
+- `uuid` (primary key)
+- `file_id` (text) - Staff employee ID
+- `name` (text) - Full name
+- `email` (text)
+- `current_password` (text) - Plain text password
+- `contact_number` (text)
+- `assigned_project` (text)
+
+**Example Query**:
+\`\`\`sql
+SELECT * FROM security_staff WHERE file_id = '3252' AND current_password = '3252';
+\`\`\`
+
+### `profiles` Table
+Contains admin users:
+- `id` (uuid)
+- `email` (text)
+- `full_name` (text)
+- `role` (text) - 'admin' or 'staff'
 
 ---
 
@@ -108,111 +399,6 @@ window.location.href = `https://elracesecurity.vercel.app/api/auth/external/sso?
 // DO THIS:
 const result = await fetch('https://elracesecurity.vercel.app/api/auth/external/sso', {...})
 window.location.href = result.redirectUrl // This is the page URL, not an API URL
-\`\`\`
-
----
-
-## Complete Hub Implementation Example
-
-\`\`\`typescript
-// Hub Dashboard Component
-import { useState, useEffect } from 'react'
-
-export function HubDashboard({ user }: { user: { email: string, name: string } }) {
-  const [hasSecurityAccess, setHasSecurityAccess] = useState(false)
-  const [securityUserRole, setSecurityUserRole] = useState<'admin' | 'staff' | null>(null)
-  const [isCheckingAccess, setIsCheckingAccess] = useState(true)
-
-  // Check security access on component mount
-  useEffect(() => {
-    const checkAccess = async () => {
-      try {
-        const response = await fetch('https://elracesecurity.vercel.app/api/auth/external/check-access', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: user.email })
-        })
-        
-        const result = await response.json()
-        
-        if (result.success && result.hasAccess) {
-          setHasSecurityAccess(true)
-          setSecurityUserRole(result.user.role)
-          console.log('[Hub] User has security system access:', result.user.role)
-        } else {
-          setHasSecurityAccess(false)
-          console.log('[Hub] User does not have security system access')
-        }
-      } catch (error) {
-        console.error('[Hub] Failed to check security access:', error)
-        setHasSecurityAccess(false)
-      } finally {
-        setIsCheckingAccess(false)
-      }
-    }
-
-    checkAccess()
-  }, [user.email])
-
-  // Handle security system icon click
-  const handleSecurityClick = async () => {
-    try {
-      console.log('[Hub] Authenticating to Security System for:', user.email)
-      
-      const response = await fetch('https://elracesecurity.vercel.app/api/auth/external/sso', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: user.email })
-      })
-      
-      const result = await response.json()
-      
-      if (result.success) {
-        console.log('[Hub] Security System auth response:', {
-          success: true,
-          authenticated: true,
-          user: result.user,
-          token: result.token.substring(0, 10) + '...',
-          expiresAt: result.expiresAt,
-          redirectUrl: result.redirectUrl
-        })
-        
-        console.log('[Hub] Redirecting staff user to:', result.redirectUrl)
-        
-        // Redirect to Security System with auto-login
-        window.location.href = result.redirectUrl
-        
-      } else {
-        console.error('[Hub] Security System API returned error:', result.error)
-        alert('Failed to access Security System: ' + result.error)
-      }
-    } catch (error) {
-      console.error('[Hub] Security System authentication error:', error)
-      alert('Connection error. Please try again.')
-    }
-  }
-
-  return (
-    <div className="dashboard">
-      <h1>Good morning, {user.name}</h1>
-      
-      {/* Other dashboard items */}
-      
-      {/* Security System Icon - Only shown if user has access */}
-      {!isCheckingAccess && hasSecurityAccess && (
-        <div className="dashboard-item" onClick={handleSecurityClick}>
-          <div className="icon">
-            <img src="/security-icon.png" alt="Security" />
-          </div>
-          <div className="label">
-            SECURITY SYSTEM
-            {securityUserRole === 'admin' && <span className="badge">Admin</span>}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
 \`\`\`
 
 ---
