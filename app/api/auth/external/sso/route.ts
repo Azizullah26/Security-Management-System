@@ -11,109 +11,136 @@ function getCorsHeaders() {
   }
 }
 
-// Generate SSO session for Hub users
 export async function POST(request: NextRequest) {
   try {
-    const { email, hubToken } = await request.json()
+    const { file_id, password, source } = await request.json()
 
-    console.log("[v0] SSO login request for email:", email)
+    console.log("[v0] SSO login request for file_id:", file_id, "source:", source)
 
-    if (!email) {
+    if (!file_id || !password) {
       return NextResponse.json(
-        { success: false, error: "Email is required" },
+        { success: false, error: "file_id and password are required" },
         { status: 400, headers: getCorsHeaders() },
       )
     }
 
     const supabase = await createServiceRoleClient()
 
-    // Verify user exists in profiles table
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("id, email, role, full_name, file_id")
-      .eq("email", email.toLowerCase())
+    // Check if admin login
+    if (file_id.toLowerCase() === "admin") {
+      console.log("[v0] Admin SSO login attempt")
+
+      if (password !== process.env.ADMIN_PASSWORD) {
+        console.log("[v0] Admin password mismatch")
+        return NextResponse.json(
+          { success: false, error: "Invalid credentials" },
+          { status: 401, headers: getCorsHeaders() },
+        )
+      }
+
+      // Generate admin session token
+      const sessionToken = crypto.randomBytes(32).toString("hex")
+      const expiresAt = Date.now() + 24 * 60 * 60 * 1000 // 24 hours
+
+      const { error: sessionError } = await supabase.from("admin_sessions").insert({
+        session_token: sessionToken,
+        created_at: Date.now(),
+        expires_at: expiresAt,
+      })
+
+      if (sessionError) {
+        console.error("[v0] Admin session creation error:", sessionError)
+        return NextResponse.json(
+          { success: false, error: "Failed to create session" },
+          { status: 500, headers: getCorsHeaders() },
+        )
+      }
+
+      const baseUrl = "https://elracesecurity.vercel.app"
+      const redirectUrl = `${baseUrl}/admin?token=${sessionToken}`
+
+      console.log("[v0] Admin SSO session created successfully")
+
+      return NextResponse.json(
+        {
+          success: true,
+          token: sessionToken,
+          user: {
+            file_id: "Admin",
+            role: "admin",
+            fullName: "Administrator",
+          },
+          redirectUrl,
+          expiresAt: new Date(expiresAt).toISOString(),
+        },
+        { headers: getCorsHeaders() },
+      )
+    }
+
+    // Check security_staff table for staff login
+    const { data: staff, error: staffError } = await supabase
+      .from("security_staff")
+      .select("id, file_id, full_name, current_password, position")
+      .eq("file_id", file_id)
       .maybeSingle()
 
-    if (profileError) {
-      console.log("[v0] Profile lookup error:", profileError)
+    if (staffError) {
+      console.error("[v0] Staff lookup error:", staffError)
     }
 
-    let userInfo = null
-    let userRole = "staff"
-
-    if (profile) {
-      userInfo = {
-        id: profile.id,
-        email: profile.email,
-        role: profile.role,
-        fullName: profile.full_name,
-        fileId: profile.file_id,
-      }
-      userRole = profile.role || "staff"
-    } else {
-      // Check securitystaff table
-      const { data: legacyStaff } = await supabase
-        .from("securitystaff")
-        .select("file_id, name, email")
-        .eq("email", email.toLowerCase())
-        .maybeSingle()
-
-      if (legacyStaff) {
-        userInfo = {
-          id: legacyStaff.file_id,
-          email: legacyStaff.email,
-          role: "staff",
-          fullName: legacyStaff.name,
-          fileId: legacyStaff.file_id,
-        }
-      }
-    }
-
-    if (!userInfo) {
-      console.log("[v0] SSO rejected - user not found:", email)
+    if (!staff) {
+      console.log("[v0] Staff not found with file_id:", file_id)
       return NextResponse.json(
         { success: false, error: "User not found. Access denied." },
         { status: 403, headers: getCorsHeaders() },
       )
     }
 
-    // Generate secure session token
+    // Verify password
+    if (staff.current_password !== password) {
+      console.log("[v0] Staff password mismatch for file_id:", file_id)
+      return NextResponse.json(
+        { success: false, error: "Invalid credentials" },
+        { status: 401, headers: getCorsHeaders() },
+      )
+    }
+
+    // Generate staff session token
     const sessionToken = crypto.randomBytes(32).toString("hex")
     const expiresAt = Date.now() + 24 * 60 * 60 * 1000 // 24 hours
 
-    // Determine redirect based on role
-    let redirectPath = "/"
-    if (userRole === "admin") {
-      // Create admin session
-      await supabase.from("admin_sessions").insert({
-        session_token: sessionToken,
-        created_at: Date.now(),
-        expires_at: expiresAt,
-      })
-      redirectPath = "/admin"
-    } else {
-      // Create staff session
-      await supabase.from("staff_sessions").insert({
-        session_token: sessionToken,
-        staff_id: userInfo.fileId || userInfo.id,
-        name: userInfo.fullName,
-        assigned_project: null,
-        created_at: Date.now(),
-        expires_at: expiresAt,
-      })
-      redirectPath = "/"
+    const { error: sessionError } = await supabase.from("staff_sessions").insert({
+      session_token: sessionToken,
+      staff_id: staff.file_id,
+      name: staff.full_name,
+      assigned_project: null,
+      created_at: Date.now(),
+      expires_at: expiresAt,
+    })
+
+    if (sessionError) {
+      console.error("[v0] Staff session creation error:", sessionError)
+      return NextResponse.json(
+        { success: false, error: "Failed to create session" },
+        { status: 500, headers: getCorsHeaders() },
+      )
     }
 
     const baseUrl = "https://elracesecurity.vercel.app"
-    const redirectUrl = `${baseUrl}${redirectPath}?token=${sessionToken}`
+    const redirectUrl = `${baseUrl}/?token=${sessionToken}`
 
-    console.log("[v0] SSO session created for:", email, "Role:", userRole)
+    console.log("[v0] Staff SSO session created for:", staff.full_name)
 
     return NextResponse.json(
       {
         success: true,
         token: sessionToken,
-        user: userInfo,
+        user: {
+          file_id: staff.file_id,
+          role: "staff",
+          fullName: staff.full_name,
+          position: staff.position,
+        },
         redirectUrl,
         expiresAt: new Date(expiresAt).toISOString(),
       },
