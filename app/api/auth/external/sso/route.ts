@@ -42,19 +42,25 @@ export async function POST(request: NextRequest) {
       const sessionToken = crypto.randomBytes(32).toString("hex")
       const expiresAt = Date.now() + 24 * 60 * 60 * 1000 // 24 hours
 
-      const { error: sessionError } = await supabase.from("admin_sessions").insert({
+      console.log("[v0] Attempting to insert admin session token:", sessionToken.substring(0, 20))
+      console.log("[v0] Insert data - session_token, created_at:", Date.now(), "expires_at:", expiresAt)
+
+      const { data: insertData, error: sessionError } = await supabase.from("admin_sessions").insert({
         session_token: sessionToken,
         created_at: Date.now(),
         expires_at: expiresAt,
       })
 
       if (sessionError) {
-        console.error("[v0] Admin session creation error:", sessionError)
+        console.error("[v0] Admin session creation error:", sessionError.code, sessionError.message)
+        console.error("[v0] Full error details:", sessionError)
         return NextResponse.json(
-          { success: false, error: "Failed to create session" },
+          { success: false, error: "Failed to create session: " + sessionError.message },
           { status: 500, headers: getCorsHeaders() },
         )
       }
+
+      console.log("[v0] Admin session insert successful, returned data:", insertData)
 
       const baseUrl = "https://elracesecurity.vercel.app"
       const redirectUrl = `${baseUrl}/admin?token=${sessionToken}`
