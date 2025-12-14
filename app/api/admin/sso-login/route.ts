@@ -6,10 +6,11 @@ export async function POST(request: NextRequest) {
     const { token } = await request.json()
 
     if (!token) {
+      console.log("[v0] SSO token missing")
       return NextResponse.json({ success: false, error: "Token is required" }, { status: 400 })
     }
 
-    console.log("[v0] Validating SSO token for admin login...")
+    console.log("[v0] Admin SSO: Validating token:", token.substring(0, 20) + "...")
 
     const supabase = await createServiceRoleClient()
 
@@ -20,22 +21,24 @@ export async function POST(request: NextRequest) {
       .maybeSingle()
 
     if (sessionError) {
-      console.error("[v0] Error checking admin session:", sessionError)
-      return NextResponse.json({ success: false, error: "Invalid token" }, { status: 401 })
+      console.error("[v0] Admin SSO: Error querying admin_sessions:", sessionError)
+      return NextResponse.json({ success: false, error: "Database error" }, { status: 500 })
     }
 
     if (!session) {
-      console.log("[v0] Token not found in admin_sessions")
+      console.log("[v0] Admin SSO: Token not found in admin_sessions table")
       return NextResponse.json({ success: false, error: "Invalid token" }, { status: 401 })
     }
 
+    console.log("[v0] Admin SSO: Session found, expires_at:", session.expires_at)
+
     const now = Date.now()
     if (session.expires_at && session.expires_at < now) {
-      console.log("[v0] Admin token has expired")
+      console.log("[v0] Admin SSO: Token expired. Expires:", session.expires_at, "Now:", now)
       return NextResponse.json({ success: false, error: "Token expired" }, { status: 401 })
     }
 
-    console.log("[v0] Admin authenticated via SSO")
+    console.log("[v0] Admin SSO: Token valid! Creating authenticated response")
 
     const response = NextResponse.json({
       success: true,

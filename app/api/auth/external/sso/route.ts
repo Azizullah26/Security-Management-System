@@ -111,9 +111,7 @@ export async function POST(request: NextRequest) {
 
     const { error: sessionError } = await supabase.from("staff_sessions").insert({
       session_token: sessionToken,
-      staff_id: staff.file_id,
-      name: staff.full_name,
-      assigned_project: null,
+      file_id: staff.file_id, // Changed from staff_id to file_id to match table schema
       created_at: Date.now(),
       expires_at: expiresAt,
     })

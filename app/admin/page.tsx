@@ -50,7 +50,7 @@ export default function AdminDashboard() {
         const token = urlParams.get("token")
 
         if (token) {
-          console.log("[v0] Admin token found in URL, creating admin session...")
+          console.log("[v0] Admin token found in URL:", token.substring(0, 20) + "...")
           try {
             const sessionResponse = await fetch("/api/admin/sso-login", {
               method: "POST",
@@ -59,9 +59,11 @@ export default function AdminDashboard() {
               credentials: "include",
             })
 
+            console.log("[v0] Admin SSO response status:", sessionResponse.status)
+
             if (sessionResponse.ok) {
               const data = await sessionResponse.json()
-              console.log("[v0] Admin session created from external token:", data)
+              console.log("[v0] Admin SSO successful! User:", data.user)
               // Clean URL to remove token parameter
               window.history.replaceState({}, document.title, window.location.pathname)
               setIsAuthenticated(true)
@@ -69,24 +71,26 @@ export default function AdminDashboard() {
               return
             } else {
               const errorData = await sessionResponse.json()
-              console.error("[v0] Failed to create admin session:", errorData)
+              console.error("[v0] Admin SSO failed with status", sessionResponse.status, ":", errorData)
             }
           } catch (error) {
-            console.error("[v0] Error creating admin session from token:", error)
+            console.error("[v0] Error calling admin SSO endpoint:", error)
           }
         }
 
+        console.log("[v0] Checking for existing admin session...")
         const adminResponse = await fetch("/api/admin/verify", {
           credentials: "include",
         })
 
         if (adminResponse.ok) {
+          console.log("[v0] Existing admin session found")
           setIsAuthenticated(true)
           setIsCheckingAuth(false)
           return
         }
 
-        // No valid authentication found
+        console.log("[v0] No valid admin authentication found")
         setIsAuthenticated(false)
       } catch (error) {
         console.error("Auth check failed:", error)
