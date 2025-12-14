@@ -83,9 +83,9 @@ export default function SecurityDashboard() {
       const token = urlParams.get("token")
 
       if (token) {
-        console.log("[v0] Token found in URL, verifying with API...")
+        console.log("[v0] Token found in URL, verifying and creating session...")
         try {
-          const response = await fetch("/api/auth/external/verify", {
+          const response = await fetch("/api/staff/sso-login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ token }),
@@ -93,14 +93,21 @@ export default function SecurityDashboard() {
 
           if (response.ok) {
             const data = await response.json()
-            console.log("[v0] Token verified successfully:", data.user)
+            console.log("[v0] SSO login successful:", data)
 
-            // Store the session token
-            localStorage.setItem("staff-session-token", token)
+            // Check if user is admin - redirect to admin dashboard
+            if (data.user.role === "admin" || data.user.fileId === "Admin") {
+              console.log("[v0] Admin user detected, redirecting to admin dashboard")
+              window.location.href = "/admin?token=" + token
+              return
+            }
+
+            // Store the session token for staff
+            localStorage.setItem("staff-session-token", data.sessionToken || token)
 
             // Set current staff from token data
             setCurrentStaff({
-              fileId: data.user.id,
+              fileId: data.user.fileId || data.user.id,
               name: data.user.name,
               assignedProject: data.user.assignedProject || "",
             })
@@ -110,14 +117,40 @@ export default function SecurityDashboard() {
             setIsInitializing(false)
             return
           } else {
-            console.error("[v0] Token verification failed")
+            const errorData = await response.json()
+            console.error("[v0] Token verification failed:", errorData)
           }
         } catch (error) {
           console.error("[v0] Error verifying token:", error)
         }
       }
 
-      // No token or verification failed - clear existing session
+      // No token or verification failed - check existing session
+      const staffToken = localStorage.getItem("staff-session-token")
+      if (staffToken) {
+        try {
+          const response = await fetch("/api/staff/verify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token: staffToken }),
+          })
+
+          if (response.ok) {
+            const data = await response.json()
+            setCurrentStaff({
+              fileId: data.staff.fileId,
+              name: data.staff.name,
+              assignedProject: data.staff.assignedProject || "",
+            })
+            setIsInitializing(false)
+            return
+          }
+        } catch (error) {
+          console.error("[v0] Error verifying existing session:", error)
+        }
+      }
+
+      // No valid session - clear and show login
       localStorage.removeItem("staff-session-token")
       setIsInitializing(false)
     }

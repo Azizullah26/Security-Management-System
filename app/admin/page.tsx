@@ -50,41 +50,29 @@ export default function AdminDashboard() {
         const token = urlParams.get("token")
 
         if (token) {
-          console.log("[v0] Token found in URL, verifying with API...")
+          console.log("[v0] Admin token found in URL, creating admin session...")
           try {
-            const verifyResponse = await fetch("/api/auth/external/verify", {
+            const sessionResponse = await fetch("/api/admin/sso-login", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ token }),
+              credentials: "include",
             })
 
-            if (verifyResponse.ok) {
-              const data = await verifyResponse.json()
-              console.log("[v0] Token verified successfully:", data.user)
-
-              if (data.user.role === "admin") {
-                // Create admin session using the token
-                const sessionResponse = await fetch("/api/admin/create-session", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ token }),
-                  credentials: "include",
-                })
-
-                if (sessionResponse.ok) {
-                  console.log("[v0] Admin session created from external token")
-                  // Clean URL to remove token parameter
-                  window.history.replaceState({}, document.title, window.location.pathname)
-                  setIsAuthenticated(true)
-                  setIsCheckingAuth(false)
-                  return
-                }
-              } else {
-                console.error("[v0] Token is for staff user, not admin")
-              }
+            if (sessionResponse.ok) {
+              const data = await sessionResponse.json()
+              console.log("[v0] Admin session created from external token:", data)
+              // Clean URL to remove token parameter
+              window.history.replaceState({}, document.title, window.location.pathname)
+              setIsAuthenticated(true)
+              setIsCheckingAuth(false)
+              return
+            } else {
+              const errorData = await sessionResponse.json()
+              console.error("[v0] Failed to create admin session:", errorData)
             }
           } catch (error) {
-            console.error("[v0] Error verifying token:", error)
+            console.error("[v0] Error creating admin session from token:", error)
           }
         }
 
@@ -96,23 +84,6 @@ export default function AdminDashboard() {
           setIsAuthenticated(true)
           setIsCheckingAuth(false)
           return
-        }
-
-        // If no admin session, check if user has a staff session with fileId="Admin"
-        const staffToken = localStorage.getItem("staff-session-token")
-        if (staffToken) {
-          // Try to auto-authenticate using the new endpoint
-          const autoAuthResponse = await fetch("/api/admin/auto-auth", {
-            method: "POST",
-            credentials: "include",
-          })
-
-          if (autoAuthResponse.ok) {
-            console.log("[v0] Admin session created automatically")
-            setIsAuthenticated(true)
-            setIsCheckingAuth(false)
-            return
-          }
         }
 
         // No valid authentication found
