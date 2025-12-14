@@ -143,6 +143,7 @@ export async function POST(request: NextRequest) {
       .from("staff_sessions")
       .insert({
         session_token: sessionToken,
+        staff_id: staff.file_id, // Required NOT NULL field
         file_id: staff.file_id,
         name: staff.full_name,
         created_at: createdAt,
