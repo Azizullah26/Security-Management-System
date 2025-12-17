@@ -41,7 +41,7 @@ The `security_staff` table contains:
 ## Password Hashing
 
 Passwords are hashed using the Web Crypto API:
-\`\`\`typescript
+```typescript
 async function hashPassword(password: string): Promise<string> {
   const encoder = new TextEncoder()
   const data = encoder.encode(password)
@@ -50,7 +50,7 @@ async function hashPassword(password: string): Promise<string> {
   const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("")
   return hashHex
 }
-\`\`\`
+```
 
 ## Adding New Staff
 

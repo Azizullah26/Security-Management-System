@@ -12,19 +12,19 @@ The system now stores staff credentials in the Supabase `profiles` table instead
 
 Run the SQL script to add the `password_hash` column:
 
-\`\`\`bash
+```bash
 # Execute script 07
 scripts/07_add_password_to_profiles.sql
-\`\`\`
+```
 
 ### 2. Insert Security Staff Members
 
 Run the SQL script to insert the 6 security staff members:
 
-\`\`\`bash
+```bash
 # Execute script 08
 scripts/08_insert_security_staff.sql
-\`\`\`
+```
 
 This creates profiles for:
 - File ID 3252 - Mohus
@@ -38,9 +38,9 @@ This creates profiles for:
 
 Call the setup endpoint to hash passwords from environment variables and store them in the database:
 
-\`\`\`bash
+```bash
 POST /api/setup-staff-passwords
-\`\`\`
+```
 
 This endpoint:
 - Reads passwords from environment variables (STAFF_3252_PASSWORD, etc.)

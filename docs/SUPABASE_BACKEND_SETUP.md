@@ -101,70 +101,70 @@ Stores visitor and staff entry/exit records.
 ### Step 1: Create Sites Table
 Run the SQL script to create the sites table and link it to profiles:
 
-\`\`\`bash
+```bash
 # Execute in Supabase SQL Editor or via API
 scripts/01_create_sites_table.sql
-\`\`\`
+```
 
 ### Step 2: Setup Users and Site Assignments
 Run the SQL script to insert admin and staff users with site assignments:
 
-\`\`\`bash
+```bash
 scripts/02_setup_users_and_sites.sql
-\`\`\`
+```
 
 ### Step 3: Setup RLS Policies
 Run the SQL script to enable RLS and create security policies:
 
-\`\`\`bash
+```bash
 scripts/03_setup_rls_policies.sql
-\`\`\`
+```
 
 ### Step 4: Test with Sample Queries
 Use the sample queries to verify the setup:
 
-\`\`\`bash
+```bash
 scripts/04_sample_queries.sql
-\`\`\`
+```
 
 ## Usage Examples
 
 ### For Security Staff (e.g., Umair - 3242)
 
 **Fetch today's entries:**
-\`\`\`sql
+```sql
 SELECT set_config('app.current_user_id', '3242', false);
 
 SELECT * FROM public.entries
 WHERE created_by = (SELECT full_name FROM public.profiles WHERE file_id = '3242')
 AND DATE(created_at) = CURRENT_DATE;
-\`\`\`
+```
 
 **Create new entry:**
-\`\`\`sql
+```sql
 INSERT INTO public.entries (category, name, company, created_by, site_name, ...)
 VALUES ('visitors', 'John Doe', 'ABC Corp', 'Umair', 'Site B', ...);
-\`\`\`
+```
 
 ### For Admin
 
 **Fetch all entries with site info:**
-\`\`\`sql
+```sql
 SELECT set_config('app.current_user_id', 'ADMIN', false);
 
 SELECT e.*, p.file_id as staff_id, s.location
 FROM public.entries e
 LEFT JOIN public.profiles p ON e.created_by = p.full_name
 LEFT JOIN public.sites s ON e.site_name = s.name;
-\`\`\`
+```
 
 **Get statistics by site:**
-\`\`\`sql
+```sql
 SELECT site_name, COUNT(*) as total, 
        COUNT(CASE WHEN status = 'inside' THEN 1 END) as inside
 FROM public.entries
 GROUP BY site_name;
-\`\`\`
+```
 
 ## Security Considerations
 
@@ -178,13 +178,13 @@ GROUP BY site_name;
 The application code should:
 
 1. Set the user context before queries:
-\`\`\`typescript
+```typescript
 await supabase.rpc('set_config', {
   setting: 'app.current_user_id',
   value: staffFileId,
   is_local: false
 })
-\`\`\`
+```
 
 2. Use the Supabase client with proper authentication
 3. Handle RLS policy violations gracefully

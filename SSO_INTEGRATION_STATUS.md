@@ -25,7 +25,7 @@ Single Sign-On (SSO) integration between RCC Hub and Security System is now full
 ## 🔧 API Endpoints (All Working)
 
 ### 1. Generate SSO Token
-\`\`\`http
+```http
 POST https://elracesecurity.vercel.app/api/auth/external/sso
 Content-Type: application/json
 
@@ -34,43 +34,43 @@ Content-Type: application/json
   "password": "3252",
   "source": "rcc_hub"
 }
-\`\`\`
+```
 
 **Response:**
-\`\`\`json
+```json
 {
   "success": true,
   "token": "4772cd759593...",
   "redirectUrl": "https://elracesecurity.vercel.app/?token=4772cd759593...",
   "expiresAt": 1734598566016
 }
-\`\`\`
+```
 
 ### 2. Staff SSO Login (Internal - Called by Page)
-\`\`\`http
+```http
 POST /api/staff/sso-login
 Content-Type: application/json
 
 {
   "token": "4772cd759593..."
 }
-\`\`\`
+```
 
 ### 3. Admin SSO Login (Internal - Called by Page)
-\`\`\`http
+```http
 POST /api/admin/sso-login
 Content-Type: application/json
 
 {
   "token": "4772cd759593..."
 }
-\`\`\`
+```
 
 ---
 
 ## 📋 Flow Diagram
 
-\`\`\`
+```
 RCC Hub User Login
        ↓
 [Hub authenticates via security_staff table]
@@ -90,14 +90,14 @@ Token validated, session created
 Dashboard displays (NO LOGIN FORM SHOWN)
        ↓
 Token removed from URL
-\`\`\`
+```
 
 ---
 
 ## 🎯 RCC Hub Integration Code
 
 ### Step 1: Authenticate User (Hub Side)
-\`\`\`typescript
+```typescript
 // Hub already has access to security_staff table
 const staff = await supabase
   .from('security_staff')
@@ -109,10 +109,10 @@ const staff = await supabase
 if (!staff.data) {
   throw new Error('Invalid credentials')
 }
-\`\`\`
+```
 
 ### Step 2: Generate SSO Token
-\`\`\`typescript
+```typescript
 const response = await fetch('https://elracesecurity.vercel.app/api/auth/external/sso', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
@@ -124,13 +124,13 @@ const response = await fetch('https://elracesecurity.vercel.app/api/auth/externa
 })
 
 const { redirectUrl } = await response.json()
-\`\`\`
+```
 
 ### Step 3: Redirect User
-\`\`\`typescript
+```typescript
 // Simply redirect to the URL - Security System handles the rest
 window.location.href = redirectUrl
-\`\`\`
+```
 
 ---
 
