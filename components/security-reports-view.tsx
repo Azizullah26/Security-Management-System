@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Eye, Download, FileText, ImageIcon, Video } from "lucide-react"
+import { Eye, Download, FileText, Video, Trash2 } from "lucide-react"
 import jsPDF from "jspdf"
 import html2canvas from "html2canvas"
 
@@ -38,6 +38,7 @@ export function SecurityReportsView() {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedReport, setSelectedReport] = useState<SecurityReport | null>(null)
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
+  const [deletingId, setDeletingId] = useState<number | null>(null)
 
   useEffect(() => {
     fetchReports()
@@ -71,6 +72,32 @@ export function SecurityReportsView() {
       setError(error instanceof Error ? error.message : "Failed to fetch reports")
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleDeleteReport = async (reportId: number) => {
+    if (!confirm(`Are you sure you want to delete report #${reportId}? This action cannot be undone.`)) {
+      return
+    }
+
+    try {
+      setDeletingId(reportId)
+      const response = await fetch(`/api/security-reports/delete?id=${reportId}`, {
+        method: "DELETE",
+        credentials: "include",
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to delete report")
+      }
+
+      // Remove the deleted report from state
+      setReports((prev) => prev.filter((r) => r.id !== reportId))
+    } catch (error) {
+      console.error("[v0] Error deleting report:", error)
+      alert("Failed to delete report. Please try again.")
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -316,6 +343,7 @@ export function SecurityReportsView() {
     }
   }
 
+  // These functions were not modified in the provided updates, so they are kept as is.
   const loadImageAsDataURL = (url: string): Promise<string> => {
     return new Promise((resolve, reject) => {
       const img = new Image()
@@ -424,12 +452,12 @@ export function SecurityReportsView() {
                 <TableHeader className="sticky top-0 z-10 bg-gradient-to-r from-indigo-100 to-purple-100">
                   <TableRow>
                     <TableHead className="font-semibold text-indigo-900">Report #</TableHead>
-                    <TableHead className="font-semibold text-indigo-900">Staff Name</TableHead>
-                    <TableHead className="font-semibold text-indigo-900">Project</TableHead>
-                    <TableHead className="font-semibold text-indigo-900">Description</TableHead>
                     <TableHead className="font-semibold text-indigo-900">Attachments</TableHead>
                     <TableHead className="font-semibold text-indigo-900">Created</TableHead>
                     <TableHead className="font-semibold text-indigo-900 text-center">Actions</TableHead>
+                    <TableHead className="font-semibold text-indigo-900">Staff Name</TableHead>
+                    <TableHead className="font-semibold text-indigo-900">Project</TableHead>
+                    <TableHead className="font-semibold text-indigo-900">Description</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -439,13 +467,6 @@ export function SecurityReportsView() {
                     return (
                       <TableRow key={report.id} className="hover:bg-indigo-50/50 transition-colors">
                         <TableCell className="font-medium text-indigo-700">#{report.id}</TableCell>
-                        <TableCell className="font-medium">{report.staff_name}</TableCell>
-                        <TableCell className="max-w-xs">
-                          <p className="truncate text-gray-700 font-medium">{report.project_name || "N/A"}</p>
-                        </TableCell>
-                        <TableCell className="max-w-xs">
-                          <p className="truncate text-gray-600">{report.description}</p>
-                        </TableCell>
                         <TableCell>
                           <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
                             {attachments.length} {attachments.length === 1 ? "file" : "files"}
@@ -472,7 +493,24 @@ export function SecurityReportsView() {
                             >
                               <Download className="h-4 w-4" />
                             </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleDeleteReport(report.id)}
+                              disabled={deletingId === report.id}
+                              className="hover:bg-red-100 hover:text-red-700"
+                              title="Delete Report"
+                            >
+                              <Trash2 className={`h-4 w-4 ${deletingId === report.id ? "animate-spin" : ""}`} />
+                            </Button>
                           </div>
+                        </TableCell>
+                        <TableCell className="font-medium">{report.staff_name}</TableCell>
+                        <TableCell className="max-w-xs">
+                          <p className="truncate text-gray-700 font-medium">{report.project_name || "N/A"}</p>
+                        </TableCell>
+                        <TableCell className="max-w-xs">
+                          <p className="truncate text-gray-600">{report.description}</p>
                         </TableCell>
                       </TableRow>
                     )
@@ -524,82 +562,86 @@ export function SecurityReportsView() {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500 font-medium">Created</p>
-                  <p className="text-lg font-semibold text-gray-900">{formatDate(selectedReport.Date)}</p>
+                  <p className="text-lg font-semibold text-gray-900">{formatDate(selectedReport.created_at)}</p>
                 </div>
               </div>
 
               {/* Description */}
-              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+              <div className="p-4 bg-gray-50 rounded-lg">
                 <p className="text-sm text-gray-500 font-medium mb-2">Description</p>
-                <p className="text-gray-800 whitespace-pre-wrap">{selectedReport.description}</p>
+                <p className="text-gray-900 whitespace-pre-wrap">{selectedReport.description}</p>
               </div>
 
               {/* Attachments */}
               {parseAttachments(selectedReport.attachment).length > 0 && (
-                <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <ImageIcon className="h-4 w-4 text-gray-500" />
-                    <p className="text-sm text-gray-500 font-medium">
-                      Attachments (${parseAttachments(selectedReport.attachment).length})
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <div className="p-4 bg-green-50 rounded-lg">
+                  <p className="text-sm text-gray-500 font-medium mb-3">
+                    Attachments ({parseAttachments(selectedReport.attachment).length})
+                  </p>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {parseAttachments(selectedReport.attachment).map((url, index) => {
                       const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(url)
                       const isVideo = /\.(mp4|webm|mov)$/i.test(url)
 
-                      return (
-                        <div
-                          key={index}
-                          className="group relative bg-gray-100 rounded-lg overflow-hidden border border-gray-200 hover:border-indigo-400 transition-all"
-                        >
-                          {isImage && (
-                            <a href={url} target="_blank" rel="noopener noreferrer" className="block aspect-square">
-                              <img
-                                src={url || "/placeholder.svg"}
-                                alt={`Attachment ${index + 1}`}
-                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                              />
-                            </a>
-                          )}
-                          {isVideo && (
-                            <a href={url} target="_blank" rel="noopener noreferrer" className="block aspect-square">
-                              <video src={url} className="w-full h-full object-cover" controls={false} />
-                              <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                                <div className="bg-white/90 rounded-full p-3">
-                                  <Video className="w-6 h-6 text-indigo-600" />
-                                </div>
-                              </div>
-                            </a>
-                          )}
+                      if (isImage) {
+                        return (
                           <a
+                            key={index}
                             href={url}
-                            download
-                            className="absolute top-2 right-2 bg-white/90 hover:bg-white p-1.5 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block rounded-lg overflow-hidden border border-gray-200 hover:border-indigo-400 transition-colors"
                           >
-                            <Download className="h-3 w-3 text-indigo-600" />
+                            <img
+                              src={url || "/placeholder.svg"}
+                              alt={`Attachment ${index + 1}`}
+                              className="w-full h-32 object-cover"
+                            />
                           </a>
-                        </div>
+                        )
+                      }
+
+                      if (isVideo) {
+                        return (
+                          <a
+                            key={index}
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center h-32 rounded-lg border border-gray-200 bg-gray-100 hover:border-indigo-400 transition-colors"
+                          >
+                            <Video className="h-8 w-8 text-gray-500" />
+                          </a>
+                        )
+                      }
+
+                      return (
+                        <a
+                          key={index}
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-center h-32 rounded-lg border border-gray-200 bg-gray-100 hover:border-indigo-400 transition-colors"
+                        >
+                          <FileText className="h-8 w-8 text-gray-500" />
+                        </a>
                       )
                     })}
                   </div>
                 </div>
               )}
 
-              {/* Created At */}
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border-t border-gray-200">
-                <div>
-                  <span className="text-sm text-gray-500">Report Submitted:</span>
-                  <span className="text-sm font-medium text-gray-900 ml-2">
-                    {formatDate(selectedReport.created_at)}
-                  </span>
-                </div>
+              {/* Actions */}
+              <div className="flex gap-3 pt-4">
                 <Button
                   onClick={() => downloadPDF(selectedReport)}
                   className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white"
                 >
                   <Download className="h-4 w-4 mr-2" />
                   Download PDF
+                </Button>
+                <Button variant="outline" onClick={() => setIsDetailsOpen(false)} className="border-gray-300">
+                  Close
                 </Button>
               </div>
             </div>
