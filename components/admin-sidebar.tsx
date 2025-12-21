@@ -38,7 +38,7 @@ const sidebarItems = [
   },
   {
     id: "all-records",
-    label: "All Records",
+    label: "Entry and Exit Records", // Changed button text from "All Records" to "Entry and Exit Records"
     icon: FileText,
     category: "MAIN",
   },

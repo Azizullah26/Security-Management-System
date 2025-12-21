@@ -255,10 +255,10 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-            All Records
+            Entry and Exit Records
           </h1>
           <p className="text-gray-600 bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent font-medium">
-            Complete overview of all entry records across all categories
+            Complete overview of all entry and exit records across all categories
           </p>
         </div>
         <Button
