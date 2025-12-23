@@ -94,6 +94,13 @@ export default function SecurityDashboard() {
           })
 
           console.log("[v0] Response status:", response.status)
+
+          const contentType = response.headers.get("content-type")
+          if (!contentType || !contentType.includes("application/json")) {
+            console.error("[v0] API returned non-JSON response:", contentType)
+            throw new Error("Invalid response format from server")
+          }
+
           const data = await response.json()
           console.log("[v0] Response data:", data)
 
@@ -142,16 +149,25 @@ export default function SecurityDashboard() {
             body: JSON.stringify({ token: staffToken }),
           })
 
-          if (response.ok) {
-            const data = await response.json()
-            setCurrentStaff({
-              fileId: data.staff.fileId,
-              name: data.staff.name,
-              assignedProject: data.staff.assignedProject || "",
-            })
-            setIsInitializing(false)
-            return
+          if (!response.ok) {
+            console.log("[v0] Session verification failed with status:", response.status)
+            throw new Error("Session verification failed")
           }
+
+          const contentType = response.headers.get("content-type")
+          if (!contentType || !contentType.includes("application/json")) {
+            console.error("[v0] API returned non-JSON response:", contentType)
+            throw new Error("Invalid response format from server")
+          }
+
+          const data = await response.json()
+          setCurrentStaff({
+            fileId: data.staff.fileId,
+            name: data.staff.name,
+            assignedProject: data.staff.assignedProject || "",
+          })
+          setIsInitializing(false)
+          return
         } catch (error) {
           console.error("[v0] Error verifying existing session:", error)
         }

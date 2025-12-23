@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Eye, Download, FileText, Video, Trash2 } from "lucide-react"
+import { Eye, Download, FileText, Video, Trash2, RefreshCw } from "lucide-react"
 import jsPDF from "jspdf"
 import html2canvas from "html2canvas"
 
@@ -39,10 +39,20 @@ export function SecurityReportsView() {
   const [selectedReport, setSelectedReport] = useState<SecurityReport | null>(null)
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
   const [deletingId, setDeletingId] = useState<number | null>(null)
+  const [retryCount, setRetryCount] = useState(0)
 
   useEffect(() => {
     fetchReports()
-  }, [])
+    const retryInterval = setInterval(() => {
+      if (error && retryCount < 3) {
+        console.log("[v0] Auto-retrying security reports fetch, attempt:", retryCount + 1)
+        setRetryCount((prev) => prev + 1)
+        fetchReports()
+      }
+    }, 5000)
+
+    return () => clearInterval(retryInterval)
+  }, [error, retryCount])
 
   const fetchReports = async () => {
     try {
@@ -67,6 +77,7 @@ export function SecurityReportsView() {
       const data = await response.json()
       console.log("[v0] Security reports fetched:", data.length)
       setReports(data)
+      setRetryCount(0)
     } catch (error) {
       console.error("[v0] Error fetching security reports:", error)
       setError(error instanceof Error ? error.message : "Failed to fetch reports")
@@ -91,7 +102,6 @@ export function SecurityReportsView() {
         throw new Error("Failed to delete report")
       }
 
-      // Remove the deleted report from state
       setReports((prev) => prev.filter((r) => r.id !== reportId))
     } catch (error) {
       console.error("[v0] Error deleting report:", error)
@@ -101,15 +111,12 @@ export function SecurityReportsView() {
     }
   }
 
-  const filteredReports = reports.filter((report) => {
-    const searchLower = searchTerm.toLowerCase()
-    return (
-      (report.staff_name || "").toLowerCase().includes(searchLower) ||
-      (report.project_name || "").toLowerCase().includes(searchLower) ||
-      (report.description || "").toLowerCase().includes(searchLower) ||
-      (report.Date || "").toLowerCase().includes(searchLower)
-    )
-  })
+  const filteredReports = reports.filter(
+    (report) =>
+      report.staff_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      report.project_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      report.description?.toLowerCase().includes(searchTerm.toLowerCase()),
+  )
 
   const parseAttachments = (attachment: string | null): string[] => {
     if (!attachment) return []
@@ -138,7 +145,6 @@ export function SecurityReportsView() {
       const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document
       if (!iframeDoc) throw new Error("Failed to create iframe document")
 
-      // Write a complete HTML document with only standard colors
       iframeDoc.open()
       const attachments = parseAttachments(report.attachment)
       iframeDoc.write(`
@@ -273,31 +279,8 @@ export function SecurityReportsView() {
       `)
       iframeDoc.close()
 
-      // Wait for iframe to be ready
       await new Promise((resolve) => setTimeout(resolve, 100))
 
-      // Load and add images to iframe
-      const attachmentsContainer = iframeDoc.getElementById("attachments-container")
-
-      for (const url of attachments) {
-        if (url.match(/\.(jpg|jpeg|png|gif)$/i)) {
-          const img = iframeDoc.createElement("img")
-          img.src = url
-          attachmentsContainer?.appendChild(img)
-
-          // Wait for image to load
-          await new Promise((resolve) => {
-            img.onload = resolve
-            img.onerror = resolve
-            setTimeout(resolve, 3000) // timeout after 3s
-          })
-        }
-      }
-
-      // Wait a bit more for rendering
-      await new Promise((resolve) => setTimeout(resolve, 200))
-
-      // Capture the iframe body with html2canvas
       const canvas = await html2canvas(iframeDoc.body, {
         scale: 2,
         useCORS: true,
@@ -306,28 +289,24 @@ export function SecurityReportsView() {
         logging: false,
       })
 
-      // Remove iframe
       document.body.removeChild(iframe)
 
-      // Create PDF from canvas
       const pdf = new jsPDF({
         orientation: "portrait",
         unit: "mm",
         format: "a4",
       })
 
-      const imgWidth = 210 // A4 width in mm
+      const imgWidth = 210
       const imgHeight = (canvas.height * imgWidth) / canvas.width
-      const pageHeight = 297 // A4 height in mm
+      const pageHeight = 297
 
       let heightLeft = imgHeight
       let position = 0
 
-      // Add first page
       pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, position, imgWidth, imgHeight)
       heightLeft -= pageHeight
 
-      // Add additional pages if needed
       while (heightLeft > 0) {
         position = heightLeft - imgHeight
         pdf.addPage()
@@ -335,7 +314,6 @@ export function SecurityReportsView() {
         heightLeft -= pageHeight
       }
 
-      // Save the PDF
       pdf.save(`security-report-${report.id}.pdf`)
     } catch (error) {
       console.error("Error generating PDF:", error)
@@ -343,7 +321,6 @@ export function SecurityReportsView() {
     }
   }
 
-  // These functions were not modified in the provided updates, so they are kept as is.
   const loadImageAsDataURL = (url: string): Promise<string> => {
     return new Promise((resolve, reject) => {
       const img = new Image()
@@ -375,50 +352,57 @@ export function SecurityReportsView() {
     })
   }
 
-  if (loading) {
+  if (loading && reports.length === 0) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-2 border-indigo-600 border-t-transparent mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading security reports...</p>
-        </div>
-      </div>
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center justify-center space-x-2">
+            <RefreshCw className="h-5 w-5 animate-spin" />
+            <p className="text-muted-foreground">Loading security reports...</p>
+          </div>
+        </CardContent>
+      </Card>
     )
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <p className="text-red-600 mb-4">{error}</p>
-          <Button onClick={fetchReports} className="bg-indigo-600 hover:bg-indigo-700 text-white">
-            Retry
-          </Button>
-        </div>
-      </div>
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex flex-col items-center justify-center space-y-4">
+            <p className="text-red-500">Error: {error}</p>
+            <Button
+              onClick={() => {
+                setRetryCount(0)
+                fetchReports()
+              }}
+              variant="outline"
+            >
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Retry Now
+            </Button>
+            {retryCount > 0 && retryCount < 3 && (
+              <p className="text-sm text-muted-foreground">Auto-retrying... (Attempt {retryCount}/3)</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     )
   }
 
   return (
-    <div className="space-y-6 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-6 rounded-xl border border-white/30 shadow-lg">
-      <div className="flex justify-between items-center">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-            Security Reports
-          </h1>
-          <p className="text-gray-600 bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent font-medium">
-            View all submitted security reports with details and attachments
-          </p>
+          <h2 className="text-2xl font-bold text-gray-900">Security Reports</h2>
+          <p className="text-sm text-gray-500">View and manage all security incident reports</p>
         </div>
-        <Button
-          onClick={fetchReports}
-          className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white"
-        >
+        <Button onClick={fetchReports} variant="outline" size="sm" disabled={loading}>
+          <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           Refresh
         </Button>
       </div>
 
-      {/* Search Bar */}
       <div className="flex gap-4 items-center bg-white p-4 rounded-lg border border-gray-200 shadow-md">
         <div className="relative flex-1 max-w-md">
           <Eye className="absolute left-3 top-1/2 -translate-y-1/2 text-purple-500 h-4 w-4 pointer-events-none" />
@@ -434,7 +418,6 @@ export function SecurityReportsView() {
         </Badge>
       </div>
 
-      {/* Reports Table */}
       {filteredReports.length === 0 ? (
         <Card className="bg-white/80 backdrop-blur-sm border-white/50 shadow-lg">
           <CardContent className="flex flex-col items-center justify-center py-12">
@@ -522,7 +505,6 @@ export function SecurityReportsView() {
         </Card>
       )}
 
-      {/* Details Modal Dialog */}
       <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -533,7 +515,6 @@ export function SecurityReportsView() {
 
           {selectedReport && (
             <div className="space-y-6 mt-4">
-              {/* Staff Name */}
               <div className="flex items-center gap-3 p-4 bg-purple-50 rounded-lg">
                 <div className="bg-purple-100 p-2 rounded-lg">
                   <Eye className="h-5 w-5 text-purple-600" />
@@ -544,7 +525,6 @@ export function SecurityReportsView() {
                 </div>
               </div>
 
-              {/* Project Name */}
               <div className="flex items-center gap-3 p-4 bg-indigo-50 rounded-lg">
                 <div className="bg-indigo-100 p-2 rounded-lg">
                   <FileText className="h-5 w-5 text-indigo-600" />
@@ -555,7 +535,6 @@ export function SecurityReportsView() {
                 </div>
               </div>
 
-              {/* Report Date */}
               <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg">
                 <div className="bg-blue-100 p-2 rounded-lg">
                   <Eye className="h-5 w-5 text-blue-600" />
@@ -566,13 +545,11 @@ export function SecurityReportsView() {
                 </div>
               </div>
 
-              {/* Description */}
               <div className="p-4 bg-gray-50 rounded-lg">
                 <p className="text-sm text-gray-500 font-medium mb-2">Description</p>
                 <p className="text-gray-900 whitespace-pre-wrap">{selectedReport.description}</p>
               </div>
 
-              {/* Attachments */}
               {parseAttachments(selectedReport.attachment).length > 0 && (
                 <div className="p-4 bg-green-50 rounded-lg">
                   <p className="text-sm text-gray-500 font-medium mb-3">
@@ -631,7 +608,6 @@ export function SecurityReportsView() {
                 </div>
               )}
 
-              {/* Actions */}
               <div className="flex gap-3 pt-4">
                 <Button
                   onClick={() => downloadPDF(selectedReport)}
