@@ -43,6 +43,12 @@ export function SecurityReportsView() {
 
   useEffect(() => {
     fetchReports()
+
+    const pollInterval = setInterval(() => {
+      console.log("[v0] Polling for new security reports...")
+      fetchReports()
+    }, 10000) // Poll every 10 seconds
+
     const retryInterval = setInterval(() => {
       if (error && retryCount < 3) {
         console.log("[v0] Auto-retrying security reports fetch, attempt:", retryCount + 1)
@@ -51,7 +57,10 @@ export function SecurityReportsView() {
       }
     }, 5000)
 
-    return () => clearInterval(retryInterval)
+    return () => {
+      clearInterval(pollInterval)
+      clearInterval(retryInterval)
+    }
   }, [error, retryCount])
 
   const fetchReports = async () => {
