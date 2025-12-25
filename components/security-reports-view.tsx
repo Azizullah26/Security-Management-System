@@ -71,10 +71,13 @@ export function SecurityReportsView() {
       }
       setError(null)
       console.log("[v0] Fetching security reports...")
-      const response = await fetch("/api/security-reports/list?admin=true", {
+      const timestamp = Date.now()
+      const response = await fetch(`/api/security-reports/list?admin=true&_t=${timestamp}`, {
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
         },
       })
 
