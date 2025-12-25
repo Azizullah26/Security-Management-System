@@ -40,6 +40,7 @@ export function SecurityReportsView() {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
   const [deletingId, setDeletingId] = useState<number | null>(null)
   const [retryCount, setRetryCount] = useState(0)
+  const [isInitialLoad, setIsInitialLoad] = useState(true)
 
   useEffect(() => {
     fetchReports()
@@ -47,7 +48,7 @@ export function SecurityReportsView() {
     const pollInterval = setInterval(() => {
       console.log("[v0] Polling for new security reports...")
       fetchReports()
-    }, 10000) // Poll every 10 seconds
+    }, 10000)
 
     const retryInterval = setInterval(() => {
       if (error && retryCount < 3) {
@@ -65,7 +66,9 @@ export function SecurityReportsView() {
 
   const fetchReports = async () => {
     try {
-      setLoading(true)
+      if (isInitialLoad) {
+        setLoading(true)
+      }
       setError(null)
       console.log("[v0] Fetching security reports...")
       const response = await fetch("/api/security-reports/list?admin=true", {
@@ -87,11 +90,16 @@ export function SecurityReportsView() {
       console.log("[v0] Security reports fetched:", data.length)
       setReports(data)
       setRetryCount(0)
+      if (isInitialLoad) {
+        setIsInitialLoad(false)
+      }
     } catch (error) {
       console.error("[v0] Error fetching security reports:", error)
       setError(error instanceof Error ? error.message : "Failed to fetch reports")
     } finally {
-      setLoading(false)
+      if (isInitialLoad) {
+        setLoading(false)
+      }
     }
   }
 
@@ -361,7 +369,7 @@ export function SecurityReportsView() {
     })
   }
 
-  if (loading && reports.length === 0) {
+  if (loading && reports.length === 0 && isInitialLoad) {
     return (
       <Card>
         <CardContent className="p-6">
