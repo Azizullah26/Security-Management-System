@@ -22,7 +22,7 @@ When a user successfully logs into the RCC Hub using their `file_id` and passwor
 ### Step 2: Authenticate User (Direct Database Query)
 When authenticating, verify credentials against the database:
 
-```typescript
+\`\`\`typescript
 // Hub-side code - Direct authentication
 const authenticateUser = async (fileId: string, password: string) => {
   try {
@@ -55,12 +55,12 @@ const authenticateUser = async (fileId: string, password: string) => {
     return { success: false }
   }
 }
-```
+\`\`\`
 
 ### Step 3: Generate SSO Token and Redirect
 After successful authentication, call the SSO API to get a redirect URL:
 
-```typescript
+\`\`\`typescript
 const handleSecuritySystemClick = async (fileId: string, password: string) => {
   try {
     console.log('[Hub] Generating SSO token for file_id:', fileId)
@@ -93,23 +93,23 @@ const handleSecuritySystemClick = async (fileId: string, password: string) => {
     alert('Connection error. Please try again.')
   }
 }
-```
+\`\`\`
 
 ---
 
 ## CRITICAL: What NOT to Do
 
 ### ❌ WRONG - Do NOT redirect to these URLs:
-```typescript
+\`\`\`typescript
 // DON'T DO THIS - These are API endpoints, not pages:
 window.location.href = `https://elracesecurity.vercel.app/api/staff/sso-login?token=${token}` // ❌
 window.location.href = `https://elracesecurity.vercel.app/api/auth/external/sso?token=${token}` // ❌
-```
+\`\`\`
 
 These URLs return JSON, not HTML pages, and will show "Method Not Allowed" errors.
 
 ### ✅ CORRECT - Always use the redirectUrl from the SSO API response:
-```typescript
+\`\`\`typescript
 // DO THIS - Use the redirectUrl from the response:
 const result = await fetch('https://elracesecurity.vercel.app/api/auth/external/sso', {
   method: 'POST',
@@ -119,7 +119,7 @@ const result = await fetch('https://elracesecurity.vercel.app/api/auth/external/
 if (result.success) {
   window.location.href = result.redirectUrl // ✅ This is a page URL, not API
 }
-```
+\`\`\`
 
 The `redirectUrl` will automatically be:
 - `https://elracesecurity.vercel.app/?token=xxx` for staff users
@@ -129,7 +129,7 @@ The `redirectUrl` will automatically be:
 
 ## Complete Hub Implementation Example
 
-```typescript
+\`\`\`typescript
 // Hub Dashboard Component
 import { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
@@ -200,7 +200,7 @@ export function HubDashboard({ user }: { user: { fileId: string, password: strin
     </div>
   )
 }
-```
+\`\`\`
 
 ---
 
@@ -210,16 +210,16 @@ export function HubDashboard({ user }: { user: { fileId: string, password: strin
 **Endpoint**: `POST https://elracesecurity.vercel.app/api/auth/external/sso`
 
 **Request**:
-```json
+\`\`\`json
 {
   "file_id": "3252",
   "password": "3252",
   "source": "rcc_hub"
 }
-```
+\`\`\`
 
 **Success Response**:
-```json
+\`\`\`json
 {
   "success": true,
   "token": "abc123...",
@@ -232,15 +232,15 @@ export function HubDashboard({ user }: { user: { fileId: string, password: strin
   "redirectUrl": "https://elracesecurity.vercel.app/?token=abc123...",
   "expiresAt": "2025-12-16T18:16:16.752Z"
 }
-```
+\`\`\`
 
 **Error Response**:
-```json
+\`\`\`json
 {
   "success": false,
   "error": "Invalid credentials"
 }
-```
+\`\`\`
 
 ---
 
