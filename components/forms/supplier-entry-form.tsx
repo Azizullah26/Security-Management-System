@@ -22,17 +22,19 @@ export function SupplierEntryForm({ onSubmit, onCancel }: SupplierEntryFormProps
     contactNumber: "",
     lpo: "",
     materials: "",
-    numberOfPersons: 1,
+    numberOfPersons: "",
     vehicleNumber: "",
   })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
+    const { numberOfPersons, ...restFormData } = formData
     const entryData: EntryData = {
       id: crypto.randomUUID(),
       category: "suppliers",
-      ...formData,
+      ...restFormData,
+      numberOfPersons: numberOfPersons ? Number(numberOfPersons) : undefined,
       email: "",
       entryTime: new Date().toISOString(),
       status: "inside",
@@ -109,7 +111,7 @@ export function SupplierEntryForm({ onSubmit, onCancel }: SupplierEntryFormProps
           min="1"
           max="50"
           value={formData.numberOfPersons}
-          onChange={(e) => setFormData({ ...formData, numberOfPersons: Number.parseInt(e.target.value) || 1 })}
+          onChange={(e) => setFormData({ ...formData, numberOfPersons: e.target.value })}
           placeholder="Enter number of persons"
           className="h-11 text-base bg-white/80 border-2 border-red-200 focus:border-red-400 focus:ring-2 focus:ring-red-200 rounded-lg"
         />

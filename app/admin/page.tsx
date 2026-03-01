@@ -1,18 +1,18 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { AdminSidebar } from "@/components/admin-sidebar"
 import { ProjectAssignmentDialog } from "@/components/project-assignment-dialog"
 import { AllRecordsView } from "@/components/all-records-view"
+import { AdminLogin } from "@/components/admin-login"
 import { StaffAssignmentManagement } from "@/components/staff-assignment-management"
 import { StaffManagement } from "@/components/staff-management"
+import { SecurityReportsView } from "@/components/security-reports-view"
 import {
   BarChart,
   Bar,
@@ -30,7 +30,6 @@ import { Search, Users, FolderOpen, CheckCircle, AlertTriangle, UserPlus } from 
 import type { Project, SecurityPerson } from "@/lib/types"
 
 export default function AdminDashboard() {
-  const router = useRouter()
   const [activeSection, setActiveSection] = useState("overview")
   const [projects, setProjects] = useState<Project[]>([])
   const [securityStaff, setSecurityStaff] = useState<SecurityPerson[]>([])
@@ -42,22 +41,60 @@ export default function AdminDashboard() {
   }>({ isOpen: false, project: null })
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
+  const [chartReady, setChartReady] = useState(false)
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const response = await fetch("/api/admin/verify", {
+        const urlParams = new URLSearchParams(window.location.search)
+        const token = urlParams.get("token")
+
+        if (token) {
+          console.log("[v0] Admin token found in URL:", token.substring(0, 20) + "...")
+          try {
+            const sessionResponse = await fetch("/api/admin/sso-login", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ token }),
+              credentials: "include",
+            })
+
+            console.log("[v0] Admin SSO response status:", sessionResponse.status)
+
+            if (sessionResponse.ok) {
+              const data = await sessionResponse.json()
+              console.log("[v0] Admin SSO successful! User:", data.user)
+              // Clean URL to remove token parameter
+              window.history.replaceState({}, document.title, window.location.pathname)
+              setIsAuthenticated(true)
+              setIsCheckingAuth(false)
+              return
+            } else {
+              const errorData = await sessionResponse.json()
+              console.error("[v0] Admin SSO failed with status", sessionResponse.status, ":", errorData)
+            }
+          } catch (error) {
+            console.error("[v0] Error calling admin SSO endpoint:", error)
+          }
+        }
+
+        console.log("[v0] Checking for existing admin session...")
+        const adminResponse = await fetch("/api/admin/verify", {
           credentials: "include",
         })
 
-        if (response.ok) {
+        if (adminResponse.ok) {
+          console.log("[v0] Existing admin session found")
           setIsAuthenticated(true)
-        } else {
-          router.push("/admin/login")
+          setIsCheckingAuth(false)
+          return
         }
+
+        console.log("[v0] No valid admin authentication found")
+        setIsAuthenticated(false)
       } catch (error) {
         console.error("Auth check failed:", error)
-        router.push("/admin/login")
+        setIsAuthenticated(false)
       } finally {
         setIsCheckingAuth(false)
       }
@@ -79,13 +116,23 @@ export default function AdminDashboard() {
     return () => {
       window.removeEventListener("error", handleResizeObserverError)
     }
-  }, [router])
+  }, [])
 
   useEffect(() => {
+    // Wait for DOM to be ready before rendering charts
+    const timer = setTimeout(() => {
+      setChartReady(true)
+    }, 100)
+
+    return () => clearTimeout(timer)
+  }, [])
+
+  useEffect(() => {
+    // Only fetch data if authenticated
     if (isAuthenticated) {
       Promise.all([
         fetch("/api/projects", {
-          credentials: "include",
+          credentials: "include", // Include authentication cookies
         })
           .then((res) => {
             if (!res.ok) {
@@ -99,7 +146,7 @@ export default function AdminDashboard() {
             return []
           }),
         fetch("/api/security-staff", {
-          credentials: "include",
+          credentials: "include", // Include authentication cookies
         })
           .then((res) => {
             if (!res.ok) {
@@ -119,6 +166,10 @@ export default function AdminDashboard() {
     }
   }, [isAuthenticated])
 
+  const handleLogin = () => {
+    setIsAuthenticated(true)
+  }
+
   const handleLogout = async () => {
     try {
       await fetch("/api/admin/logout", {
@@ -130,8 +181,24 @@ export default function AdminDashboard() {
     } finally {
       setIsAuthenticated(false)
       setActiveSection("overview")
-      router.push("/admin/login")
     }
+  }
+
+  // Show loading while checking authentication
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading admin dashboard...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show login if not authenticated
+  if (!isAuthenticated) {
+    return <AdminLogin onLogin={handleLogin} />
   }
 
   const handleAssignProject = async (projectId: string, securityPersonId: string) => {
@@ -159,9 +226,13 @@ export default function AdminDashboard() {
   }
 
   const filteredProjects = projects.filter((project) => {
+    const searchLower = searchTerm.toLowerCase()
     const matchesSearch =
-      project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      project.description?.toLowerCase().includes(searchTerm.toLowerCase())
+      project.name.toLowerCase().includes(searchLower) ||
+      project.description?.toLowerCase().includes(searchLower) ||
+      project.woNumber?.toLowerCase().includes(searchLower) ||
+      project.client?.toLowerCase().includes(searchLower) ||
+      project.agreement?.toLowerCase().includes(searchLower)
     const matchesStatus = statusFilter === "all" || project.status === statusFilter
     return matchesSearch && matchesStatus
   })
@@ -180,7 +251,7 @@ export default function AdminDashboard() {
   }))
 
   const pieData = [
-    { name: "Active", value: stats.activeProjects, color: "#22c55e" },
+    { name: "Active", value: stats.activeProjects, color: "#22c55e" }, // Changed Active color to a brighter green
     { name: "Completed", value: stats.completedProjects, color: "#3b82f6" },
     { name: "Pending", value: projects.filter((p) => p.status === "pending").length, color: "#f59e0b" },
     { name: "On Hold", value: projects.filter((p) => p.status === "on-hold").length, color: "#ef4444" },
@@ -201,7 +272,7 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-blue-500 to-cyan-500 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 hover:-translate-y-1">
+        <Card className="bg-gradient-to-br from-blue-500 to-cyan-500 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-blue-100">Total Projects</CardTitle>
             <FolderOpen className="h-4 w-4 text-blue-200" />
@@ -212,7 +283,7 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-green-500 to-emerald-500 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 hover:-translate-y-1">
+        <Card className="bg-gradient-to-br from-green-500 to-emerald-500 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-green-100">Active Projects</CardTitle>
             <CheckCircle className="h-4 w-4 text-green-200" />
@@ -223,7 +294,7 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-orange-500 to-red-500 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 hover:-translate-y-1">
+        <Card className="bg-gradient-to-br from-orange-500 to-red-500 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-orange-100">Unassigned</CardTitle>
             <AlertTriangle className="h-4 w-4 text-orange-200" />
@@ -234,7 +305,7 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-purple-500 to-pink-500 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 hover:-translate-y-1">
+        <Card className="bg-gradient-to-br from-purple-500 to-pink-500 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-purple-100">Security Staff</CardTitle>
             <Users className="h-4 w-4 text-purple-200" />
@@ -252,31 +323,36 @@ export default function AdminDashboard() {
             <CardTitle className="text-white">Project Distribution</CardTitle>
           </CardHeader>
           <CardContent className="pt-6">
-            <div style={{ width: "100%", height: "300px" }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e0e7ff" />
-                  <XAxis dataKey="name" stroke="#4f46e5" />
-                  <YAxis stroke="#4f46e5" />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#ffffff",
-                      border: "2px solid #4f46e5",
-                      borderRadius: "12px",
-                      color: "#1e1b4b",
-                      boxShadow: "0 10px 25px rgba(79, 70, 229, 0.2)",
-                    }}
-                  />
-                  <Bar dataKey="projects" fill="url(#colorGradient)" />
-                  <defs>
-                    <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.8} />
-                      <stop offset="95%" stopColor="#7c3aed" stopOpacity={0.8} />
-                    </linearGradient>
-                  </defs>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            {/* Conditional rendering to prevent chart dimension errors */}
+            {chartReady && chartData.length > 0 ? (
+              <div style={{ width: "100%", height: "300px" }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e0e7ff" />
+                    <XAxis dataKey="name" stroke="#4f46e5" />
+                    <YAxis stroke="#4f46e5" />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "#ffffff",
+                        border: "2px solid #4f46e5",
+                        borderRadius: "12px",
+                        color: "#1e1b4b",
+                        boxShadow: "0 10px 25px rgba(79, 70, 229, 0.2)",
+                      }}
+                    />
+                    <Bar dataKey="projects" fill="url(#colorGradient)" />
+                    <defs>
+                      <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.8} />
+                        <stop offset="95%" stopColor="#7c3aed" stopOpacity={0.8} />
+                      </linearGradient>
+                    </defs>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-[300px] text-gray-500">Loading chart...</div>
+            )}
           </CardContent>
         </Card>
 
@@ -327,152 +403,147 @@ export default function AdminDashboard() {
   )
 
   const renderProjects = () => (
-    <div className="space-y-6 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-6 rounded-xl">
-      <div className="flex justify-between items-center">
+    <div className="flex flex-col h-[calc(100vh-8rem)] space-y-6 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-6 rounded-xl">
+      <div className="flex-shrink-0">
         <div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
             Project Management
           </h1>
           <p className="text-gray-600 bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent font-medium">
-            Manage security projects and assignments
+            Manage security projects and assignments (Active Projects Only)
           </p>
         </div>
       </div>
 
-      <div className="flex gap-4 items-center bg-white/70 backdrop-blur-sm p-4 rounded-lg border border-white/50 shadow-sm">
+      <div className="flex-shrink-0 flex gap-4 items-center bg-white p-4 rounded-lg border border-gray-200 shadow-md">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-purple-500 h-4 w-4" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-purple-500 h-4 w-4 pointer-events-none" />
           <Input
             placeholder="Search projects..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 border-purple-200 focus:border-purple-500 focus:ring-purple-500 transition-colors duration-300"
+            className="pl-10 border-purple-200 focus:border-purple-500 focus:ring-purple-500"
           />
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-40 border-blue-200 focus:border-blue-500 hover:border-blue-400 transition-colors duration-300">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="completed">Completed</SelectItem>
-            <SelectItem value="on-hold">On Hold</SelectItem>
-            <SelectItem value="planning">Planning</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
 
-      <Card className="bg-white/80 backdrop-blur-sm border-white/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow className="border-gray-200 bg-gradient-to-r from-blue-100 via-purple-100 to-pink-100">
-                <TableHead className="text-blue-700 font-semibold">Project Name</TableHead>
-                <TableHead className="text-purple-700 font-semibold">Status</TableHead>
-                <TableHead className="text-pink-700 font-semibold">Assigned To</TableHead>
-                <TableHead className="text-indigo-700 font-semibold">Priority</TableHead>
-                <TableHead className="text-cyan-700 font-semibold">Start Date</TableHead>
-                <TableHead className="text-emerald-700 font-semibold">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredProjects.map((project, index) => {
-                const assignedStaff = securityStaff.find((s) => s.id === project.assignedTo)
-                const rowBg =
-                  index % 2 === 0
-                    ? "hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50"
-                    : "hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50"
+      <div className="flex-1 overflow-auto">
+        <Card className="bg-white/80 backdrop-blur-sm border-white/50 shadow-lg hover:shadow-xl transition-all duration-300">
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow className="border-gray-200 bg-gradient-to-r from-blue-100 via-purple-100 to-pink-100">
+                  <TableHead className="text-blue-700 font-semibold">Project Name</TableHead>
+                  <TableHead className="text-green-700 font-semibold">W.O NO</TableHead>
+                  <TableHead className="text-orange-700 font-semibold">Client</TableHead>
+                  <TableHead className="text-teal-700 font-semibold">Agreement</TableHead>
+                  <TableHead className="text-purple-700 font-semibold">Status</TableHead>
+                  <TableHead className="text-pink-700 font-semibold">Assigned To</TableHead>
+                  <TableHead className="text-indigo-700 font-semibold">Priority</TableHead>
+                  <TableHead className="text-cyan-700 font-semibold">Start Date</TableHead>
+                  <TableHead className="text-emerald-700 font-semibold">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredProjects.map((project, index) => {
+                  const assignedStaff = securityStaff.find((s) => s.id === project.assignedTo)
+                  const rowBg =
+                    index % 2 === 0
+                      ? "hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50"
+                      : "hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50"
 
-                return (
-                  <TableRow
-                    key={project.id}
-                    className={`transition-all duration-300 ${rowBg} hover:shadow-md cursor-pointer active:bg-gradient-to-r active:from-blue-100 active:to-purple-100`}
-                  >
-                    <TableCell>
-                      <div>
-                        <div className="font-medium text-gray-900">{project.name}</div>
-                        <div className="text-sm text-gray-600">{project.description}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          project.status === "active"
-                            ? "default"
-                            : project.status === "completed"
-                              ? "secondary"
-                              : project.status === "pending"
-                                ? "destructive"
-                                : project.status === "on-hold"
-                                  ? "outline"
-                                  : "default"
-                        }
-                        className={`transition-all duration-300 hover:scale-110 ${
-                          project.status === "active"
-                            ? "bg-green-500 hover:bg-green-600"
-                            : project.status === "completed"
-                              ? "bg-blue-500 hover:bg-blue-600"
-                              : project.status === "pending"
-                                ? "bg-orange-500 hover:bg-orange-600"
-                                : project.status === "on-hold"
-                                  ? "bg-red-500 hover:bg-red-600 text-white"
-                                  : "bg-purple-500 hover:bg-purple-600"
-                        }`}
-                      >
-                        {project.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {assignedStaff ? (
+                  return (
+                    <TableRow
+                      key={project.id}
+                      className={`transition-all duration-300 ${rowBg} hover:shadow-md cursor-pointer active:bg-gradient-to-r active:from-blue-100 active:to-purple-100`}
+                    >
+                      <TableCell>
                         <div>
-                          <div className="font-medium text-gray-900">{assignedStaff.name}</div>
-                          <div className="text-sm text-gray-600">{assignedStaff.email}</div>
+                          <div className="font-medium text-gray-900">{project.name}</div>
+                          <div className="text-sm text-gray-600">{project.description}</div>
                         </div>
-                      ) : (
-                        <span className="text-gray-500">Unassigned</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          project.priority === "high"
-                            ? "destructive"
-                            : project.priority === "medium"
-                              ? "default"
-                              : "secondary"
-                        }
-                        className={`transition-all duration-300 hover:scale-110 ${
-                          project.priority === "high"
-                            ? "bg-red-500 hover:bg-red-600"
-                            : project.priority === "medium"
-                              ? "bg-yellow-500 hover:bg-yellow-600"
-                              : "bg-green-500 hover:bg-green-600"
-                        }`}
-                      >
-                        {project.priority}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-gray-700">{new Date(project.startDate).toLocaleDateString()}</TableCell>
-                    <TableCell>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setAssignmentDialog({ isOpen: true, project })}
-                        className="transition-all duration-300 hover:scale-105 hover:shadow-lg border-blue-300 text-blue-600 hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-500 hover:text-white hover:border-transparent active:scale-95 active:bg-gradient-to-r active:from-purple-600 active:to-pink-600"
-                      >
-                        <UserPlus className="h-4 w-4 mr-1" />
-                        {project.assignedTo ? "Reassign" : "Assign"}
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                )
-              })}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                      </TableCell>
+                      <TableCell>
+                        {project.woNumber ? (
+                          <Badge className="bg-green-100 text-green-800 hover:bg-green-200">{project.woNumber}</Badge>
+                        ) : (
+                          <span className="text-gray-400 text-sm">N/A</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {project.client ? (
+                          <div className="font-medium text-gray-900">{project.client}</div>
+                        ) : (
+                          <span className="text-gray-400 text-sm">N/A</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {project.agreement ? (
+                          <div className="font-medium text-gray-900">{project.agreement}</div>
+                        ) : (
+                          <span className="text-gray-400 text-sm">N/A</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="default"
+                          className="transition-all duration-300 hover:scale-110 bg-green-500 hover:bg-green-600"
+                        >
+                          {project.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {assignedStaff ? (
+                          <div>
+                            <div className="font-medium text-gray-900">{assignedStaff.name}</div>
+                            <div className="text-sm text-gray-600">{assignedStaff.email}</div>
+                          </div>
+                        ) : (
+                          <span className="text-gray-500">Unassigned</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            project.priority === "high"
+                              ? "destructive"
+                              : project.priority === "medium"
+                                ? "default"
+                                : "secondary"
+                          }
+                          className={`transition-all duration-300 hover:scale-110 ${
+                            project.priority === "high"
+                              ? "bg-red-500 hover:bg-red-600"
+                              : project.priority === "medium"
+                                ? "bg-yellow-500 hover:bg-yellow-600"
+                                : "bg-green-500 hover:bg-green-600"
+                          }`}
+                        >
+                          {project.priority}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-gray-700">
+                        {new Date(project.startDate).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setAssignmentDialog({ isOpen: true, project })}
+                          className="transition-all duration-300 hover:scale-105 hover:shadow-lg border-blue-300 text-blue-600 hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-500 hover:text-white hover:border-transparent active:scale-95 active:bg-gradient-to-r active:from-purple-600 active:to-pink-600"
+                        >
+                          <UserPlus className="h-4 w-4 mr-1" />
+                          {project.assignedTo ? "Reassign" : "Assign"}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 
@@ -480,84 +551,27 @@ export default function AdminDashboard() {
 
   const renderAssignments = () => <StaffAssignmentManagement />
 
-  const renderContent = () => {
-    switch (activeSection) {
-      case "overview":
-        return renderOverview()
-      case "projects":
-        return renderProjects()
-      case "assignments":
-        return renderAssignments()
-      case "staff":
-        return renderStaff()
-      case "analytics":
-        return renderOverview()
-      case "all-records":
-        return <AllRecordsView />
-      case "visitors":
-        return (
-          <div className="flex items-center justify-center h-96">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold mb-2">Visitor System</h2>
-              <p className="text-muted-foreground">This will redirect to the main visitor management system</p>
-              <Button className="mt-4" onClick={() => (window.location.href = "/")}>
-                Go to Visitor System
-              </Button>
-            </div>
-          </div>
-        )
-      default:
-        return renderOverview()
-    }
-  }
-
-  if (isCheckingAuth) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading admin dashboard...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent mx-auto mb-4"></div>
-          <p className="text-gray-600">Redirecting to login...</p>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className={`flex h-screen bg-gray-50`}>
+    <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <AdminSidebar activeSection={activeSection} onSectionChange={setActiveSection} onLogout={handleLogout} />
-
-      <main className="flex-1 overflow-auto">
-        <div className="p-6 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-full relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-100/20 via-purple-100/20 to-pink-100/20 animate-pulse"></div>
-          <div className="absolute top-10 left-10 w-32 h-32 bg-gradient-to-br from-blue-200/30 to-cyan-200/30 rounded-full blur-2xl animate-bounce"></div>
-          <div className="absolute top-1/4 right-20 w-24 h-24 bg-gradient-to-br from-purple-200/30 to-pink-200/30 rounded-full blur-xl animate-pulse"></div>
-          <div className="absolute bottom-20 left-1/4 w-40 h-40 bg-gradient-to-br from-green-200/30 to-emerald-200/30 rounded-full blur-3xl animate-bounce"></div>
-          <div className="absolute bottom-10 right-10 w-28 h-28 bg-gradient-to-br from-orange-200/30 to-red-200/30 rounded-full blur-2xl animate-pulse"></div>
-
-          <div className="relative z-10 backdrop-blur-sm bg-white/40 rounded-3xl p-8 shadow-xl border border-white/50 transition-all duration-500 hover:shadow-2xl hover:bg-white/50 hover:scale-[1.01]">
-            {renderContent()}
-          </div>
-        </div>
+      <main className="flex-1 p-6 overflow-auto">
+        {activeSection === "overview" && renderOverview()}
+        {activeSection === "security-reports" && <SecurityReportsView />}
+        {activeSection === "all-records" && <AllRecordsView />}
+        {activeSection === "projects" && renderProjects()}
+        {activeSection === "staff" && renderStaff()}
+        {activeSection === "assignments" && renderAssignments()}
       </main>
 
-      <ProjectAssignmentDialog
-        isOpen={assignmentDialog.isOpen}
-        onClose={() => setAssignmentDialog({ isOpen: false, project: null })}
-        project={assignmentDialog.project}
-        securityStaff={securityStaff}
-        onAssign={handleAssignProject}
-      />
+      {assignmentDialog.isOpen && (
+        <ProjectAssignmentDialog
+          isOpen={assignmentDialog.isOpen}
+          project={assignmentDialog.project}
+          securityStaff={securityStaff}
+          onAssign={handleAssignProject}
+          onClose={() => setAssignmentDialog({ isOpen: false, project: null })}
+        />
+      )}
     </div>
   )
 }

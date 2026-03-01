@@ -137,58 +137,30 @@ export function RecordsTable({ isOpen, onClose, category, entries, onCheckOut }:
           <div className="flex-1 overflow-auto bg-white/60 rounded-lg border border-blue-100">
             <div className="min-w-[1200px]">
               <Table>
-                <TableHeader>
-                  <TableRow className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-100">
+                <TableHeader className="bg-gradient-to-r from-blue-50 to-purple-50">
+                  <TableRow className="border-blue-100">
+                    <TableHead className="w-24 text-slate-700 font-semibold">Actions</TableHead>
+                    <TableHead className="min-w-[140px] text-slate-700 font-semibold">Entry Time</TableHead>
+                    <TableHead className="min-w-[140px] text-slate-700 font-semibold">Exit Time</TableHead>
+                    <TableHead className="min-w-[140px] text-slate-700 font-semibold">Status/Duration</TableHead>
                     <TableHead className="w-16 text-slate-700 font-semibold">Photo</TableHead>
                     <TableHead className="min-w-[150px] text-slate-700 font-semibold">Name</TableHead>
                     <TableHead className="min-w-[150px] text-slate-700 font-semibold">Company</TableHead>
                     <TableHead className="min-w-[120px] text-slate-700 font-semibold">Purpose</TableHead>
                     <TableHead className="min-w-[140px] text-slate-700 font-semibold">Contact</TableHead>
-                    <TableHead className="min-w-[140px] text-slate-700 font-semibold">Entry Time</TableHead>
-                    <TableHead className="min-w-[140px] text-slate-700 font-semibold">Exit Time</TableHead>
-                    <TableHead className="min-w-[140px] text-slate-700 font-semibold">Status/Duration</TableHead>
-                    <TableHead className="w-24 text-slate-700 font-semibold">Actions</TableHead>
+                    <TableHead className="min-w-[140px] text-slate-700 font-semibold">Staff</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredEntries.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center py-8 text-slate-500">
+                      <TableCell colSpan={10} className="text-center py-8 text-slate-500">
                         No entries found for {category.toLowerCase()}
                       </TableCell>
                     </TableRow>
                   ) : (
                     filteredEntries.map((entry, index) => (
                       <TableRow key={entry.id} className={index % 2 === 0 ? "bg-white/40" : "bg-slate-50/40"}>
-                        <TableCell>
-                          <Avatar className="h-10 w-10 sm:h-12 sm:w-12 border-2 border-blue-200">
-                            <AvatarImage
-                              src={entry.photo || "/placeholder.svg?height=40&width=40"}
-                              alt={entry.name}
-                              className="object-cover"
-                            />
-                            <AvatarFallback className="text-xs sm:text-sm bg-gradient-to-br from-blue-100 to-purple-100 text-blue-700">
-                              {entry.name.charAt(0).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                        </TableCell>
-                        <TableCell className="font-medium text-sm sm:text-base text-slate-800">{entry.name}</TableCell>
-                        <TableCell className="text-sm sm:text-base text-slate-700">{entry.company || "N/A"}</TableCell>
-                        <TableCell className="text-sm sm:text-base text-slate-700">{entry.purpose || "N/A"}</TableCell>
-                        <TableCell className="text-sm sm:text-base text-slate-700">
-                          {entry.contactNumber || "N/A"}
-                        </TableCell>
-                        <TableCell className="text-sm sm:text-base text-slate-700">
-                          {formatTime(entry.entryTime)}
-                        </TableCell>
-                        <TableCell className="text-sm sm:text-base">
-                          {entry.exitTime ? (
-                            <span className="text-slate-600">{formatTime(entry.exitTime)}</span>
-                          ) : (
-                            <span className="text-slate-400">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell>{getStatusBadge(entry.status, entry.entryTime)}</TableCell>
                         <TableCell>
                           <div className="flex gap-1">
                             <Button
@@ -210,6 +182,44 @@ export function RecordsTable({ isOpen, onClose, category, entries, onCheckOut }:
                               </Button>
                             )}
                           </div>
+                        </TableCell>
+                        <TableCell className="text-sm sm:text-base text-slate-700">
+                          {formatTime(entry.entryTime)}
+                        </TableCell>
+                        <TableCell className="text-sm sm:text-base">
+                          {entry.exitTime ? (
+                            <span className="text-slate-600">{formatTime(entry.exitTime)}</span>
+                          ) : (
+                            <span className="text-slate-400">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>{getStatusBadge(entry.status, entry.entryTime)}</TableCell>
+                        <TableCell>
+                          <Avatar className="h-10 w-10 sm:h-12 sm:w-12 border-2 border-blue-200">
+                            <AvatarImage
+                              src={entry.photo || "/placeholder.svg?height=40&width=40"}
+                              alt={entry.name}
+                              className="object-cover"
+                            />
+                            <AvatarFallback className="text-xs sm:text-sm bg-gradient-to-br from-blue-100 to-purple-100 text-blue-700">
+                              {entry.name.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                        </TableCell>
+                        <TableCell className="font-medium text-sm sm:text-base text-slate-800">{entry.name}</TableCell>
+                        <TableCell className="text-sm sm:text-base text-slate-700">{entry.company || "N/A"}</TableCell>
+                        <TableCell className="text-sm sm:text-base text-slate-700">{entry.purpose || "N/A"}</TableCell>
+                        <TableCell className="text-sm sm:text-base text-slate-700">
+                          {entry.contactNumber || "N/A"}
+                        </TableCell>
+                        <TableCell className="text-sm sm:text-base text-slate-700">
+                          {entry.createdBy ? (
+                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                              {entry.createdBy}
+                            </Badge>
+                          ) : (
+                            <span className="text-slate-400">Unknown</span>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))
@@ -297,6 +307,10 @@ export function RecordsTable({ isOpen, onClose, category, entries, onCheckOut }:
                       {calculateDuration(selectedEntry.entryTime, selectedEntry.exitTime)}
                     </span>
                   </div>
+                </div>
+                <div className="col-span-1 sm:col-span-2">
+                  <span className="font-medium text-red-700">Staff:</span>
+                  <p className="text-slate-700">{selectedEntry.createdBy || "Unknown"}</p>
                 </div>
                 {selectedEntry.exitTime && (
                   <div className="col-span-1 sm:col-span-2">

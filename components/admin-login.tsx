@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-
+import Image from "next/image"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -29,13 +29,17 @@ export function AdminLogin({ onLogin }: AdminLoginProps) {
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include",
         body: JSON.stringify({ password }),
       })
 
       const data = await response.json()
 
       if (response.ok && data.success) {
+        // Authentication successful - server set HTTP-only cookie
+        if (data.token) {
+          localStorage.setItem("admin-token", data.token)
+          console.log("[v0] Admin token stored in localStorage")
+        }
         onLogin()
       } else {
         setError(data.error || "Invalid password")
@@ -50,8 +54,19 @@ export function AdminLogin({ onLogin }: AdminLoginProps) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-4">
-      <Card className="w-full max-w-md bg-white/80 backdrop-blur-sm border-white/50 shadow-xl">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 to-purple-100 p-4">
+      <Card className="w-full max-w-md bg-white shadow-xl">
+        <div className="flex justify-center pt-6">
+          <Image
+            src="/images/design-mode/2025%20LOGO(1).jpeg"
+            alt="RCC - El Race Contracting Logo"
+            width={120}
+            height={40}
+            className="object-contain"
+            priority
+          />
+        </div>
+
         <CardHeader className="text-center space-y-4">
           <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
             <Shield className="w-8 h-8 text-white" />
@@ -122,10 +137,10 @@ export function AdminLogin({ onLogin }: AdminLoginProps) {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => (window.location.href = "/login")}
+              onClick={() => (window.location.href = "/")}
               className="text-gray-500 hover:text-gray-700"
             >
-              ← Back to Staff Login
+              ← Back to Main Dashboard
             </Button>
           </div>
         </CardContent>

@@ -76,8 +76,8 @@ async function hashPassword(password: string): Promise<string> {
   return hashHex
 }
 
-// Verify password against hash
-export async function verifyPassword(password: string, hash: string): Promise<boolean> {
+// Verify password against hash (local helper function)
+async function verifyPassword(password: string, hash: string): Promise<boolean> {
   const passwordHash = await hashPassword(password)
   return passwordHash === hash
 }

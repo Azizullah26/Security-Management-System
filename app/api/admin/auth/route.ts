@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { adminSessionStore } from "@/lib/auth-utils"
+import { createClient } from "@supabase/supabase-js"
 
 // Rate limiting map (in production, use Redis or database)
 const rateLimitMap = new Map<string, { attempts: number; lastAttempt: number; lockUntil?: number }>()
@@ -75,6 +76,17 @@ function generateSessionToken(): string {
   return Array.from(array, (byte) => byte.toString(16).padStart(2, "0")).join("")
 }
 
+function getSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error("Missing Supabase environment variables")
+  }
+
+  return createClient(supabaseUrl, supabaseServiceKey)
+}
+
 export async function POST(request: NextRequest) {
   try {
     console.log("[v0] Admin auth request received")
@@ -104,16 +116,38 @@ export async function POST(request: NextRequest) {
       recordAttempt(ip, true)
 
       const sessionToken = generateSessionToken()
-      const now = Date.now()
-      const expiresAt = now + 24 * 60 * 60 * 1000 // 24 hours
+      const now = new Date()
+      const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000) // 24 hours
+
+      try {
+        const supabase = getSupabaseClient()
+
+        // Clean up any existing sessions for this token (shouldn't happen, but just in case)
+        await supabase.from("admin_sessions").delete().eq("session_token", sessionToken)
+
+        const { error: insertError } = await supabase.from("admin_sessions").insert({
+          session_token: sessionToken,
+          created_at: now.getTime(),
+          expires_at: expiresAt.getTime(),
+        })
+
+        if (insertError) {
+          console.error("[v0] Failed to store session in database:", insertError)
+          return NextResponse.json({ error: "Failed to create session" }, { status: 500 })
+        }
+
+        console.log("[v0] Session stored successfully in Supabase")
+      } catch (dbError) {
+        console.error("[v0] Database error:", dbError)
+        return NextResponse.json({ error: "Failed to create session" }, { status: 500 })
+      }
 
       adminSessionStore.set(sessionToken, {
-        createdAt: now,
-        expiresAt: expiresAt,
+        createdAt: now.getTime(),
+        expiresAt: expiresAt.getTime(),
       })
-      console.log("[v0] Session stored successfully in memory")
+
       console.log("[v0] Session token:", sessionToken.substring(0, 10) + "...")
-      console.log("[v0] Total sessions in store:", adminSessionStore.size)
 
       const response = NextResponse.json({
         success: true,
@@ -126,7 +160,7 @@ export async function POST(request: NextRequest) {
 
       response.headers.set("Set-Cookie", cookieValue)
 
-      console.log("[v0] Cookie header set:", cookieValue)
+      console.log("[v0] Cookie header set")
       console.log("[v0] Admin authentication successful")
       return response
     } else {

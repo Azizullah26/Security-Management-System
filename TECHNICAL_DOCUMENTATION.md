@@ -34,7 +34,7 @@ The Security Management System is a comprehensive Next.js application designed f
 ## Architecture Overview
 
 ### Frontend Architecture
-\`\`\`
+```
 app/
 ├── layout.tsx          # Root layout with theme and fonts
 ├── page.tsx           # Main dashboard component
@@ -54,10 +54,10 @@ components/
     ├── card.tsx
     ├── dialog.tsx
     └── ...
-\`\`\`
+```
 
 ### Backend Architecture
-\`\`\`
+```
 odoo_module/hr_employee_rest_api/
 ├── __manifest__.py           # Module configuration
 ├── models/
@@ -66,7 +66,7 @@ odoo_module/hr_employee_rest_api/
 └── controllers/
     ├── __init__.py
     └── hr_employee_api.py   # REST API endpoints
-\`\`\`
+```
 
 ## Core Features
 
@@ -109,7 +109,7 @@ odoo_module/hr_employee_rest_api/
 ### Odoo ERP Integration
 
 #### Authentication
-\`\`\`typescript
+```typescript
 // XML-RPC authentication with Odoo
 const uid = await client.call('common', 'authenticate', [
   process.env.ODOO_DB,
@@ -117,20 +117,20 @@ const uid = await client.call('common', 'authenticate', [
   process.env.ODOO_PASSWORD,
   {}
 ]);
-\`\`\`
+```
 
 #### Staff Lookup Endpoint
-\`\`\`typescript
+```typescript
 POST /api/odoo/staff
 Content-Type: application/json
 
 {
   "fileId": "employee_id_here"
 }
-\`\`\`
+```
 
 #### Response Format
-\`\`\`typescript
+```typescript
 {
   "success": true,
   "data": {
@@ -143,7 +143,7 @@ Content-Type: application/json
     "job_position": "Job Title"
   }
 }
-\`\`\`
+```
 
 ### Custom Odoo Module
 
@@ -163,7 +163,7 @@ Content-Type: application/json
 ### Main Application Components
 
 #### 1. EntryForm Component
-\`\`\`typescript
+```typescript
 interface EntryData {
   id: string;
   category: string;
@@ -178,7 +178,7 @@ interface EntryData {
   status: 'inside' | 'exited';
   exitTime?: string;
 }
-\`\`\`
+```
 
 **Features:**
 - Multi-step form with category-specific fields
@@ -266,7 +266,7 @@ Built on shadcn/ui patterns with 40+ components:
 - Secure image handling
 
 ### CORS Configuration
-\`\`\`json
+```json
 {
   "headers": [
     {
@@ -280,17 +280,17 @@ Built on shadcn/ui patterns with 40+ components:
     }
   ]
 }
-\`\`\`
+```
 
 ## Deployment Configuration
 
 ### Environment Variables
-\`\`\`bash
+```bash
 ODOO_URL=https://your-odoo-instance.com
 ODOO_DB=your_database_name
 ODOO_USERNAME=api_user
 ODOO_PASSWORD=secure_password
-\`\`\`
+```
 
 ### Vercel Configuration
 - Static export optimization
@@ -299,13 +299,13 @@ ODOO_PASSWORD=secure_password
 - Analytics integration
 
 ### Build Configuration
-\`\`\`javascript
+```javascript
 const nextConfig = {
   eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: true },
   images: { unoptimized: true }
 };
-\`\`\`
+```
 
 ## Performance Optimizations
 
@@ -340,7 +340,7 @@ const nextConfig = {
 ## Error Handling
 
 ### Frontend Error Boundaries
-\`\`\`typescript
+```typescript
 import { ErrorBoundary } from 'react-error-boundary';
 
 function ErrorFallback({error, resetErrorBoundary}) {
@@ -352,7 +352,7 @@ function ErrorFallback({error, resetErrorBoundary}) {
     </div>
   );
 }
-\`\`\`
+```
 
 ### API Error Handling
 - Comprehensive error logging

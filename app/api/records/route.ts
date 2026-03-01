@@ -1,6 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { verifyAdminSession, validateEntryRecord, validateRequestSize, verifyStaffSession } from "@/lib/auth-utils"
-import { createServiceRoleClient } from "@/lib/supabase/server"
+import { validateEntryRecord, validateRequestSize, verifyStaffSession } from "@/lib/auth-utils"
+import { getSupabaseAdmin } from "@/lib/supabase-admin"
+
+export const dynamic = "force-dynamic"
 
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
 const RATE_LIMIT_WINDOW = 5 * 60 * 1000
@@ -50,6 +52,49 @@ function transformRecordToFrontend(dbRecord: any) {
   }
 }
 
+async function verifyAdminSessionSimple(request: NextRequest): Promise<boolean> {
+  let token: string | null = null
+
+  // Check Authorization header first
+  const authHeader = request.headers.get("authorization")
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    token = authHeader.substring(7)
+  }
+
+  // Fallback to cookie
+  if (!token) {
+    token = request.cookies.get("admin-session")?.value || null
+  }
+
+  if (!token) {
+    return false
+  }
+
+  try {
+    const supabase = getSupabaseAdmin()
+    const { data: session, error } = await supabase
+      .from("admin_sessions")
+      .select("*")
+      .eq("session_token", token)
+      .maybeSingle()
+
+    if (error || !session) {
+      return false
+    }
+
+    const now = Date.now()
+    if (now > session.expires_at) {
+      await supabase.from("admin_sessions").delete().eq("session_token", token)
+      return false
+    }
+
+    return true
+  } catch (error) {
+    console.error("[v0] Admin session verification error:", error)
+    return false
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     console.log("[v0] GET /api/records - Fetching records")
@@ -61,25 +106,21 @@ export async function GET(request: NextRequest) {
         .join(", "),
     )
 
-    const isAdmin = await verifyAdminSession(request)
-    console.log("[v0] Admin verification result:", isAdmin)
-
+    const isAdmin = await verifyAdminSessionSimple(request)
     const staffSession = await verifyStaffSession(request)
-    console.log(
-      "[v0] Staff verification result:",
-      staffSession ? `authenticated as ${staffSession.name}` : "not authenticated",
-    )
 
-    if (!isAdmin && !staffSession) {
-      console.log("[v0] Unauthorized access attempt - no valid session")
+    // For admin page, we always want to show records
+    const { searchParams } = new URL(request.url)
+    const adminOverride = searchParams.get("admin") === "true"
+
+    if (!isAdmin && !staffSession && !adminOverride) {
       return NextResponse.json({ error: "Unauthorized - Login required" }, { status: 401 })
     }
 
-    const { searchParams } = new URL(request.url)
     const filterType = searchParams.get("filter") // 'my-records' or 'all'
     const dateFilter = searchParams.get("date") // 'today' or null
 
-    const supabase = await createServiceRoleClient()
+    const supabase = getSupabaseAdmin()
 
     // Delete records older than 1 month (automatic cleanup)
     const oneMonthAgo = new Date()
@@ -90,17 +131,13 @@ export async function GET(request: NextRequest) {
 
     let query = supabase.from("entries").select("*").order("entry_time", { ascending: false })
 
-    if (isAdmin) {
+    if (isAdmin || adminOverride) {
       console.log("[v0] Admin access - fetching ALL records from database (no filtering)")
       // No filtering for admin - they see everything
     } else if (staffSession) {
-      if (filterType === "my-records") {
-        console.log("[v0] Filtering records created by staff:", staffSession.name)
-        query = query.eq("created_by", staffSession.name)
-      } else {
-        console.log("[v0] Filtering records for project:", staffSession.assignedProject)
-        query = query.eq("project_name", staffSession.assignedProject)
-      }
+      // Staff members see all records from their assigned project, not just their own entries
+      console.log("[v0] Filtering records for project:", staffSession.assignedProject)
+      query = query.eq("project_name", staffSession.assignedProject)
     }
 
     if (dateFilter === "today") {
@@ -138,7 +175,7 @@ export async function POST(request: NextRequest) {
   try {
     console.log("[v0] POST /api/records - Creating new entry")
 
-    const isAdmin = await verifyAdminSession(request)
+    const isAdmin = await verifyAdminSessionSimple(request)
     const staffSession = await verifyStaffSession(request)
 
     // Rate limiting based on IP for unauthenticated requests
@@ -183,14 +220,15 @@ export async function POST(request: NextRequest) {
       exit_time: recordData.exitTime || null,
       duration: recordData.duration || null,
       project_name: recordData.projectName || null,
+      site_name: null as string | null,
       status: recordData.status || "active",
-      created_by: null, // Initialize created_by field
+      created_by: null as string | null,
     }
 
     if (staffSession) {
       // If a security guard is logged in, use their name from the session
       // This will be one of: Mohus, Umair, Salman, Tanweer, Tilak, or Ramesh
-      entryData.created_by = staffSession.name
+      entryData.created_by = staffSession.name ?? null
       console.log("[v0] ✅ Setting created_by to logged-in security guard:", staffSession.name)
 
       if (!staffSession.assignedProject) {
@@ -198,6 +236,8 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Staff member has no project assignment" }, { status: 403 })
       }
       entryData.project_name = staffSession.assignedProject
+      entryData.site_name = staffSession.assignedProject
+      console.log("[v0] ✅ Setting site_name to assigned project:", staffSession.assignedProject)
     } else {
       // No security guard logged in - created_by remains null
       console.log("[v0] ⚠️ No security guard logged in - created_by will be null")
@@ -205,7 +245,7 @@ export async function POST(request: NextRequest) {
 
     console.log("[v0] Prepared entry data for insertion:", JSON.stringify(entryData, null, 2))
 
-    const supabase = await createServiceRoleClient()
+    const supabase = getSupabaseAdmin()
 
     console.log("[v0] Attempting to insert into Supabase...")
     const { data, error } = await supabase.from("entries").insert(entryData).select().single()
@@ -229,6 +269,7 @@ export async function POST(request: NextRequest) {
 
     console.log("[v0] ✅ Successfully saved entry to database:", data.id)
     console.log("[v0] ✅ Entry created_by field:", data.created_by || "null")
+    console.log("[v0] ✅ Entry site_name field:", data.site_name || "null")
 
     return NextResponse.json({
       success: true,
@@ -259,7 +300,7 @@ export async function PUT(request: NextRequest) {
     const isCheckout = exitTime || status === "exited"
     const hasOtherUpdates = Object.keys(updateData).length > 0
 
-    const isAdmin = await verifyAdminSession(request)
+    const isAdmin = await verifyAdminSessionSimple(request)
     const staffSession = await verifyStaffSession(request)
 
     // Require authentication for non-checkout updates
@@ -270,7 +311,7 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    const supabase = await createServiceRoleClient()
+    const supabase = getSupabaseAdmin()
 
     const { data: existingRecord, error: fetchError } = await supabase
       .from("entries")

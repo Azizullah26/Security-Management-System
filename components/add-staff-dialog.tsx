@@ -1,6 +1,7 @@
 "use client"
 
 import type React from "react"
+import type { SecurityPerson, Project } from "@/lib/types"
 
 import { useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -8,15 +9,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
 import { UserPlus, X } from "lucide-react"
-import type { SecurityPerson } from "@/lib/types"
 
 interface AddStaffDialogProps {
   isOpen: boolean
   onClose: () => void
   onAddStaff: (staff: Omit<SecurityPerson, "id">) => void
-  projects: any[]
+  projects: Project[]
 }
 
 export function AddStaffDialog({ isOpen, onClose, onAddStaff, projects }: AddStaffDialogProps) {
@@ -40,18 +39,12 @@ export function AddStaffDialog({ isOpen, onClose, onAddStaff, projects }: AddSta
       newErrors.name = "Name is required"
     }
 
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required"
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    if (formData.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = "Please enter a valid email address"
     }
 
     if (!formData.employeeId.trim()) {
       newErrors.employeeId = "Employee ID is required"
-    }
-
-    if (!formData.phone.trim()) {
-      newErrors.phone = "Phone number is required"
     }
 
     setErrors(newErrors)
@@ -149,7 +142,7 @@ export function AddStaffDialog({ isOpen, onClose, onAddStaff, projects }: AddSta
 
             <div className="space-y-2">
               <Label htmlFor="email" className="text-slate-700 font-medium">
-                Email Address *
+                Email Address (Optional)
               </Label>
               <Input
                 id="email"
@@ -164,16 +157,15 @@ export function AddStaffDialog({ isOpen, onClose, onAddStaff, projects }: AddSta
 
             <div className="space-y-2">
               <Label htmlFor="phone" className="text-slate-700 font-medium">
-                Phone Number *
+                Phone Number (Optional)
               </Label>
               <Input
                 id="phone"
                 value={formData.phone}
                 onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
                 placeholder="Enter phone number"
-                className={`bg-white/80 border-2 ${errors.phone ? "border-red-300" : "border-blue-200"} focus:border-blue-400 text-black`}
+                className="bg-white/80 border-2 border-blue-200 focus:border-blue-400 text-black"
               />
-              {errors.phone && <p className="text-red-500 text-sm">{errors.phone}</p>}
             </div>
 
             <div className="space-y-2">
@@ -189,6 +181,7 @@ export function AddStaffDialog({ isOpen, onClose, onAddStaff, projects }: AddSta
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Security Guard">Security Guard</SelectItem>
+                  <SelectItem value="Assistant Security Guard">Assistant Security Guard</SelectItem>
                   <SelectItem value="Senior Security Guard">Senior Security Guard</SelectItem>
                   <SelectItem value="Security Supervisor">Security Supervisor</SelectItem>
                   <SelectItem value="Security Manager">Security Manager</SelectItem>
@@ -214,39 +207,6 @@ export function AddStaffDialog({ isOpen, onClose, onAddStaff, projects }: AddSta
                 </SelectContent>
               </Select>
             </div>
-          </div>
-
-          {projects.length > 0 && (
-            <div className="space-y-2">
-              <Label className="text-slate-700 font-medium">Assign to Projects (Optional)</Label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-32 overflow-y-auto bg-white/50 p-3 rounded-lg border border-blue-200">
-                {projects.slice(0, 10).map((project) => (
-                  <label key={project.id} className="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.assignedProjects.includes(project.id)}
-                      onChange={() => handleProjectToggle(project.id)}
-                      className="rounded border-blue-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span className="text-sm text-slate-700 truncate">{project.name}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="space-y-2">
-            <Label htmlFor="notes" className="text-slate-700 font-medium">
-              Additional Notes (Optional)
-            </Label>
-            <Textarea
-              id="notes"
-              value={formData.notes}
-              onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
-              placeholder="Enter any additional notes or comments"
-              className="bg-white/80 border-2 border-blue-200 focus:border-blue-400 text-black"
-              rows={3}
-            />
           </div>
 
           <div className="flex gap-3 pt-4">

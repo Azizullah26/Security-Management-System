@@ -46,7 +46,7 @@ export function StaffEntryForm({ onSubmit, onCancel }: StaffEntryFormProps): Rea
     purpose: "",
     contactNumber: "",
     email: "",
-    numberOfPersons: 1,
+    numberOfPersons: "", // Changed numberOfPersons default from 0 to empty string
     vehicleNumber: "",
     fileId: "",
   })
@@ -124,10 +124,12 @@ export function StaffEntryForm({ onSubmit, onCancel }: StaffEntryFormProps): Rea
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
+    const { numberOfPersons, ...restFormData } = formData
     const entryData: EntryData = {
       id: crypto.randomUUID(),
       category: "staff",
-      ...formData,
+      ...restFormData,
+      numberOfPersons: numberOfPersons ? Number(numberOfPersons) : undefined,
       photo: personDetails?.image || undefined,
       entryTime: new Date().toISOString(),
       status: "inside",

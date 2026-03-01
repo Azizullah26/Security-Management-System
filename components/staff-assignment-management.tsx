@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Users, UserPlus, Search, Trash2, MapPin } from "lucide-react"
+import { Users, UserPlus, Search, Trash2, MapPin, ChevronDown } from "lucide-react"
 import { toast } from "sonner"
 
 interface StaffMember {
@@ -23,6 +23,9 @@ interface Project {
   status: string
   priority: string
   description?: string
+  woNumber?: string
+  client?: string
+  agreement?: string
 }
 
 interface Assignment {
@@ -31,40 +34,18 @@ interface Assignment {
   projectName: string
 }
 
-const staffMembers: StaffMember[] = [
-  { fileId: "3252", name: "Mohus" },
-  { fileId: "3242", name: "Umair" },
-  { fileId: "3253", name: "Salman" },
-  { fileId: "2234", name: "Tanweer" },
-  { fileId: "3245", name: "Tilak" },
-  { fileId: "3248", name: "Ramesh" },
-]
-
-const allProjects = [
-  "Residential Tower A - Phase 1",
-  "Commercial Complex B - Main Building",
-  "Industrial Park C - Warehouse Section",
-  "Office Building D - Corporate Headquarters",
-  "Shopping Mall E - Retail Wing",
-  "Hospital F - Medical Center",
-  "School G - Educational Campus",
-  "Hotel H - Hospitality Project",
-  "Airport I - Terminal Expansion",
-  "Stadium J - Sports Complex",
-  "Bridge K - Infrastructure Project",
-  "Metro Station L - Transit Hub",
-  "Power Plant M - Energy Facility",
-  "Water Treatment N - Utility Project",
-  "Residential Villa O - Luxury Homes",
-]
-
 export function StaffAssignmentManagement() {
+  const [staffMembers, setStaffMembers] = useState<StaffMember[]>([])
+  const [projects, setProjects] = useState<Project[]>([])
   const [assignments, setAssignments] = useState<Assignment[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedProject, setSelectedProject] = useState("")
   const [selectedStaff, setSelectedStaff] = useState("")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [projectSearchTerm, setProjectSearchTerm] = useState("")
+  const [isProjectDropdownOpen, setIsProjectDropdownOpen] = useState(false)
+  const projectDropdownRef = useRef<HTMLDivElement>(null)
 
   const getAdminToken = () => {
     if (typeof window !== "undefined") {
@@ -72,6 +53,103 @@ export function StaffAssignmentManagement() {
     }
     return null
   }
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        console.log("[v0] Fetching projects from API...")
+        const response = await fetch("/api/projects", {
+          credentials: "include",
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          console.log("[v0] Projects API response:", data)
+
+          let projectsArray: any[]
+
+          if (Array.isArray(data)) {
+            // API returns array directly
+            projectsArray = data
+            console.log("[v0] Response is array directly, length:", projectsArray.length)
+          } else if (data.projects && Array.isArray(data.projects)) {
+            // API returns object with projects property
+            projectsArray = data.projects
+            console.log("[v0] Response has projects property, length:", projectsArray.length)
+          } else {
+            console.error("[v0] Invalid projects response structure:", data)
+            toast.error("Invalid projects data received")
+            setProjects([])
+            return
+          }
+
+          setProjects(projectsArray)
+          console.log("[v0] Projects loaded successfully:", projectsArray.length)
+        } else {
+          console.error("[v0] Failed to fetch projects - HTTP", response.status)
+          toast.error("Failed to load projects")
+          setProjects([])
+        }
+      } catch (error) {
+        console.error("[v0] Failed to fetch projects - Exception:", error)
+        toast.error("Failed to load projects")
+        setProjects([])
+      }
+    }
+
+    fetchProjects()
+  }, [])
+
+  useEffect(() => {
+    const fetchStaffMembers = async () => {
+      try {
+        console.log("[v0] Fetching staff members from security_staff table...")
+        const response = await fetch("/api/security-staff", {
+          credentials: "include",
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          console.log("[v0] Full API response:", data)
+
+          let staffArray: any[]
+
+          if (Array.isArray(data)) {
+            staffArray = data
+            console.log("[v0] Response is array directly, length:", staffArray.length)
+          } else if (data.staff && Array.isArray(data.staff)) {
+            staffArray = data.staff
+            console.log("[v0] Response has staff property, length:", staffArray.length)
+          } else {
+            console.error("[v0] Invalid response structure:", data)
+            toast.error("Invalid staff data received")
+            setStaffMembers([])
+            return
+          }
+
+          const mappedStaff = staffArray.map((staff: any) => ({
+            fileId: staff.employeeId || staff.file_id,
+            name: staff.name || staff.full_name,
+          }))
+
+          setStaffMembers(mappedStaff)
+          console.log("[v0] Staff members loaded successfully:", mappedStaff.length)
+        } else {
+          console.error("[v0] Failed to fetch staff members - HTTP", response.status)
+          const errorText = await response.text()
+          console.error("[v0] Error response:", errorText)
+          toast.error("Failed to load staff members")
+          setStaffMembers([])
+        }
+      } catch (error) {
+        console.error("[v0] Failed to fetch staff members - Exception:", error)
+        toast.error("Failed to load staff members")
+        setStaffMembers([])
+      }
+    }
+
+    fetchStaffMembers()
+  }, [])
 
   useEffect(() => {
     const fetchAssignments = async () => {
@@ -103,6 +181,22 @@ export function StaffAssignmentManagement() {
 
     fetchAssignments()
   }, [])
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (projectDropdownRef.current && !projectDropdownRef.current.contains(event.target as Node)) {
+        setIsProjectDropdownOpen(false)
+      }
+    }
+
+    if (isProjectDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [isProjectDropdownOpen])
 
   const handleAssignProject = async () => {
     console.log("[v0] handleAssignProject called")
@@ -149,9 +243,20 @@ export function StaffAssignmentManagement() {
       if (response.ok) {
         const data = await response.json()
         console.log("[v0] Assignment created successfully:", data)
-        setAssignments((prev) => [...prev, data.assignment])
+
+        const assignmentsResponse = await fetch("/api/assignments", {
+          credentials: "include",
+          headers,
+        })
+
+        if (assignmentsResponse.ok) {
+          const assignmentsData = await assignmentsResponse.json()
+          setAssignments(assignmentsData.assignments || [])
+        }
+
         setSelectedProject("")
         setSelectedStaff("")
+        setProjectSearchTerm("")
         setIsDialogOpen(false)
         toast.success("Project assigned successfully")
       } else {
@@ -161,7 +266,7 @@ export function StaffAssignmentManagement() {
       }
     } catch (error) {
       console.error("[v0] Assignment error:", error)
-      toast.error("Failed to assign project")
+      toast.error("Failed to assign project. Please try again.")
     } finally {
       setIsLoading(false)
     }
@@ -195,7 +300,7 @@ export function StaffAssignmentManagement() {
       }
     } catch (error) {
       console.error("[v0] Remove assignment error:", error)
-      toast.error("Failed to remove assignment")
+      toast.error("Failed to remove assignment. Please try again.")
     } finally {
       setIsLoading(false)
     }
@@ -214,12 +319,32 @@ export function StaffAssignmentManagement() {
   }
 
   const getAllProjects = () => {
-    return allProjects
+    return projects.map((p) => p.name)
+  }
+
+  const getFilteredProjects = () => {
+    if (!projectSearchTerm.trim()) {
+      return projects
+    }
+    const searchLower = projectSearchTerm.toLowerCase()
+    return projects.filter(
+      (project) =>
+        project.name.toLowerCase().includes(searchLower) ||
+        (project.woNumber && project.woNumber.toLowerCase().includes(searchLower)),
+    )
+  }
+
+  const handleProjectSelect = (projectName: string) => {
+    console.log("[v0] Project selected:", projectName)
+    setSelectedProject(projectName)
+    setProjectSearchTerm(projectName)
+    setTimeout(() => {
+      setIsProjectDropdownOpen(false)
+    }, 100)
   }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Staff Project Assignments</h2>
@@ -233,7 +358,7 @@ export function StaffAssignmentManagement() {
               New Assignment
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-3xl">
             <DialogHeader>
               <DialogTitle>Assign Project to Staff</DialogTitle>
             </DialogHeader>
@@ -259,18 +384,59 @@ export function StaffAssignmentManagement() {
 
               <div>
                 <Label htmlFor="project-select">Project</Label>
-                <Select value={selectedProject} onValueChange={setSelectedProject}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Select project" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[300px] overflow-y-auto" position="popper">
-                    {allProjects.map((projectName) => (
-                      <SelectItem key={projectName} value={projectName}>
-                        {projectName}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="relative mt-1" ref={projectDropdownRef}>
+                  <div className="relative">
+                    <Input
+                      type="text"
+                      placeholder="Search by project name, W.O NO, or agreement..."
+                      value={projectSearchTerm}
+                      onChange={(e) => {
+                        setProjectSearchTerm(e.target.value)
+                        setIsProjectDropdownOpen(true)
+                      }}
+                      onFocus={() => setIsProjectDropdownOpen(true)}
+                      className="pr-8 bg-white text-black"
+                    />
+                    <ChevronDown
+                      className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 cursor-pointer"
+                      onClick={() => setIsProjectDropdownOpen(!isProjectDropdownOpen)}
+                    />
+                  </div>
+                  {isProjectDropdownOpen && (
+                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-[400px] overflow-y-auto">
+                      {getFilteredProjects().length === 0 ? (
+                        <div className="px-3 py-2 text-sm text-gray-500">No projects found</div>
+                      ) : (
+                        getFilteredProjects().map((project) => (
+                          <div
+                            key={project.id}
+                            className="px-3 py-3 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+                            onClick={() => handleProjectSelect(project.name)}
+                            onMouseDown={(e) => {
+                              e.preventDefault()
+                            }}
+                          >
+                            <div className="flex flex-col gap-1">
+                              <div className="font-medium text-sm text-black">{project.name}</div>
+                              <div className="flex gap-3 text-xs text-gray-600">
+                                {project.woNumber && (
+                                  <span className="flex items-center gap-1">
+                                    <span className="font-semibold">W.O:</span> {project.woNumber}
+                                  </span>
+                                )}
+                                {project.agreement && (
+                                  <span className="flex items-center gap-1">
+                                    <span className="font-semibold">Agreement:</span> {project.agreement}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="flex justify-end gap-2 pt-4">
@@ -286,7 +452,6 @@ export function StaffAssignmentManagement() {
         </Dialog>
       </div>
 
-      {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 shadow-lg hover:shadow-xl transition-all duration-300">
           <CardContent className="p-4">
@@ -338,14 +503,13 @@ export function StaffAssignmentManagement() {
               </div>
               <div>
                 <p className="text-sm text-purple-700 font-medium">Total Projects</p>
-                <p className="text-xl font-bold text-purple-900">{allProjects.length}</p>
+                <p className="text-xl font-bold text-purple-900">{projects.length}</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Search and Filter */}
       <Card className="bg-gradient-to-br from-slate-50 to-blue-50 border-slate-200 shadow-lg">
         <CardHeader className="bg-gradient-to-r from-blue-100 to-slate-100 border-b border-blue-200">
           <CardTitle className="text-slate-800">Current Assignments</CardTitle>
@@ -363,7 +527,6 @@ export function StaffAssignmentManagement() {
             </div>
           </div>
 
-          {/* Assignments Table */}
           <div className="border-2 border-blue-900 rounded-lg">
             <Table>
               <TableHeader>
@@ -416,7 +579,6 @@ export function StaffAssignmentManagement() {
         </CardContent>
       </Card>
 
-      {/* Unassigned Staff */}
       {getUnassignedStaff().length > 0 && (
         <Card className="bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200 shadow-lg">
           <CardHeader className="bg-gradient-to-r from-orange-100 to-amber-100 border-b border-orange-200">

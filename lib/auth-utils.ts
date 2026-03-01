@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server"
-import { staffSessionStore } from "@/app/api/staff/auth/route"
+import { staffSessionStore } from "@/lib/session-store"
+import { createClient } from "@supabase/supabase-js"
 
 // Shared admin session store (deprecated - using Supabase now)
 export const adminSessionStore = new Map<
@@ -9,75 +10,6 @@ export const adminSessionStore = new Map<
     expiresAt: number
   }
 >()
-
-// Direct admin verification using in-memory session store
-export async function verifyAdminSession(request: NextRequest): Promise<boolean> {
-  console.log("[v0] Verifying admin session...")
-
-  // Check Authorization header first (for token-based auth)
-  const authHeader = request.headers.get("authorization")
-  if (authHeader && authHeader.startsWith("Bearer ")) {
-    const token = authHeader.substring(7)
-    console.log("[v0] Authorization header token:", token ? "present" : "missing")
-
-    if (token) {
-      const session = adminSessionStore.get(token)
-      console.log("[v0] Session in store (from header):", session ? "found" : "not found")
-
-      if (session) {
-        const now = Date.now()
-        if (now <= session.expiresAt) {
-          console.log("[v0] ✅ Admin session verified successfully (from header)")
-          return true
-        } else {
-          console.log("[v0] Session expired, removing from store")
-          adminSessionStore.delete(token)
-        }
-      }
-    }
-  }
-
-  // Fallback to cookie-based auth
-  const adminSession = request.cookies.get("admin-session")?.value
-  console.log("[v0] Admin session cookie:", adminSession ? "present" : "missing")
-
-  if (!adminSession) {
-    console.log("[v0] No admin session cookie or token found")
-    return false
-  }
-
-  try {
-    const session = adminSessionStore.get(adminSession)
-    console.log("[v0] Session in store:", session ? "found" : "not found")
-
-    if (!session) {
-      console.log("[v0] Session not found in store")
-      return false
-    }
-
-    const now = Date.now()
-    console.log(
-      "[v0] Session expiry check - now:",
-      now,
-      "expires:",
-      session.expiresAt,
-      "valid:",
-      now <= session.expiresAt,
-    )
-
-    if (now > session.expiresAt) {
-      console.log("[v0] Session expired, removing from store")
-      adminSessionStore.delete(adminSession)
-      return false
-    }
-
-    console.log("[v0] ✅ Admin session verified successfully")
-    return true
-  } catch (error) {
-    console.error("[v0] Session verification error:", error)
-    return false
-  }
-}
 
 // CSRF token generation and validation
 export function generateCSRFToken(): string {
@@ -145,7 +77,223 @@ export function validateRequestSize(data: any): boolean {
   return jsonString.length <= 1024 * 500 // 500KB limit for large staff photos
 }
 
+function getSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error("Missing Supabase environment variables")
+  }
+
+  return createClient(supabaseUrl, supabaseServiceKey)
+}
+
+export async function verifyAdminSession(request: NextRequest): Promise<boolean> {
+  console.log("[v0] Verifying admin session...")
+
+  let token: string | null = null
+
+  // Check Authorization header first (for token-based auth)
+  const authHeader = request.headers.get("authorization")
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    token = authHeader.substring(7)
+    console.log("[v0] Authorization header token:", token ? "present" : "missing")
+  }
+
+  // Fallback to cookie-based auth
+  if (!token) {
+    token = request.cookies.get("admin-session")?.value || null
+    console.log("[v0] Admin session cookie:", token ? "present" : "missing")
+  }
+
+  if (!token) {
+    console.log("[v0] No admin session cookie or token found")
+    return false
+  }
+
+  try {
+    const supabase = getSupabaseClient()
+    const { data: session, error } = await supabase
+      .from("admin_sessions")
+      .select("*")
+      .eq("session_token", token)
+      .single()
+
+    if (error || !session) {
+      console.log("[v0] Session not found in database:", error?.message)
+      return false
+    }
+
+    const now = Date.now()
+    const expiresAt = session.expires_at
+
+    console.log("[v0] Session expiry check - now:", now, "expires:", expiresAt, "valid:", now <= expiresAt)
+
+    if (now > expiresAt) {
+      console.log("[v0] Session expired, removing from database")
+      await supabase.from("admin_sessions").delete().eq("session_token", token)
+      return false
+    }
+
+    console.log("[v0] ✅ Admin session verified successfully")
+    return true
+  } catch (error) {
+    console.error("[v0] Session verification error:", error)
+    return false
+  }
+}
+
+// Direct admin verification using in-memory session store (deprecated)
+export async function verifyAdminSessionInMemory(request: NextRequest): Promise<boolean> {
+  console.log("[v0] Verifying admin session...")
+
+  // Check Authorization header first (for token-based auth)
+  const authHeader = request.headers.get("authorization")
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    const token = authHeader.substring(7)
+    console.log("[v0] Authorization header token:", token ? "present" : "missing")
+
+    if (token) {
+      const session = adminSessionStore.get(token)
+      console.log("[v0] Session in store (from header):", session ? "found" : "not found")
+
+      if (session) {
+        const now = Date.now()
+        if (now <= session.expiresAt) {
+          console.log("[v0] ✅ Admin session verified successfully (from header)")
+          return true
+        } else {
+          console.log("[v0] Session expired, removing from store")
+          adminSessionStore.delete(token)
+        }
+      }
+    }
+  }
+
+  // Fallback to cookie-based auth
+  const adminSession = request.cookies.get("admin-session")?.value
+  console.log("[v0] Admin session cookie:", adminSession ? "present" : "missing")
+
+  if (!adminSession) {
+    console.log("[v0] No admin session cookie or token found")
+    return false
+  }
+
+  try {
+    const session = adminSessionStore.get(adminSession)
+    console.log("[v0] Session in store:", session ? "found" : "not found")
+
+    if (!session) {
+      console.log("[v0] Session not found in store")
+      return false
+    }
+
+    const now = Date.now()
+    console.log(
+      "[v0] Session expiry check - now:",
+      now,
+      "expires:",
+      session.expiresAt,
+      "valid:",
+      now <= session.expiresAt,
+    )
+
+    if (now > session.expiresAt) {
+      console.log("[v0] Session expired, removing from store")
+      adminSessionStore.delete(adminSession)
+      return false
+    }
+
+    console.log("[v0] ✅ Admin session verified successfully")
+    return true
+  } catch (error) {
+    console.error("[v0] Session verification error:", error)
+    return false
+  }
+}
+
 export async function verifyStaffSession(request: NextRequest): Promise<{
+  authenticated: boolean
+  staffId?: string
+  name?: string
+  assignedProject?: string | null
+} | null> {
+  console.log("[v0] Verifying staff session...")
+
+  let token: string | null = null
+
+  // Check Authorization header first (for token-based auth)
+  const authHeader = request.headers.get("authorization")
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    token = authHeader.substring(7)
+    console.log("[v0] Staff authorization header token:", token ? "present" : "missing")
+  }
+
+  // Check localStorage token (sent as header)
+  if (!token) {
+    const localStorageToken = request.headers.get("x-staff-session-token")
+    if (localStorageToken) {
+      console.log("[v0] Staff localStorage token:", localStorageToken ? "present" : "missing")
+      token = localStorageToken
+    }
+  }
+
+  // Fallback to cookie-based auth
+  if (!token) {
+    token = request.cookies.get("staff-session")?.value || null
+    console.log("[v0] Staff session cookie:", token ? "present" : "missing")
+  }
+
+  if (!token) {
+    console.log("[v0] No staff session cookie or token found")
+    return null
+  }
+
+  try {
+    const supabase = getSupabaseClient()
+
+    const { data: session, error } = await supabase
+      .from("staff_sessions")
+      .select("*")
+      .eq("session_token", token)
+      .maybeSingle()
+
+    if (error) {
+      console.log("[v0] Database error during staff session verification:", error.message)
+      return null
+    }
+
+    if (!session) {
+      console.log("[v0] Staff session not found in database: no session")
+      return null
+    }
+
+    const now = Date.now()
+    const expiresAt = session.expires_at
+
+    console.log("[v0] Staff session expiry check - now:", now, "expires:", expiresAt, "valid:", now <= expiresAt)
+
+    if (now > expiresAt) {
+      console.log("[v0] Staff session expired, removing from database")
+      await supabase.from("staff_sessions").delete().eq("session_token", token)
+      return null
+    }
+
+    console.log("[v0] ✅ Staff session verified successfully (from database):", session.name)
+    return {
+      authenticated: true,
+      staffId: session.staff_id,
+      name: session.name,
+      assignedProject: session.assigned_project,
+    }
+  } catch (error) {
+    console.error("[v0] Staff session verification error:", error)
+    return null
+  }
+}
+
+// Direct staff verification using in-memory session store (deprecated)
+export async function verifyStaffSessionInMemory(request: NextRequest): Promise<{
   authenticated: boolean
   staffId?: string
   name?: string
