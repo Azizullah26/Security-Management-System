@@ -26,7 +26,7 @@ This guide explains how to integrate the RCC Security Management System with the
 
 When a user logs into the RCC Hub, check if they have access to the security system:
 
-```javascript
+\`\`\`javascript
 // Call this when user logs into RCC Hub
 async function checkSecurityAccess(email) {
   try {
@@ -54,11 +54,11 @@ async function checkSecurityAccess(email) {
 // Response format:
 // { success: true, hasAccess: true, user: { id, email, role, fullName, fileId } }
 // { success: true, hasAccess: false, user: null }
-```
+\`\`\`
 
 ### Step 2: Handle Security Icon Click
 
-```javascript
+\`\`\`javascript
 async function handleSecurityIconClick() {
   const hasAccess = localStorage.getItem('hasSecurityAccess') === 'true';
   const userEmail = localStorage.getItem('userEmail'); // Store this on login
@@ -101,11 +101,11 @@ async function handleSecurityIconClick() {
 //   redirectUrl: "https://elracesecurity.vercel.app/admin?token=abc123...",
 //   expiresAt: "2025-12-13T..."
 // }
-```
+\`\`\`
 
 ### Step 3: Complete Hub Integration Example
 
-```javascript
+\`\`\`javascript
 // On RCC Hub Login Success
 async function onLoginSuccess(email, password) {
   // 1. Store user email
@@ -122,7 +122,7 @@ async function onLoginSuccess(email, password) {
 
 // Security Icon Click Handler
 document.getElementById('security-icon').addEventListener('click', handleSecurityIconClick);
-```
+\`\`\`
 
 ---
 
@@ -132,7 +132,7 @@ If you need traditional username/password login instead of SSO:
 
 ### Login Endpoint
 
-```javascript
+\`\`\`javascript
 async function loginToSecurity(username, password) {
   const response = await fetch('https://elracesecurity.vercel.app/api/auth/external/login', {
     method: 'POST',
@@ -165,7 +165,7 @@ async function loginToSecurity(username, password) {
 //   dashboardUrl: "https://elracesecurity.vercel.app/admin?token=abc123...",
 //   expiresAt: "2025-12-13T..."
 // }
-```
+\`\`\`
 
 ---
 
@@ -173,7 +173,7 @@ async function loginToSecurity(username, password) {
 
 Check if an existing token is still valid:
 
-```javascript
+\`\`\`javascript
 async function verifyToken(token) {
   const response = await fetch('https://elracesecurity.vercel.app/api/auth/external/verify', {
     method: 'POST',
@@ -186,7 +186,7 @@ async function verifyToken(token) {
 
 // Response: { success: true, valid: true, user: {...}, expiresAt: "..." }
 // Response: { success: true, valid: false, error: "Invalid or expired token" }
-```
+\`\`\`
 
 ---
 
@@ -194,7 +194,7 @@ async function verifyToken(token) {
 
 Invalidate a session when user logs out:
 
-```javascript
+\`\`\`javascript
 async function logoutFromSecurity(token) {
   await fetch('https://elracesecurity.vercel.app/api/auth/external/logout', {
     method: 'POST',
@@ -206,13 +206,13 @@ async function logoutFromSecurity(token) {
   localStorage.removeItem('hasSecurityAccess');
   localStorage.removeItem('securityUser');
 }
-```
+\`\`\`
 
 ---
 
 ## Authentication Flow Diagram
 
-```
+\`\`\`
 ┌─────────────────────────────────────────────────────────────────┐
 │                         RCC HUB                                  │
 │                                                                  │
@@ -241,7 +241,7 @@ async function logoutFromSecurity(token) {
 │  7. Creates authenticated session                                │
 │  8. User sees dashboard (no login required)                      │
 └─────────────────────────────────────────────────────────────────┘
-```
+\`\`\`
 
 ---
 
