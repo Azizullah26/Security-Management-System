@@ -1,8 +1,6 @@
 # React 
 
 [![Deployed on ](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/azizkhan-projects/v0-react-and-beat-ui)
-[![Built with](https://img.shields.io/badge/Built%20with-v0.app-black?style=for-the-badge)](https://v0.app/chat/projects/AyRuPUL4xHv)
-
 ## Overview
 
 This repository will stay in sync with dployed on url .
