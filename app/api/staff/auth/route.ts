@@ -1,37 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createServiceRoleClient } from "@/lib/supabase/server"
-
-function timingSafeEqual(a: string, b: string): boolean {
-  // Ensure both strings are the same length to prevent length-based timing attacks
-  if (a.length !== b.length) {
-    return false
-  }
-
-  let result = 0
-  for (let i = 0; i < a.length; i++) {
-    result |= a.charCodeAt(i) ^ b.charCodeAt(i)
-  }
-
-  return result === 0
-}
-
-function generateSessionToken(): string {
-  const array = new Uint8Array(32)
-  self.crypto.getRandomValues(array)
-  return Array.from(array, (byte) => byte.toString(16).padStart(2, "0")).join("")
-}
-
-// Session storage for staff (in production, use Redis or database)
-export const staffSessionStore = new Map<
-  string,
-  {
-    staffId: string
-    name: string
-    assignedProject: string | null
-    createdAt: number
-    expiresAt: number
-  }
->()
+import { createClient } from "@supabase/supabase-js"
 
 // Rate limiting map
 const rateLimitMap = new Map<string, { attempts: number; lastAttempt: number; lockUntil?: number }>()
@@ -102,7 +70,7 @@ async function ensureStaffInDatabase(supabase: any) {
   const { data: existingStaff, error } = await supabase
     .from("security_staff")
     .select("file_id")
-    .in("file_id", ["3252", "3242", "3253", "2234", "3245", "3248"])
+    .in("file_id", ["Admin", "3252", "3242", "3253", "2234", "3245", "3248"])
 
   if (error) {
     console.error("[v0] Error checking staff in database:", error)
@@ -118,24 +86,26 @@ async function ensureStaffInDatabase(supabase: any) {
   console.log("[v0] No staff members found in database. Setting up staff credentials...")
 
   const staffMembers = [
-    { fileId: "3252", name: "Mohus" },
-    { fileId: "3242", name: "Umair" },
-    { fileId: "3253", name: "Salman" },
-    { fileId: "2234", name: "Tanweer" },
-    { fileId: "3245", name: "Tilak" },
-    { fileId: "3248", name: "Ramesh" },
+    { fileId: "Admin", name: "Administrator", password: "RCC0085" },
+    { fileId: "3252", name: "Mohus", password: "3252" },
+    { fileId: "3242", name: "Umair", password: "3242" },
+    { fileId: "3253", name: "Salman", password: "3253" },
+    { fileId: "2234", name: "Tanweer", password: "2234" },
+    { fileId: "3245", name: "Tilak", password: "3245" },
+    { fileId: "3248", name: "Ramesh", password: "3248" },
   ]
 
   let successCount = 0
 
   for (const member of staffMembers) {
-    const password = member.name
+    const password = member.password
     const passwordHash = await hashPassword(password)
 
     const { error: insertError } = await supabase.from("security_staff").insert({
       file_id: member.fileId,
       full_name: member.name,
       password_hash: passwordHash,
+      current_password: password,
     })
 
     if (insertError) {
@@ -143,7 +113,7 @@ async function ensureStaffInDatabase(supabase: any) {
     } else {
       successCount++
       console.log(
-        `[v0] ✅ Staff member ${member.name} (${member.fileId}) added to security_staff table with password: ${member.name}`,
+        `[v0] ✅ Staff member ${member.name} (${member.fileId}) added to security_staff table with password: ${password}`,
       )
     }
   }
@@ -157,6 +127,26 @@ async function ensureStaffInDatabase(supabase: any) {
   return successCount > 0
 }
 
+function timingSafeEqual(a: string, b: string): boolean {
+  // Ensure both strings are the same length to prevent length-based timing attacks
+  if (a.length !== b.length) {
+    return false
+  }
+
+  let result = 0
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i)
+  }
+
+  return result === 0
+}
+
+function generateSessionToken(): string {
+  const array = new Uint8Array(32)
+  crypto.getRandomValues(array)
+  return Array.from(array, (byte) => byte.toString(16).padStart(2, "0")).join("")
+}
+
 export async function POST(request: NextRequest) {
   try {
     const ip = request.ip || request.headers.get("x-forwarded-for") || "unknown"
@@ -167,15 +157,28 @@ export async function POST(request: NextRequest) {
 
     const { fileId, password } = await request.json()
 
-    const supabase = await createServiceRoleClient()
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
+    const supabaseServiceKey =
+      process.env.SUPABASE_SERVICE_ROLE_KEY ||
+      process.env.SUPABASE_ANON_KEY ||
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error("[v0] Supabase configuration missing. URL:", !!supabaseUrl, "Key:", !!supabaseServiceKey)
+      return NextResponse.json({ error: "Server configuration error" }, { status: 500 })
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    })
 
     await ensureStaffInDatabase(supabase)
 
     const { data: staff, error: fetchError } = await supabase
       .from("security_staff")
-      .select("id, file_id, full_name, password_hash")
+      .select("id, file_id, full_name, password_hash, current_password")
       .eq("file_id", fileId)
-      .single()
+      .maybeSingle()
 
     if (fetchError || !staff) {
       console.log("[v0] Staff not found in security_staff table for file_id:", fileId)
@@ -184,17 +187,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid File ID or Password" }, { status: 401 })
     }
 
-    // Check if password hash exists
-    if (!staff.password_hash) {
-      console.error("[v0] No password hash found for staff:", staff.full_name)
+    let isValidPassword = false
+
+    if (staff.current_password) {
+      isValidPassword = timingSafeEqual(password, staff.current_password)
+      console.log("[v0] Authenticating using current_password for staff:", staff.full_name)
+    } else if (staff.password_hash) {
+      isValidPassword = await verifyPassword(password, staff.password_hash)
+      console.log("[v0] Authenticating using password_hash for staff:", staff.full_name)
+    } else {
+      console.error("[v0] No password or hash found for staff:", staff.full_name)
       return NextResponse.json(
         { error: "Account not properly configured. Please contact administrator." },
         { status: 500 },
       )
     }
-
-    // Verify password against stored hash
-    const isValidPassword = await verifyPassword(password, staff.password_hash)
 
     if (isValidPassword) {
       recordAttempt(ip, true)
@@ -210,17 +217,22 @@ export async function POST(request: NextRequest) {
       const now = Date.now()
       const expiresAt = now + 8 * 60 * 60 * 1000 // 8 hours (work shift)
 
-      // Store session server-side
-      staffSessionStore.set(sessionToken, {
-        staffId: staff.file_id,
+      const { error: sessionError } = await supabase.from("staff_sessions").insert({
+        session_token: sessionToken,
+        staff_id: staff.file_id,
         name: staff.full_name,
-        assignedProject: assignedProject,
-        createdAt: now,
-        expiresAt: expiresAt,
+        assigned_project: assignedProject,
+        created_at: now,
+        expires_at: expiresAt,
       })
 
+      if (sessionError) {
+        console.error("[v0] Failed to store staff session in database:", sessionError)
+        return NextResponse.json({ error: "Failed to create session" }, { status: 500 })
+      }
+
       console.log("[v0] Staff session created for:", staff.full_name, "Token:", sessionToken.substring(0, 8) + "...")
-      console.log("[v0] Session stored in memory, expires at:", new Date(expiresAt).toISOString())
+      console.log("[v0] Session stored in database, expires at:", new Date(expiresAt).toISOString())
 
       const response = NextResponse.json({
         success: true,

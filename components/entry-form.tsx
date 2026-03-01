@@ -1,7 +1,7 @@
 "use client"
 import type { ReactElement } from "react"
 import { useState, useEffect } from "react"
-import { ErrorBoundary } from "react-error-boundary"
+import { ErrorBoundary, type FallbackProps } from "react-error-boundary"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 
@@ -34,16 +34,17 @@ export interface EntryData {
   exitTime?: string
   status: "inside" | "exited"
   projectName?: string
+  createdBy?: string
+  site_name?: string
 }
 
-function ErrorFallback({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }): ReactElement {
-  console.error("[v0] React Error Boundary caught error:", error)
-  console.error("[v0] Error stack:", error.stack)
+function ErrorFallback({ error, resetErrorBoundary }: FallbackProps): ReactElement {
+  const errorMessage = error instanceof Error ? error.message : String(error)
 
   return (
     <div className="p-4 border border-red-200 bg-red-50 rounded-lg">
       <h2 className="text-lg font-semibold text-red-800 mb-2">Something went wrong</h2>
-      <p className="text-red-600 mb-4">Error: {error.message}</p>
+      <p className="text-red-600 mb-4">Error: {errorMessage}</p>
       <Button onClick={resetErrorBoundary} variant="outline">
         Try again
       </Button>
@@ -110,6 +111,14 @@ export function EntryForm({ isOpen, onClose, category, onSubmit }: EntryFormProp
             "text-lg sm:text-xl bg-gradient-to-r from-purple-600 to-violet-600 bg-clip-text text-transparent font-bold",
         }
       case "staff":
+        return {
+          content:
+            "w-[95vw] max-w-md sm:max-w-lg max-h-[95vh] overflow-y-auto mx-2 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 border-2 border-blue-200/50 shadow-2xl",
+          header:
+            "bg-gradient-to-r from-blue-100 to-purple-100 -mx-6 -mt-6 px-6 pt-6 pb-4 rounded-t-lg border-b border-blue-200/30",
+          title:
+            "text-lg sm:text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent font-bold",
+        }
       default:
         return {
           content:
@@ -167,10 +176,9 @@ export function EntryForm({ isOpen, onClose, category, onSubmit }: EntryFormProp
   return (
     <ErrorBoundary
       FallbackComponent={ErrorFallback}
-      onError={(error, errorInfo) => {
-        console.error("[v0] Error Boundary triggered:", error)
-        console.error("[v0] Error Info:", errorInfo)
-        setReactError(`React Error: ${error.message}`)
+      onError={(error) => {
+        const msg = error instanceof Error ? error.message : String(error)
+        setReactError(`React Error: ${msg}`)
       }}
       onReset={() => {
         setReactError(null)

@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-
+import Image from "next/image"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -30,15 +30,30 @@ export function StaffLogin({ onLogin }: StaffLoginProps) {
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include",
+        credentials: "include", // Added to ensure cookies are sent and received
         body: JSON.stringify({ fileId, password }),
       })
 
-      const data = await response.json()
+      let data
+      const contentType = response.headers.get("content-type")
+
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json()
+      } else {
+        // Response is not JSON, likely a server error
+        const textError = await response.text()
+        console.error("[v0] Non-JSON response from server:", textError)
+        setError("Server error occurred. Please try again later.")
+        setFileId("")
+        setPassword("")
+        setIsLoading(false)
+        return
+      }
 
       if (response.ok && data.success) {
         if (data.sessionToken) {
           localStorage.setItem("staff-session-token", data.sessionToken)
+          console.log("[v0] Staff session token stored in localStorage")
         }
         onLogin(data.staff)
       } else {
@@ -47,8 +62,8 @@ export function StaffLogin({ onLogin }: StaffLoginProps) {
         setPassword("")
       }
     } catch (error) {
-      console.error("Login error:", error)
-      setError("Authentication failed. Please try again.")
+      console.error("[v0] Login error:", error)
+      setError("Authentication failed. Please check your connection and try again.")
     } finally {
       setIsLoading(false)
     }
@@ -57,6 +72,16 @@ export function StaffLogin({ onLogin }: StaffLoginProps) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-4">
       <Card className="w-full max-w-md bg-white/80 backdrop-blur-sm border-white/50 shadow-xl">
+        <div className="flex justify-center pt-6">
+          <Image
+            src="/images/design-mode/2025%20LOGO(1).jpeg"
+            alt="RCC - El Race Contracting Logo"
+            width={120}
+            height={40}
+            className="object-contain"
+          />
+        </div>
+
         <CardHeader className="text-center space-y-4">
           <div className="mx-auto w-16 h-16 bg-gradient-to-br from-green-600 to-blue-600 rounded-full flex items-center justify-center">
             <User className="w-8 h-8 text-white" />
@@ -141,14 +166,6 @@ export function StaffLogin({ onLogin }: StaffLoginProps) {
               )}
             </Button>
           </form>
-
-          <div className="mt-6 text-center">
-            <div className="text-sm text-gray-500 mb-2">Example credentials:</div>
-            <div className="text-xs text-gray-400 space-y-1">
-              <div>3252 - Mohus | 3242 - Umair | 3253 - Salman</div>
-              <div>2234 - Tanweer | 3245 - Tilak | 3248 - Ramesh</div>
-            </div>
-          </div>
         </CardContent>
       </Card>
     </div>

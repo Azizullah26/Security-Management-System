@@ -3,14 +3,15 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Users, HardHat, Wrench, Briefcase, Truck, UserCheck, LogOut } from "lucide-react"
+import { Users, HardHat, Wrench, Briefcase, Truck, UserCheck, LogOut, FileText } from "lucide-react"
 import { EntryForm, type EntryData } from "@/components/entry-form"
 import { RecordsTable } from "@/components/records-table"
 import { TimeTracker } from "@/components/time-tracker"
+import { StaffLogin } from "@/components/staff-login"
+import { SecurityReportForm } from "@/components/security-report-form"
 import type { StaffMember } from "@/lib/types"
 
 interface CategoryData {
@@ -22,7 +23,6 @@ interface CategoryData {
 }
 
 export default function SecurityDashboard() {
-  const router = useRouter()
   const [isInitializing, setIsInitializing] = useState(true)
   const [currentStaff, setCurrentStaff] = useState<StaffMember | null>(null)
   const [categories, setCategories] = useState<CategoryData[]>([
@@ -72,44 +72,114 @@ export default function SecurityDashboard() {
 
   const [isEntryFormOpen, setIsEntryFormOpen] = useState(false)
   const [isRecordsTableOpen, setIsRecordsTableOpen] = useState(false)
+  const [isSecurityReportFormOpen, setIsSecurityReportFormOpen] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<string>("")
   const [entries, setEntries] = useState<EntryData[]>([])
   const [viewingMyRecords, setViewingMyRecords] = useState(false)
 
   useEffect(() => {
-    const checkSession = async () => {
-      const staffToken = localStorage.getItem("staff-session-token")
+    const checkTokenAuth = async () => {
+      const urlParams = new URLSearchParams(window.location.search)
+      const token = urlParams.get("token")
 
-      if (!staffToken) {
-        router.push("/login")
-        return
-      }
+      if (token) {
+        console.log("[v0] Token found in URL:", token.substring(0, 20) + "...")
+        console.log("[v0] Calling /api/staff/sso-login to verify token...")
 
-      try {
-        const response = await fetch("/api/staff/verify", {
-          headers: {
-            "x-staff-session-token": staffToken,
-          },
-          credentials: "include",
-        })
+        try {
+          const response = await fetch("/api/staff/sso-login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token }),
+          })
 
-        if (response.ok) {
+          console.log("[v0] Response status:", response.status)
+
+          const contentType = response.headers.get("content-type")
+          if (!contentType || !contentType.includes("application/json")) {
+            console.error("[v0] API returned non-JSON response:", contentType)
+            throw new Error("Invalid response format from server")
+          }
+
           const data = await response.json()
-          setCurrentStaff(data.staff)
-        } else {
-          localStorage.removeItem("staff-session-token")
-          router.push("/login")
+          console.log("[v0] Response data:", data)
+
+          if (response.ok && data.success) {
+            console.log("[v0] SSO login successful")
+
+            if (data.user.role === "admin" || data.user.fileId === "Admin" || data.user.file_id === "Admin") {
+              console.log("[v0] Admin user detected, redirecting to admin dashboard")
+              window.location.href = "/admin?token=" + token
+              return
+            }
+
+            // Store the session token for staff
+            const sessionToken = data.sessionToken || token
+            localStorage.setItem("staff-session-token", sessionToken)
+            console.log("[v0] Stored session token in localStorage")
+
+            setCurrentStaff({
+              fileId: data.user.fileId || data.user.file_id || data.user.id,
+              name: data.user.name || data.user.fullname,
+              assignedProject: data.user.assignedProject || data.user.assigned_project || "",
+            })
+
+            console.log("[v0] Current staff set, cleaning URL...")
+
+            // Clean URL to remove token parameter
+            window.history.replaceState({}, document.title, window.location.pathname)
+            setIsInitializing(false)
+            console.log("[v0] SSO auto-login complete!")
+            return
+          } else {
+            console.error("[v0] Token verification failed:", data)
+          }
+        } catch (error) {
+          console.error("[v0] Error verifying token:", error)
         }
-      } catch (error) {
-        console.error("Session verification failed:", error)
-        router.push("/login")
-      } finally {
-        setIsInitializing(false)
       }
+
+      // No token or verification failed - check existing session
+      const staffToken = localStorage.getItem("staff-session-token")
+      if (staffToken) {
+        try {
+          const response = await fetch("/api/staff/verify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token: staffToken }),
+          })
+
+          if (!response.ok) {
+            console.log("[v0] Session verification failed with status:", response.status)
+            throw new Error("Session verification failed")
+          }
+
+          const contentType = response.headers.get("content-type")
+          if (!contentType || !contentType.includes("application/json")) {
+            console.error("[v0] API returned non-JSON response:", contentType)
+            throw new Error("Invalid response format from server")
+          }
+
+          const data = await response.json()
+          setCurrentStaff({
+            fileId: data.staff.fileId,
+            name: data.staff.name,
+            assignedProject: data.staff.assignedProject || "",
+          })
+          setIsInitializing(false)
+          return
+        } catch (error) {
+          console.error("[v0] Error verifying existing session:", error)
+        }
+      }
+
+      // No valid session - clear and show login
+      localStorage.removeItem("staff-session-token")
+      setIsInitializing(false)
     }
 
-    checkSession()
-  }, [router])
+    checkTokenAuth()
+  }, [])
 
   useEffect(() => {
     if (!currentStaff) return
@@ -154,6 +224,12 @@ export default function SecurityDashboard() {
   }, [currentStaff])
 
   const handleLogin = (staff: StaffMember) => {
+    // Admin user - redirect to admin dashboard
+    if (staff.fileId === "Admin") {
+      window.location.href = "/admin"
+      return
+    }
+    // Regular staff - show staff dashboard
     setCurrentStaff(staff)
   }
 
@@ -164,7 +240,6 @@ export default function SecurityDashboard() {
       setEntries([])
       setCategories((prev) => prev.map((cat) => ({ ...cat, count: 0 })))
       localStorage.removeItem("staff-session-token")
-      router.push("/login")
     } catch (error) {
       console.error("Logout failed:", error)
     }
@@ -308,14 +383,7 @@ export default function SecurityDashboard() {
   }
 
   if (!currentStaff) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
-          <p className="text-gray-600">Redirecting to login...</p>
-        </div>
-      </div>
-    )
+    return <StaffLogin onLogin={handleLogin} />
   }
 
   return (
@@ -336,7 +404,7 @@ export default function SecurityDashboard() {
               </h1>
               <p className="text-sm md:text-base lg:text-lg text-gray-600">Visitor and Personnel Tracking Dashboard</p>
 
-              <div className="mt-2 md:mt-3 flex flex-col sm:flex-row gap-2 md:gap-4 text-xs sm:text-sm md:text-base">
+              <div className="mt-2 md:mt-3 flex flex-col sm:flex-row md:flex-col lg:flex-row gap-2 md:gap-4 text-xs sm:text-sm md:text-base">
                 <div className="flex items-center justify-center md:justify-start gap-2">
                   <span className="font-medium text-blue-600">Staff:</span>
                   <span className="text-gray-700">
@@ -365,14 +433,6 @@ export default function SecurityDashboard() {
               >
                 <Users className="h-4 w-4 md:h-5 md:w-5" />
                 <span className="whitespace-nowrap">My Records Today</span>
-              </Button>
-              <Button
-                onClick={() => (window.location.href = "/admin")}
-                variant="outline"
-                className="w-full md:w-auto gap-2 text-sm md:text-base px-4 md:px-5 h-10 md:h-11"
-              >
-                <Users className="h-4 w-4 md:h-5 md:w-5" />
-                <span className="whitespace-nowrap">Admin Dashboard</span>
               </Button>
               <Button
                 onClick={handleLogout}
@@ -435,6 +495,37 @@ export default function SecurityDashboard() {
                   </Card>
                 )
               })}
+
+              <Card className="hover:shadow-lg transition-shadow bg-gradient-to-br from-white to-gray-50 border-gray-200">
+                <CardHeader className="pb-2 sm:pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm sm:text-base md:text-lg font-semibold text-gray-800">
+                      Security Report
+                    </CardTitle>
+                    <div className="p-2 sm:p-2.5 rounded-lg bg-indigo-100">
+                      <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-gray-700" />
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-2 sm:space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs sm:text-sm text-gray-600">Submit Reports</span>
+                    <Badge variant="secondary" className="text-sm sm:text-base md:text-lg px-2 sm:px-3 py-1">
+                      📝
+                    </Badge>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      onClick={() => setIsSecurityReportFormOpen(true)}
+                      className="w-full text-xs sm:text-sm md:text-base h-9 sm:h-10 md:h-11 bg-indigo-600 hover:bg-indigo-700"
+                      size="default"
+                    >
+                      Add Report
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
 
             <div className="bg-white rounded-lg shadow p-3 sm:p-4 md:p-5 lg:p-6">
@@ -481,6 +572,16 @@ export default function SecurityDashboard() {
         category={selectedCategory}
         entries={entries}
         onCheckOut={handleCheckOut}
+      />
+
+      <SecurityReportForm
+        isOpen={isSecurityReportFormOpen}
+        onClose={() => setIsSecurityReportFormOpen(false)}
+        staffName={currentStaff?.name || ""}
+        assignedProject={currentStaff?.assignedProject || ""}
+        onSubmitSuccess={() => {
+          // Optionally refresh or show confirmation
+        }}
       />
     </div>
   )

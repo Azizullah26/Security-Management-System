@@ -20,17 +20,19 @@ export function SubContractorEntryForm({ onSubmit, onCancel }: SubContractorEntr
     company: "",
     purpose: "",
     contactNumber: "",
-    numberOfPersons: 1,
+    numberOfPersons: "",
     vehicleNumber: "",
   })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
+    const { numberOfPersons, ...restFormData } = formData
     const entryData: EntryData = {
       id: crypto.randomUUID(),
       category: "subcontractors",
-      ...formData,
+      ...restFormData,
+      numberOfPersons: numberOfPersons ? Number(numberOfPersons) : undefined,
       email: "",
       entryTime: new Date().toISOString(),
       status: "inside",
@@ -95,7 +97,7 @@ export function SubContractorEntryForm({ onSubmit, onCancel }: SubContractorEntr
           min="1"
           max="50"
           value={formData.numberOfPersons}
-          onChange={(e) => setFormData({ ...formData, numberOfPersons: Number.parseInt(e.target.value) || 1 })}
+          onChange={(e) => setFormData({ ...formData, numberOfPersons: e.target.value })}
           placeholder="Enter number of persons"
           className="h-11 text-base bg-white/80 border-2 border-orange-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-200 rounded-lg"
         />

@@ -12,6 +12,7 @@ import {
   ClipboardList,
   LogOut,
   FileText,
+  AlertCircle,
 } from "lucide-react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
@@ -30,8 +31,14 @@ const sidebarItems = [
     category: "MAIN",
   },
   {
+    id: "security-reports",
+    label: "Security Reports",
+    icon: AlertCircle,
+    category: "MAIN",
+  },
+  {
     id: "all-records",
-    label: "All Records",
+    label: "Entry and Exit Records", // Changed button text from "All Records" to "Entry and Exit Records"
     icon: FileText,
     category: "MAIN",
   },

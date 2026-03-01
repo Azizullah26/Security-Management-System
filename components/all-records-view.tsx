@@ -1,11 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Search, Eye, Clock, Download } from "lucide-react"
@@ -23,10 +22,14 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
   const [selectedEntry, setSelectedEntry] = useState<EntryData | null>(null)
   const [localEntries, setLocalEntries] = useState<EntryData[]>([])
   const [projects, setProjects] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const tableContainerRef = useRef<HTMLDivElement>(null)
+  const scrollbarRef = useRef<HTMLDivElement>(null)
 
-  // Load entries from database and projects from API on mount
   useEffect(() => {
     const loadData = async () => {
+      setIsLoading(true)
       try {
         const token = localStorage.getItem("admin-token")
         const headers: HeadersInit = {
@@ -37,9 +40,8 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
           headers["Authorization"] = `Bearer ${token}`
         }
 
-        // Load entries from database
-        const entriesResponse = await fetch("/api/records", {
-          credentials: "include", // Include authentication cookies as fallback
+        const entriesResponse = await fetch("/api/records?admin=true", {
+          credentials: "include",
           headers,
         })
         if (entriesResponse.ok) {
@@ -47,11 +49,11 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
           setLocalEntries(data.records || [])
         } else {
           console.error("Failed to fetch entries:", entriesResponse.status)
+          setLocalEntries([])
         }
 
-        // Load projects for project filter
         const projectsResponse = await fetch("/api/projects", {
-          credentials: "include", // Include authentication cookies as fallback
+          credentials: "include",
           headers,
         })
         if (projectsResponse.ok) {
@@ -62,23 +64,62 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
         }
       } catch (error) {
         console.error("Failed to load data:", error)
+        setLocalEntries([])
+      } finally {
+        setIsLoading(false)
       }
     }
     loadData()
-  }, []) // Run only once on mount
+  }, [])
 
-  // Use provided entries or local entries (only fall back when entries is undefined)
+  useEffect(() => {
+    const tableContainer = tableContainerRef.current
+    const scrollbar = scrollbarRef.current
+
+    if (!tableContainer || !scrollbar) return
+
+    const handleTableScroll = () => {
+      if (scrollbar && tableContainer) {
+        requestAnimationFrame(() => {
+          scrollbar.scrollLeft = tableContainer.scrollLeft
+        })
+      }
+    }
+
+    const handleScrollbarScroll = () => {
+      if (tableContainer && scrollbar) {
+        requestAnimationFrame(() => {
+          tableContainer.scrollLeft = scrollbar.scrollLeft
+        })
+      }
+    }
+
+    tableContainer.addEventListener("scroll", handleTableScroll, { passive: true })
+    scrollbar.addEventListener("scroll", handleScrollbarScroll, { passive: true })
+
+    return () => {
+      tableContainer.removeEventListener("scroll", handleTableScroll)
+      scrollbar.removeEventListener("scroll", handleScrollbarScroll)
+    }
+  }, [])
+
   const allEntries = entries ?? localEntries
 
-  // Filter entries based on search term, category, status, and project
+  const uniqueProjects = Array.from(
+    new Set(
+      allEntries.map((entry) => entry.projectName).filter((projectName): projectName is string => Boolean(projectName)),
+    ),
+  ).sort()
+
   const filteredEntries = allEntries.filter((entry) => {
     const matchesSearch =
-      entry.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      entry.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      entry.contactNumber.includes(searchTerm) ||
-      entry.purpose.toLowerCase().includes(searchTerm.toLowerCase())
+      (entry.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (entry.company || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (entry.contactNumber || "").includes(searchTerm) ||
+      (entry.purpose || "").toLowerCase().includes(searchTerm.toLowerCase())
 
-    const matchesCategory = categoryFilter === "all" || entry.category.toLowerCase() === categoryFilter.toLowerCase()
+    const matchesCategory =
+      categoryFilter === "all" || (entry.category || "").toLowerCase() === categoryFilter.toLowerCase()
     const matchesStatus = statusFilter === "all" || entry.status === statusFilter
     const matchesProject = projectFilter === "all" || entry.projectName === projectFilter
 
@@ -90,7 +131,6 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
 
     try {
       const date = new Date(isoString)
-      // Check if date is valid
       if (isNaN(date.getTime())) return "Invalid Date"
 
       return date.toLocaleString("en-US", {
@@ -167,6 +207,7 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
       "Company",
       "Purpose",
       "Contact",
+      "Staff",
       "Entry Time",
       "Exit Time",
       "Status",
@@ -178,6 +219,7 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
       entry.company || "N/A",
       entry.purpose || "N/A",
       entry.contactNumber || "N/A",
+      entry.createdBy || "N/A",
       formatTime(entry.entryTime),
       entry.exitTime ? formatTime(entry.exitTime) : "N/A",
       entry.status,
@@ -195,7 +237,6 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
     window.URL.revokeObjectURL(url)
   }
 
-  // Get summary statistics
   const stats = {
     total: allEntries.length,
     inside: allEntries.filter((e) => e.status === "inside").length,
@@ -211,14 +252,13 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
 
   return (
     <div className="space-y-6 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-6 rounded-xl border border-white/30 shadow-lg">
-      {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-            All Records
+            Entry and Exit Records
           </h1>
           <p className="text-gray-600 bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent font-medium">
-            Complete overview of all entry records across all categories
+            Complete overview of all entry and exit records across all categories
           </p>
         </div>
         <Button
@@ -230,7 +270,6 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
         </Button>
       </div>
 
-      {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="bg-gradient-to-br from-blue-500 to-cyan-500 text-white border-0 shadow-lg">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -273,14 +312,17 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
         </Card>
       </div>
 
-      {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4 items-center bg-white/70 backdrop-blur-sm p-4 rounded-lg border border-white/50 shadow-sm">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-purple-500 h-4 w-4" />
           <Input
+            type="text"
             placeholder="Search by name, company, contact, or purpose..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value || ""
+              setSearchTerm(value)
+            }}
             className="pl-10 border-purple-200 focus:border-purple-500 focus:ring-purple-500"
           />
         </div>
@@ -316,103 +358,155 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Projects</SelectItem>
-            {projects
-              .filter((project) => project.status === "active")
-              .slice(0, 10) // Limit to first 10 for UI performance
-              .map((project) => (
-                <SelectItem key={project.id} value={project.name}>
-                  {project.name}
-                </SelectItem>
-              ))}
+            {uniqueProjects.map((projectName) => (
+              <SelectItem key={projectName} value={projectName}>
+                {projectName}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
 
-      {/* Records Table */}
       <Card className="bg-white/80 backdrop-blur-sm border-white/50 shadow-lg">
         <CardContent className="p-0">
-          <div className="overflow-auto max-h-[600px]">
-            <Table>
-              <TableHeader className="sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50 z-10">
-                <TableRow className="border-blue-100">
-                  <TableHead className="w-16 text-slate-700 font-semibold">Photo</TableHead>
-                  <TableHead className="min-w-[150px] text-slate-700 font-semibold">Name</TableHead>
-                  <TableHead className="min-w-[120px] text-slate-700 font-semibold">Category</TableHead>
-                  <TableHead className="min-w-[150px] text-slate-700 font-semibold">Company</TableHead>
-                  <TableHead className="min-w-[120px] text-slate-700 font-semibold">Purpose</TableHead>
-                  <TableHead className="min-w-[140px] text-slate-700 font-semibold">Contact</TableHead>
-                  <TableHead className="min-w-[150px] text-slate-700 font-semibold">Project</TableHead>
-                  <TableHead className="min-w-[140px] text-slate-700 font-semibold">Entry Time</TableHead>
-                  <TableHead className="min-w-[140px] text-slate-700 font-semibold">Exit Time</TableHead>
-                  <TableHead className="min-w-[140px] text-slate-700 font-semibold">Status/Duration</TableHead>
-                  <TableHead className="w-24 text-slate-700 font-semibold">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredEntries.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={11} className="text-center py-8 text-slate-500">
-                      {allEntries.length === 0 ? "No records found" : "No entries match your filters"}
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredEntries.map((entry, index) => (
-                    <TableRow key={entry.id} className={index % 2 === 0 ? "bg-white/40" : "bg-slate-50/40"}>
-                      <TableCell>
-                        <Avatar className="h-10 w-10 border-2 border-blue-200">
-                          <AvatarImage
-                            src={entry.photo || "/placeholder.svg?height=40&width=40"}
-                            alt={entry.name}
-                            className="object-cover"
-                          />
-                          <AvatarFallback className="text-xs bg-gradient-to-br from-blue-100 to-purple-100 text-blue-700">
-                            {entry.name.charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                      </TableCell>
-                      <TableCell className="font-medium text-slate-800">{entry.name}</TableCell>
-                      <TableCell>{getCategoryBadge(entry.category)}</TableCell>
-                      <TableCell className="text-slate-700">{entry.company || "N/A"}</TableCell>
-                      <TableCell className="text-slate-700">{entry.purpose || "N/A"}</TableCell>
-                      <TableCell className="text-slate-700">{entry.contactNumber || "N/A"}</TableCell>
-                      <TableCell className="text-slate-700">
-                        {entry.projectName ? (
-                          <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
-                            {entry.projectName}
-                          </Badge>
-                        ) : (
-                          <span className="text-slate-400">No project</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-slate-700">{formatTime(entry.entryTime)}</TableCell>
-                      <TableCell>
-                        {entry.exitTime ? (
-                          <span className="text-slate-600">{formatTime(entry.exitTime)}</span>
-                        ) : (
-                          <span className="text-slate-400">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>{getStatusBadge(entry.status, entry.entryTime)}</TableCell>
-                      <TableCell>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => setSelectedEntry(entry)}
-                          className="h-9 w-9 border-blue-200 hover:bg-blue-50 hover:border-blue-300"
-                        >
-                          <Eye className="h-4 w-4 text-blue-600" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+          <div className="relative">
+            <div
+              ref={scrollbarRef}
+              className="overflow-x-auto scrollbar-thin scrollbar-thumb-purple-500 scrollbar-track-purple-100 bg-gradient-to-r from-blue-50 to-purple-50 sticky top-0 z-20"
+              style={{ height: "12px" }}
+            >
+              <div style={{ width: "1600px", height: "1px" }} />
+            </div>
+
+            <div
+              ref={tableContainerRef}
+              className="overflow-x-auto overflow-y-auto scrollbar-thin scrollbar-thumb-purple-400 scrollbar-track-purple-100"
+              style={{ maxHeight: "600px" }}
+            >
+              <table className="w-full caption-bottom text-sm">
+                <thead className="sticky top-0 z-10 bg-gradient-to-r from-blue-50 to-purple-50 shadow-sm">
+                  <tr className="border-blue-100 border-b">
+                    <th className="h-10 px-2 text-left align-middle font-semibold text-slate-700 whitespace-nowrap sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50">
+                      Actions
+                    </th>
+                    <th className="h-10 px-2 text-left align-middle font-semibold text-slate-700 whitespace-nowrap min-w-[140px] sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50">
+                      Entry Time
+                    </th>
+                    <th className="h-10 px-2 text-left align-middle font-semibold text-slate-700 whitespace-nowrap min-w-[140px] sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50">
+                      Exit Time
+                    </th>
+                    <th className="h-10 px-2 text-left align-middle font-semibold text-slate-700 whitespace-nowrap min-w-[140px] sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50">
+                      Status/Duration
+                    </th>
+                    <th className="h-10 px-2 text-left align-middle font-semibold text-slate-700 whitespace-nowrap w-16 sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50">
+                      Photo
+                    </th>
+                    <th className="h-10 px-2 text-left align-middle font-semibold text-slate-700 whitespace-nowrap min-w-[150px] sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50">
+                      Name
+                    </th>
+                    <th className="h-10 px-2 text-left align-middle font-semibold text-slate-700 whitespace-nowrap min-w-[120px] sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50">
+                      Category
+                    </th>
+                    <th className="h-10 px-2 text-left align-middle font-semibold text-slate-700 whitespace-nowrap min-w-[150px] sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50">
+                      Company
+                    </th>
+                    <th className="h-10 px-2 text-left align-middle font-semibold text-slate-700 whitespace-nowrap min-w-[120px] sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50">
+                      Purpose
+                    </th>
+                    <th className="h-10 px-2 text-left align-middle font-semibold text-slate-700 whitespace-nowrap min-w-[140px] sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50">
+                      Contact
+                    </th>
+                    <th className="h-10 px-2 text-left align-middle font-semibold text-slate-700 whitespace-nowrap min-w-[150px] sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50">
+                      Project
+                    </th>
+                    <th className="h-10 px-2 text-left align-middle font-semibold text-slate-700 whitespace-nowrap min-w-[140px] sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50">
+                      Staff
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredEntries.length === 0 ? (
+                    <tr>
+                      <td colSpan={12} className="text-center py-8 text-slate-500 p-2 align-middle">
+                        {allEntries.length === 0 ? "No records found" : "No entries match your filters"}
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredEntries.map((entry, index) => (
+                      <tr
+                        key={entry.id}
+                        className={`border-b transition-colors hover:bg-muted/50 ${index % 2 === 0 ? "bg-white/40" : "bg-slate-50/40"}`}
+                      >
+                        <td className="p-2 align-middle whitespace-nowrap">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => setSelectedEntry(entry)}
+                            className="h-9 w-9 border-blue-200 hover:bg-blue-50 hover:border-blue-300"
+                          >
+                            <Eye className="h-4 w-4 text-blue-600" />
+                          </Button>
+                        </td>
+                        <td className="p-2 align-middle whitespace-nowrap text-slate-700">
+                          {formatTime(entry.entryTime)}
+                        </td>
+                        <td className="p-2 align-middle whitespace-nowrap">
+                          {entry.exitTime ? (
+                            <span className="text-slate-600">{formatTime(entry.exitTime)}</span>
+                          ) : (
+                            <span className="text-slate-400">-</span>
+                          )}
+                        </td>
+                        <td className="p-2 align-middle whitespace-nowrap">
+                          {getStatusBadge(entry.status, entry.entryTime)}
+                        </td>
+                        <td className="p-2 align-middle whitespace-nowrap">
+                          <Avatar className="h-10 w-10 border-2 border-blue-200">
+                            <AvatarImage
+                              src={entry.photo || "/placeholder.svg?height=40&width=40"}
+                              alt={entry.name}
+                              className="object-cover"
+                            />
+                            <AvatarFallback className="text-xs bg-gradient-to-br from-blue-100 to-purple-100 text-blue-700">
+                              {entry.name.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                        </td>
+                        <td className="p-2 align-middle whitespace-nowrap font-medium text-slate-800">{entry.name}</td>
+                        <td className="p-2 align-middle whitespace-nowrap">{getCategoryBadge(entry.category)}</td>
+                        <td className="p-2 align-middle whitespace-nowrap text-slate-700">{entry.company || "N/A"}</td>
+                        <td className="p-2 align-middle whitespace-nowrap text-slate-700">{entry.purpose || "N/A"}</td>
+                        <td className="p-2 align-middle whitespace-nowrap text-slate-700">
+                          {entry.contactNumber || "N/A"}
+                        </td>
+                        <td className="p-2 align-middle whitespace-nowrap text-slate-700">
+                          {entry.projectName ? (
+                            <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+                              {entry.projectName}
+                            </Badge>
+                          ) : (
+                            <span className="text-slate-400">No project</span>
+                          )}
+                        </td>
+                        <td className="p-2 align-middle whitespace-nowrap text-slate-700">
+                          {entry.createdBy ? (
+                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                              {entry.createdBy}
+                            </Badge>
+                          ) : (
+                            <span className="text-slate-400">Unknown</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Footer */}
       <div className="flex justify-between items-center text-sm text-slate-600 bg-white/50 p-4 rounded-lg">
         <span>
           Showing {filteredEntries.length} of {allEntries.length} records
@@ -420,7 +514,6 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
         <span>Last updated: {new Date().toLocaleString()}</span>
       </div>
 
-      {/* Entry Details Modal */}
       {selectedEntry && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
@@ -468,6 +561,10 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
                   <div>
                     <span className="font-medium text-pink-700">Contact:</span>
                     <p className="text-gray-700">{selectedEntry.contactNumber || "N/A"}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-cyan-700">Staff:</span>
+                    <p className="text-gray-700">{selectedEntry.createdBy || "Unknown"}</p>
                   </div>
                   <div>
                     <span className="font-medium text-indigo-700">Entry Time:</span>

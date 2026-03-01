@@ -30,62 +30,185 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "File ID is required" }, { status: 400 })
     }
 
-    const ODOO_URL = "https://test.elrace.com"
-    const ODOO_DB = "test.elrace.com" // Only use the confirmed database name
-    const ODOO_USERNAME = "jawad"
-    const ODOO_API_KEY = "272127212721" // This should be an API key generated from Odoo user settings
+    const ODOO_URL = process.env.ODOO_URL
+    const ODOO_DB = process.env.ODOO_DB
+    const ODOO_USERNAME = process.env.ODOO_USERNAME
+    const ODOO_API_KEY = process.env.ODOO_PASSWORD
+
+    // Validate required environment variables
+    if (!ODOO_URL || !ODOO_DB || !ODOO_USERNAME || !ODOO_API_KEY) {
+      console.log("[v0] Missing Odoo configuration:")
+      console.log("[v0] URL:", ODOO_URL ? "present" : "missing")
+      console.log("[v0] DB:", ODOO_DB ? "present" : "missing")
+      console.log("[v0] Username:", ODOO_USERNAME ? "present" : "missing")
+      console.log("[v0] API Key:", ODOO_API_KEY ? "present" : "missing")
+      return NextResponse.json(
+        { error: "Odoo configuration is incomplete. Please check environment variables." },
+        { status: 500 }
+      )
+    }
+
+    // Generate alternative URLs to try if the configured one fails
+    const urlsToTry = [ODOO_URL]
+    
+    // If URL contains test.elrace.com, try odoo.elrace.com
+    if (ODOO_URL.includes('test.elrace.com')) {
+      urlsToTry.push(ODOO_URL.replace('test.elrace.com', 'odoo.elrace.com'))
+    }
+    
+    // If URL contains a subdomain, try without it
+    const urlMatch = ODOO_URL.match(/https?:\/\/([^.]+)\.elrace\.com/)
+    if (urlMatch && urlMatch[1] !== 'odoo') {
+      urlsToTry.push(ODOO_URL.replace(`${urlMatch[1]}.elrace.com`, 'odoo.elrace.com'))
+    }
+
+    let workingUrl = ODOO_URL
 
     console.log("[v0] Odoo Configuration:")
     console.log("[v0] URL:", ODOO_URL)
+    console.log("[v0] URLs to try:", urlsToTry)
     console.log("[v0] DB:", ODOO_DB)
     console.log("[v0] Username:", ODOO_USERNAME)
     console.log("[v0] API Key length:", ODOO_API_KEY.length)
 
-    const authenticate = async () => {
-      console.log("[v0] Attempting XML-RPC authentication with API key...")
+    async function listDatabases(url: string): Promise<string[]> {
+      try {
+        console.log(`[v0] Attempting to list databases from: ${url}`)
+        const listXml = `<?xml version="1.0"?>
+<methodCall>
+<methodName>list</methodName>
+<params>
+</params>
+</methodCall>`
 
-      const authXml = `<?xml version="1.0"?>
+        const listResponse = await fetch(`${url}/xmlrpc/2/db`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "text/xml",
+          },
+          body: listXml,
+          signal: AbortSignal.timeout(10000),
+        })
+
+        if (!listResponse.ok) {
+          console.log(`[v0] Failed to list databases from ${url}:`, listResponse.status)
+          return []
+        }
+
+        const listResult = await listResponse.text()
+
+        // Parse database names from XML response
+        const dbMatches = listResult.matchAll(/<value><string>([^<]+)<\/string><\/value>/g)
+        const databases: string[] = []
+
+        for (const match of dbMatches) {
+          databases.push(match[1])
+        }
+
+        console.log(`[v0] Available databases from ${url}:`, databases)
+        return databases
+      } catch (error) {
+        console.log(`[v0] Error listing databases from ${url}:`, error instanceof Error ? error.message : String(error))
+        return []
+      }
+    }
+
+    async function tryAuthenticate(database: string, url: string): Promise<number | null> {
+      try {
+        console.log(`[v0] Attempting authentication with database: ${database} at ${url}`)
+
+        const authXml = `<?xml version="1.0"?>
 <methodCall>
 <methodName>authenticate</methodName>
 <params>
-<param><value><string>${ODOO_DB}</string></value></param>
+<param><value><string>${database}</string></value></param>
 <param><value><string>${ODOO_USERNAME}</string></value></param>
 <param><value><string>${ODOO_API_KEY}</string></value></param>
 <param><value><struct></struct></value></param>
 </params>
 </methodCall>`
 
-      const authResponse = await fetch(`${ODOO_URL}/xmlrpc/2/common`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "text/xml",
-        },
-        body: authXml,
-      })
+        const authResponse = await fetch(`${url}/xmlrpc/2/common`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "text/xml",
+          },
+          body: authXml,
+          signal: AbortSignal.timeout(10000),
+        })
 
-      console.log("[v0] Auth response status:", authResponse.status)
+        console.log(`[v0] Auth response status for ${database} at ${url}:`, authResponse.status)
 
-      if (!authResponse.ok) {
-        throw new Error(`Authentication failed: ${authResponse.status} ${authResponse.statusText}`)
+        if (!authResponse.ok) {
+          console.log(`[v0] Auth failed for ${database} at ${url}: ${authResponse.status}`)
+          return null
+        }
+
+        const authResult = await authResponse.text()
+
+        if (authResult.includes("<fault>")) {
+          console.log(`[v0] Auth fault for ${database} at ${url}`)
+          return null
+        }
+
+        // Extract UID from XML response
+        const uidMatch = authResult.match(/<value><int>(\d+)<\/int><\/value>/)
+        if (!uidMatch) {
+          console.log(`[v0] No UID returned for ${database} at ${url}`)
+          return null
+        }
+
+        const uid = Number.parseInt(uidMatch[1])
+        console.log(`[v0] ✅ Authentication successful with ${database} at ${url}, UID: ${uid}`)
+        return uid
+      } catch (error) {
+        console.log(`[v0] Error authenticating with ${database} at ${url}:`, error instanceof Error ? error.message : String(error))
+        return null
+      }
+    }
+
+    let uid: number | null = null
+    let workingDatabase = ODOO_DB
+
+    // Try each URL until one works
+    for (const tryUrl of urlsToTry) {
+      console.log(`[v0] Trying URL: ${tryUrl}`)
+      
+      // Try the configured database first
+      uid = await tryAuthenticate(ODOO_DB, tryUrl)
+
+      // If configured database fails, try available databases
+      if (uid === null) {
+        console.log(`[v0] Configured database failed at ${tryUrl}, trying available databases...`)
+        const availableDbs = await listDatabases(tryUrl)
+
+        if (availableDbs.length > 0) {
+          console.log(`[v0] Found ${availableDbs.length} available databases at ${tryUrl}, trying each...`)
+
+          for (const db of availableDbs) {
+            uid = await tryAuthenticate(db, tryUrl)
+            if (uid !== null) {
+              workingDatabase = db
+              workingUrl = tryUrl
+              console.log(`[v0] ✅ Successfully connected to database: ${db} at ${tryUrl}`)
+              break
+            }
+          }
+        }
+      } else {
+        workingUrl = tryUrl
+        console.log(`[v0] ✅ Successfully connected with configured database at ${tryUrl}`)
+        break
       }
 
-      const authResult = await authResponse.text()
-      console.log("[v0] Auth response:", authResult)
+      if (uid !== null) break
+    }
 
-      if (authResult.includes("<fault>")) {
-        console.log("[v0] Authentication failed - fault in response")
-        throw new Error("Authentication failed - invalid credentials or permissions")
-      }
-
-      // Extract UID from XML response
-      const uidMatch = authResult.match(/<value><int>(\d+)<\/int><\/value>/)
-      if (!uidMatch) {
-        throw new Error("Authentication failed - no UID returned")
-      }
-
-      const uid = Number.parseInt(uidMatch[1])
-      console.log("[v0] Authentication successful, UID:", uid)
-      return uid
+    // If all URLs failed
+    if (uid === null) {
+      throw new Error(
+        `Unable to connect to Odoo server. Tried URLs: ${urlsToTry.join(", ")}. Please update ODOO_URL environment variable to the correct server address (e.g., https://odoo.elrace.com).`,
+      )
     }
 
     const searchEmployee = async (uid: number) => {
@@ -95,7 +218,7 @@ export async function POST(request: NextRequest) {
 <methodCall>
 <methodName>execute_kw</methodName>
 <params>
-<param><value><string>${ODOO_DB}</string></value></param>
+<param><value><string>${workingDatabase}</string></value></param>
 <param><value><int>${uid}</int></value></param>
 <param><value><string>${ODOO_API_KEY}</string></value></param>
 <param><value><string>hr.employee</string></value></param>
@@ -128,12 +251,13 @@ export async function POST(request: NextRequest) {
 </params>
 </methodCall>`
 
-      const searchResponse = await fetch(`${ODOO_URL}/xmlrpc/2/object`, {
+      const searchResponse = await fetch(`${workingUrl}/xmlrpc/2/object`, {
         method: "POST",
         headers: {
           "Content-Type": "text/xml",
         },
         body: searchXml,
+        signal: AbortSignal.timeout(15000),
       })
 
       console.log("[v0] Search response status:", searchResponse.status)
@@ -202,9 +326,7 @@ export async function POST(request: NextRequest) {
       return employee
     }
 
-    // Step 1: Authenticate and get UID
-    const uid = await authenticate()
-
+    // Step 1: Authenticate and get UID (already done above with fallback)
     // Step 2: Search for employee using stateless XML-RPC
     const searchResult = await searchEmployee(uid)
 

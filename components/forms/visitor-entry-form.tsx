@@ -6,7 +6,6 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { EntryData } from "../entry-form"
 
 interface VisitorEntryFormProps {
@@ -21,17 +20,24 @@ export function VisitorEntryForm({ onSubmit, onCancel }: VisitorEntryFormProps):
     purpose: "",
     contactNumber: "",
     email: "",
-    numberOfPersons: 1,
+    numberOfPersons: "",
     vehicleNumber: "",
   })
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setFormData({ ...formData, [name]: value })
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
+    const { numberOfPersons, ...restFormData } = formData
     const entryData: EntryData = {
       id: crypto.randomUUID(),
       category: "visitors",
-      ...formData,
+      ...restFormData,
+      numberOfPersons: numberOfPersons ? Number(numberOfPersons) : undefined,
       entryTime: new Date().toISOString(),
       status: "inside",
     }
@@ -108,7 +114,7 @@ export function VisitorEntryForm({ onSubmit, onCancel }: VisitorEntryFormProps):
           min="1"
           max="50"
           value={formData.numberOfPersons}
-          onChange={(e) => setFormData({ ...formData, numberOfPersons: Number.parseInt(e.target.value) || 1 })}
+          onChange={(e) => setFormData({ ...formData, numberOfPersons: e.target.value })}
           placeholder="Enter number of persons"
           className="h-11 text-base bg-white/80 border-2 border-indigo-200 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200 rounded-lg"
         />
@@ -119,18 +125,15 @@ export function VisitorEntryForm({ onSubmit, onCancel }: VisitorEntryFormProps):
           <Label htmlFor="purpose" className="text-sm sm:text-base font-semibold text-indigo-700">
             Purpose of Visit
           </Label>
-          <Select onValueChange={(value) => setFormData({ ...formData, purpose: value })}>
-            <SelectTrigger className="h-11 text-base bg-white/80 border-2 border-indigo-200 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200 rounded-lg">
-              <SelectValue placeholder="Select purpose" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="meeting">Meeting</SelectItem>
-              <SelectItem value="delivery">Delivery</SelectItem>
-              <SelectItem value="maintenance">Maintenance</SelectItem>
-              <SelectItem value="interview">Interview</SelectItem>
-              <SelectItem value="other">Other</SelectItem>
-            </SelectContent>
-          </Select>
+          <Input
+            id="purpose"
+            name="purpose"
+            value={formData.purpose}
+            onChange={handleInputChange}
+            required
+            placeholder="Enter purpose of visit"
+            className="mt-1 text-sm sm:text-base"
+          />
         </div>
       </div>
 
