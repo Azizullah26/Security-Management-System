@@ -132,6 +132,16 @@ export function SecurityReportsView() {
     }
   }
 
+  const parseAttachments = (attachment: string | null): string[] => {
+    if (!attachment) return []
+    try {
+      const parsed = JSON.parse(attachment)
+      return Array.isArray(parsed) ? parsed : []
+    } catch {
+      return []
+    }
+  }
+
   const filteredReports = reports.filter((report) => {
     const matchesSearch =
       report.staff_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -147,16 +157,6 @@ export function SecurityReportsView() {
 
     return true
   })
-
-  const parseAttachments = (attachment: string | null): string[] => {
-    if (!attachment) return []
-    try {
-      const parsed = JSON.parse(attachment)
-      return Array.isArray(parsed) ? parsed : []
-    } catch {
-      return []
-    }
-  }
 
   const handleViewDetails = (report: SecurityReport) => {
     setSelectedReport(report)
