@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Eye, Download, FileText, Video, Trash2, RefreshCw } from "lucide-react"
+import { Eye, Download, FileText, Video, Trash2, RefreshCw, Paperclip } from "lucide-react"
 import jsPDF from "jspdf"
 import html2canvas from "html2canvas"
 
@@ -41,6 +41,7 @@ export function SecurityReportsView() {
   const [deletingId, setDeletingId] = useState<number | null>(null)
   const [retryCount, setRetryCount] = useState(0)
   const [isInitialLoad, setIsInitialLoad] = useState(true)
+  const [showWithAttachmentsOnly, setShowWithAttachmentsOnly] = useState(false)
 
   useEffect(() => {
     fetchReports()
@@ -131,12 +132,21 @@ export function SecurityReportsView() {
     }
   }
 
-  const filteredReports = reports.filter(
-    (report) =>
+  const filteredReports = reports.filter((report) => {
+    const matchesSearch =
       report.staff_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       report.project_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      report.description?.toLowerCase().includes(searchTerm.toLowerCase()),
-  )
+      report.description?.toLowerCase().includes(searchTerm.toLowerCase())
+
+    if (!matchesSearch) return false
+
+    if (showWithAttachmentsOnly) {
+      const attachments = parseAttachments(report.attachment)
+      return attachments.length > 0
+    }
+
+    return true
+  })
 
   const parseAttachments = (attachment: string | null): string[] => {
     if (!attachment) return []
@@ -433,6 +443,20 @@ export function SecurityReportsView() {
             className="pl-10 border-purple-200 focus:border-purple-500 focus:ring-purple-500"
           />
         </div>
+        <Button
+          variant={showWithAttachmentsOnly ? "default" : "outline"}
+          size="sm"
+          onClick={() => setShowWithAttachmentsOnly((prev) => !prev)}
+          className={
+            showWithAttachmentsOnly
+              ? "bg-purple-600 hover:bg-purple-700 text-white border-purple-600"
+              : "border-purple-300 text-purple-700 hover:bg-purple-50"
+          }
+          title="Show only reports with attachments"
+        >
+          <Paperclip className="mr-2 h-4 w-4" />
+          Has Attachments
+        </Button>
         <Badge className="bg-indigo-100 text-indigo-800 text-sm px-3 py-1">
           {filteredReports.length} {filteredReports.length === 1 ? "Report" : "Reports"}
         </Badge>

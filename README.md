@@ -18,4 +18,4 @@ Continue building your app on:
 
 **[https://v0.app/chat/projects/AyRuPUL4xHv](https://v0.app/chat/projects/AyRuPUL4xHv)**
 
-## All the env variablea are in env.download file 
+## All the env variablea are in env.download file
