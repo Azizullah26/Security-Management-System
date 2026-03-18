@@ -32,6 +32,18 @@ async function connectToOdoo(url: string) {
       body: JSON.stringify(authPayload),
     })
 
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.log(`[v0] ❌ fetch to ${url}/jsonrpc failed with status ${response.status} and body: ${errorText.substring(0, 200)}`)
+      return null
+    }
+
+    const contentType = response.headers.get("content-type")
+    if (!contentType || !contentType.includes("application/json")) {
+      console.log(`[v0] ❌ Odoo returned non-JSON response (${contentType})`)
+      return null
+    }
+
     const data = await response.json()
     if (data.result && typeof data.result === "number") {
       console.log(`[v0] ✅ Odoo auth successful, UID: ${data.result}`)
@@ -100,6 +112,18 @@ export async function GET(request: NextRequest) {
       body: JSON.stringify(searchReadPayload),
     })
 
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.warn(`[v0] Odoo projects fetch failed with status ${response.status}: ${errorText.substring(0, 200)}`)
+      return NextResponse.json({ success: false, projects: [], error: `Odoo server error (${response.status})` })
+    }
+
+    const contentType = response.headers.get("content-type")
+    if (!contentType || !contentType.includes("application/json")) {
+      console.warn(`[v0] Odoo returned non-JSON response (${contentType})`)
+      return NextResponse.json({ success: false, projects: [], error: "Odoo returned invalid response" })
+    }
+
     const data = await response.json()
 
     if (data.error) {
@@ -134,6 +158,17 @@ export async function GET(request: NextRequest) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(minimalPayload),
       })
+
+      if (!retryResponse.ok) {
+        console.warn(`[v0] Odoo retry also failed with status ${retryResponse.status}`)
+        return NextResponse.json({ success: false, projects: [], error: `Odoo server error (${retryResponse.status})` })
+      }
+
+      const retryContentType = retryResponse.headers.get("content-type")
+      if (!retryContentType || !retryContentType.includes("application/json")) {
+        console.warn(`[v0] Odoo retry returned non-JSON response`)
+        return NextResponse.json({ success: false, projects: [], error: "Odoo returned invalid response" })
+      }
 
       const retryData = await retryResponse.json()
 
