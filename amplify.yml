@@ -1,0 +1,41 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - npm ci
+    build:
+      commands:
+        - npm run build
+  artifacts:
+    baseDirectory: .next
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
+  envs:
+    - name: NEXT_PUBLIC_SUPABASE_URL
+      stackOutputs:
+        - SUPABASE_URL
+    - name: NEXT_PUBLIC_SUPABASE_ANON_KEY
+      stackOutputs:
+        - SUPABASE_ANON_KEY
+    - name: SUPABASE_URL
+      stackOutputs:
+        - SUPABASE_URL
+    - name: SUPABASE_SERVICE_ROLE_KEY
+      stackOutputs:
+        - SUPABASE_SERVICE_ROLE_KEY
+    - name: ODOO_URL
+      stackOutputs:
+        - ODOO_URL
+    - name: ODOO_DB
+      stackOutputs:
+        - ODOO_DB
+    - name: ODOO_USERNAME
+      stackOutputs:
+        - ODOO_USERNAME
+    - name: ODOO_PASSWORD
+      stackOutputs:
+        - ODOO_PASSWORD
