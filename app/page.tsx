@@ -393,7 +393,7 @@ export default function SecurityDashboard() {
           <div className="flex flex-col md:flex-row items-center gap-3 md:gap-5 lg:gap-6 mb-3 sm:mb-4">
             <div className="flex-shrink-0">
               <img
-                src="/images/design-mode/2025%20LOGO(1).jpeg"
+                src="https://elrace.com/RCC4/Requirements/IMG/rcclogo.PNG"
                 alt="RCC - El Race Contracting Logo"
                 className="h-14 sm:h-16 md:h-18 lg:h-20 xl:h-24 w-auto object-contain"
               />
