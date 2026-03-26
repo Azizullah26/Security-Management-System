@@ -1,0 +1,64 @@
+service: security-management-system
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+  memorySize: 1024
+  timeout: 30
+  architecture: arm64
+  
+  environment:
+    NODE_ENV: production
+    NEXT_PUBLIC_SUPABASE_URL: ${env:NEXT_PUBLIC_SUPABASE_URL}
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: ${env:NEXT_PUBLIC_SUPABASE_ANON_KEY}
+    SUPABASE_SERVICE_ROLE_KEY: ${env:SUPABASE_SERVICE_ROLE_KEY}
+    ODOO_URL: ${env:ODOO_URL}
+    ODOO_DB: ${env:ODOO_DB}
+    ODOO_USERNAME: ${env:ODOO_USERNAME}
+    ODOO_PASSWORD: ${env:ODOO_PASSWORD}
+    ADMIN_PASSWORD: ${env:ADMIN_PASSWORD}
+    AUTONOMA_CLIENT_ID: ${env:AUTONOMA_CLIENT_ID}
+    AUTONOMA_SECRET_ID: ${env:AUTONOMA_SECRET_ID}
+  
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+          Resource: arn:aws:logs:${aws:region}:${aws:accountId}:log-group:/aws/lambda/*
+        - Effect: Allow
+          Action:
+            - s3:*
+          Resource: '*'
+
+functions:
+  api:
+    handler: server.handler
+    events:
+      - http:
+          path: /{proxy+}
+          method: ANY
+          cors: true
+      - http:
+          path: /
+          method: ANY
+          cors: true
+
+plugins:
+  - serverless-plugin-tracing
+  - serverless-offline
+
+package:
+  individually: false
+  patterns:
+    - '!node_modules/aws-sdk'
+    - '!.git/**'
+    - '!.gitignore'
+    - '!.env.local'
+    - '!coverage/**'
