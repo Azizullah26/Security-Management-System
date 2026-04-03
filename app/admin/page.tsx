@@ -130,36 +130,54 @@ export default function AdminDashboard() {
   useEffect(() => {
     // Only fetch data if authenticated
     if (isAuthenticated) {
+      console.log("[v0] Admin authenticated, fetching projects and staff...")
       Promise.all([
         fetch("/api/projects", {
           credentials: "include", // Include authentication cookies
         })
           .then((res) => {
+            console.log("[v0] Projects API response status:", res.status)
             if (!res.ok) {
-              console.error("Failed to fetch projects:", res.status)
+              console.error("[v0] Failed to fetch projects:", res.status)
               return []
             }
-            return res.json()
+            return res.json().then((data) => {
+              console.log("[v0] Projects API response data type:", typeof data)
+              console.log("[v0] Projects API response is array:", Array.isArray(data))
+              console.log("[v0] Projects API response length:", Array.isArray(data) ? data.length : "N/A")
+              console.log("[v0] Projects API response sample:", Array.isArray(data) ? data.slice(0, 2) : data)
+              return data
+            })
           })
           .catch((error) => {
-            console.error("Error fetching projects:", error)
+            console.error("[v0] Error fetching projects:", error)
             return []
           }),
         fetch("/api/security-staff", {
           credentials: "include", // Include authentication cookies
         })
           .then((res) => {
+            console.log("[v0] Security staff API response status:", res.status)
             if (!res.ok) {
-              console.error("Failed to fetch security staff:", res.status)
+              console.error("[v0] Failed to fetch security staff:", res.status)
               return []
             }
-            return res.json()
+            return res.json().then((data) => {
+              console.log("[v0] Security staff API response type:", typeof data)
+              console.log("[v0] Security staff API response is array:", Array.isArray(data))
+              console.log("[v0] Security staff API response length:", Array.isArray(data) ? data.length : "N/A")
+              return data
+            })
           })
           .catch((error) => {
-            console.error("Error fetching security staff:", error)
+            console.error("[v0] Error fetching security staff:", error)
             return []
           }),
       ]).then(([projectsData, staffData]) => {
+        console.log("[v0] Projects data received:", projectsData)
+        console.log("[v0] Projects is array:", Array.isArray(projectsData))
+        console.log("[v0] Security staff data received:", staffData)
+        console.log("[v0] Staff is array:", Array.isArray(staffData))
         setProjects(Array.isArray(projectsData) ? projectsData : [])
         setSecurityStaff(Array.isArray(staffData) ? staffData : [])
       })
