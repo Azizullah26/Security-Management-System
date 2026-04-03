@@ -148,17 +148,38 @@ export async function GET(request: NextRequest) {
       query = query.gte("created_at", todayISO)
     }
 
-    const { data: records, error } = await query
+    // Fetch all records using pagination to bypass Supabase's default 1000 row limit
+    const allRecords: any[] = []
+    let pageStart = 0
+    const pageSize = 1000
 
-    if (error) {
-      console.error("[v0] Supabase fetch error:", error)
-      return NextResponse.json({ error: "Failed to fetch records" }, { status: 500 })
+    while (true) {
+      const { data: pageRecords, error } = await query
+        .range(pageStart, pageStart + pageSize - 1)
+
+      if (error) {
+        console.error("[v0] Supabase fetch error:", error)
+        return NextResponse.json({ error: "Failed to fetch records" }, { status: 500 })
+      }
+
+      if (!pageRecords || pageRecords.length === 0) {
+        break
+      }
+
+      allRecords.push(...pageRecords)
+
+      // If we got fewer records than the page size, we've reached the end
+      if (pageRecords.length < pageSize) {
+        break
+      }
+
+      pageStart += pageSize
     }
 
-    console.log("[v0] Successfully fetched", records?.length || 0, "records")
+    console.log("[v0] Successfully fetched", allRecords.length || 0, "records (total)")
     console.log("[v0] Records include entries from all staff members:", isAdmin ? "YES (admin)" : "NO (staff filtered)")
 
-    const transformedRecords = records?.map(transformRecordToFrontend) || []
+    const transformedRecords = allRecords?.map(transformRecordToFrontend) || []
     console.log(
       "[v0] Sample transformed record:",
       transformedRecords[0] ? JSON.stringify(transformedRecords[0], null, 2) : "No records",
