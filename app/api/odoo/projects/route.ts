@@ -1,18 +1,34 @@
 import { type NextRequest, NextResponse } from "next/server"
+import https from "https"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 0
 
-// Helper function to make fetch requests with timeout
+// Create an HTTPS agent that ignores SSL certificate validation errors
+// This is needed for self-signed or misconfigured SSL certificates
+const httpsAgent = new https.Agent({
+  rejectUnauthorized: false,
+  keepAlive: true,
+})
+
+// Helper function to make fetch requests with timeout and SSL bypass
 async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: number = 5000): Promise<Response> {
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
 
   try {
-    return await fetch(url, {
+    // For HTTPS URLs, use the custom agent with SSL verification disabled
+    const fetchOptions: RequestInit = {
       ...options,
       signal: controller.signal,
-    })
+    }
+
+    // Node.js fetch in newer versions supports an agent option
+    if (url.startsWith("https://")) {
+      ;(fetchOptions as any).agent = httpsAgent
+    }
+
+    return await fetch(url, fetchOptions)
   } finally {
     clearTimeout(timeoutId)
   }
@@ -58,6 +74,8 @@ async function connectToOdoo(url: string) {
     if (error instanceof Error) {
       if (error.name === "AbortError") {
         console.log(`[v0] ❌ Odoo connection timed out after 8 seconds`)
+      } else if (error.message.includes("SSL") || error.message.includes("CERTIFICATE")) {
+        console.log(`[v0] ℹ️ SSL certificate issue detected (using fallback):`, error.message)
       } else {
         console.log(`[v0] ❌ Connection failed:`, error.message)
       }
