@@ -67,9 +67,47 @@ export async function GET(request: NextRequest) {
     }))
 
     let odooProjects: Project[] = []
-    // Skip Odoo integration - the Odoo server (erp.elrace.com) has SSL configuration issues
-    // Continuing with database and master list projects only
-    console.log("[v0] Skipping Odoo projects (SSL configuration issues on erp.elrace.com)")
+    try {
+      console.log("[v0] Fetching projects from Odoo...")
+      
+      // Add timeout to Odoo fetch to prevent hanging
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+      
+      const odooResponse = await fetch(`${request.nextUrl.origin}/api/odoo/projects`, {
+        signal: controller.signal,
+      })
+      clearTimeout(timeoutId)
+
+      if (odooResponse.ok) {
+        const odooData = await odooResponse.json()
+        if (odooData.success && odooData.projects && Array.isArray(odooData.projects)) {
+          odooProjects = odooData.projects
+            .filter((p: any) => p.name && !existingProjectNames.has(p.name))
+            .map((p: any) => ({
+              id: p.id,
+              name: p.name,
+              description: "Project from Odoo",
+              status: p.status || "active",
+              assignedTo: null,
+              priority: "medium",
+              startDate: new Date().toISOString(),
+              woNumber: p.woNumber || extractWONumber(p.name),
+              client: p.client,
+              agreement: p.agreement,
+            }))
+          console.log("[v0] Successfully fetched", odooProjects.length, "active projects from Odoo")
+        }
+      } else {
+        console.warn("[v0] Failed to fetch Odoo projects:", odooResponse.status)
+      }
+    } catch (odooError) {
+      if (odooError instanceof Error && odooError.name === "AbortError") {
+        console.warn("[v0] Odoo fetch timed out after 10 seconds (continuing without Odoo data)")
+      } else {
+        console.warn("[v0] Error fetching Odoo projects (continuing without them):", odooError)
+      }
+    }
 
     const allProjects = [...activeDbProjects, ...additionalProjects, ...odooProjects]
 
