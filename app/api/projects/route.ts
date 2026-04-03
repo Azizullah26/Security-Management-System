@@ -69,7 +69,15 @@ export async function GET(request: NextRequest) {
     let odooProjects: Project[] = []
     try {
       console.log("[v0] Fetching projects from Odoo...")
-      const odooResponse = await fetch(`${request.nextUrl.origin}/api/odoo/projects`)
+      
+      // Add timeout to Odoo fetch to prevent hanging
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 8000)
+      
+      const odooResponse = await fetch(`${request.nextUrl.origin}/api/odoo/projects`, {
+        signal: controller.signal,
+      })
+      clearTimeout(timeoutId)
 
       if (odooResponse.ok) {
         const odooData = await odooResponse.json()
@@ -94,7 +102,11 @@ export async function GET(request: NextRequest) {
         console.warn("[v0] Failed to fetch Odoo projects:", odooResponse.status)
       }
     } catch (odooError) {
-      console.warn("[v0] Error fetching Odoo projects (continuing without them):", odooError)
+      if (odooError instanceof Error && odooError.name === "AbortError") {
+        console.warn("[v0] Odoo fetch timed out after 8 seconds (continuing without Odoo data)")
+      } else {
+        console.warn("[v0] Error fetching Odoo projects (continuing without them):", odooError)
+      }
     }
 
     const allProjects = [...activeDbProjects, ...additionalProjects, ...odooProjects]
