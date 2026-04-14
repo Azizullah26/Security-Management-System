@@ -26,11 +26,17 @@ async function connectToOdoo(url: string) {
 
   try {
     console.log(`[v0] Attempting Odoo authentication at ${url} with DB: ${ODOO_DB}`)
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+    
     const response = await fetch(`${url}/jsonrpc`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(authPayload),
+      signal: controller.signal,
     })
+    
+    clearTimeout(timeoutId)
 
     if (!response.ok) {
       const errorText = await response.text()
@@ -52,7 +58,17 @@ async function connectToOdoo(url: string) {
     console.log(`[v0] ❌ Odoo auth failed:`, data.error?.data?.message || "Invalid response")
     return null
   } catch (error) {
-    console.log(`[v0] ❌ Connection failed:`, error instanceof Error ? error.message : String(error))
+    if (error instanceof Error) {
+      if (error.name === "AbortError") {
+        console.log(`[v0] ❌ Odoo connection timeout`)
+      } else if (error.message.includes("SSL")) {
+        console.log(`[v0] ❌ SSL/TLS error connecting to Odoo:`, error.message)
+      } else {
+        console.log(`[v0] ❌ Connection failed:`, error.message)
+      }
+    } else {
+      console.log(`[v0] ❌ Connection failed:`, String(error))
+    }
     return null
   }
 }
@@ -106,11 +122,17 @@ export async function GET(request: NextRequest) {
       id: Math.random(),
     }
 
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+
     const response = await fetch(`${url}/jsonrpc`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(searchReadPayload),
+      signal: controller.signal,
     })
+    
+    clearTimeout(timeoutId)
 
     if (!response.ok) {
       const errorText = await response.text()
@@ -157,6 +179,7 @@ export async function GET(request: NextRequest) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(minimalPayload),
+        signal: AbortSignal.timeout(10000), // 10 second timeout
       })
 
       if (!retryResponse.ok) {
