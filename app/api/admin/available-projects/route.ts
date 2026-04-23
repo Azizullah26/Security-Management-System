@@ -7,7 +7,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || '',
 )
 
-// GET - List all available projects (those assigned to security staff)
+// GET - List all available projects (from projects table)
 export async function GET(request: NextRequest) {
   try {
     console.log('[v0] Available projects endpoint called')
@@ -20,27 +20,32 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Fetch all unique projects from staff assignments
-    const { data: staffProjects, error: staffError } = await supabase
-      .from('staff_project_assignment')
-      .select('project_name')
-      .distinct()
+    // Fetch all projects from projects table
+    const { data: projects, error } = await supabase
+      .from('projects')
+      .select('id, name')
+      .eq('status', 'active')
+      .order('name', { ascending: true })
 
-    if (staffError) {
-      console.error('[v0] Error fetching staff projects:', staffError)
-      throw staffError
+    if (error) {
+      console.error('[v0] Error fetching projects:', error)
+      throw error
     }
 
-    const projectNames = staffProjects?.map(p => p.project_name).filter(Boolean) || []
+    console.log('[v0] Found available projects:', projects?.length)
     
-    console.log('[v0] Found available projects:', projectNames.length)
+    // Return projects in the format needed by the component
+    const projectList = projects?.map(p => ({
+      id: p.id,
+      name: p.name
+    })) || []
 
     return NextResponse.json({ 
-      projects: projectNames,
-      total: projectNames.length
+      projects: projectList,
+      total: projectList.length
     })
   } catch (error) {
     console.error('[v0] Available projects error:', error)
-    return NextResponse.json({ error: 'Failed to fetch available projects' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to fetch available projects', details: String(error) }, { status: 500 })
   }
 }

@@ -101,10 +101,13 @@ export async function POST(request: NextRequest) {
 
     // Assign projects if provided
     if (projects && projects.length > 0) {
-      const assignments = projects.map((project: string) => ({
+      console.log('[v0] Assigning project IDs to PM:', projects)
+      
+      // Projects come as IDs from the frontend, directly create assignments
+      const assignments = projects.map((projectId: string) => ({
         pm_id: newPM.id,
-        project_name: project,
-        assigned_at: new Date().toISOString(),
+        project_id: projectId,
+        assigned_date: new Date().toISOString(),
       }))
 
       const { error: assignError } = await supabase
@@ -114,7 +117,7 @@ export async function POST(request: NextRequest) {
       if (assignError) {
         console.error('[v0] Error assigning projects:', assignError)
       } else {
-        console.log('[v0] Projects assigned to PM:', projects.length)
+        console.log('[v0] Projects assigned to PM:', assignments.length)
       }
     }
 

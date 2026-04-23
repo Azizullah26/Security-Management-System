@@ -101,6 +101,7 @@ export function PMManagement({ adminToken }: PMManagementProps) {
 
       const data = await response.json()
       console.log('[v0] Fetched available projects:', data.projects)
+      // Projects come back as objects with id and name
       setProjects(data.projects || [])
     } catch (err) {
       console.error('[v0] Error fetching projects:', err)
@@ -239,22 +240,22 @@ export function PMManagement({ adminToken }: PMManagementProps) {
                   {projects.length === 0 ? (
                     <p className="text-sm text-slate-500">No projects available</p>
                   ) : (
-                    projects.map((project) => (
-                      <label key={project} className="flex items-center gap-2 cursor-pointer">
+                    projects.map((project: any) => (
+                      <label key={project.id} className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"
-                          checked={selectedProjects.includes(project)}
+                          checked={selectedProjects.includes(project.id)}
                           onChange={(e) => {
                             if (e.target.checked) {
-                              setSelectedProjects([...selectedProjects, project])
+                              setSelectedProjects([...selectedProjects, project.id])
                             } else {
-                              setSelectedProjects(selectedProjects.filter((p) => p !== project))
+                              setSelectedProjects(selectedProjects.filter((p) => p !== project.id))
                             }
                           }}
                           disabled={isSubmitting}
                           className="rounded"
                         />
-                        <span className="text-sm">{project}</span>
+                        <span className="text-sm">{project.name}</span>
                       </label>
                     ))
                   )}
