@@ -165,7 +165,7 @@ export async function GET(request: NextRequest) {
       transformedRecords[0] ? JSON.stringify(transformedRecords[0], null, 2) : "No records",
     )
 
-    return NextResponse.json({ records: transformedRecords })
+    return NextResponse.json({ records: transformedRecords, total: count || transformedRecords.length })
   } catch (error) {
     console.error("[v0] Records fetch error:", error)
     return NextResponse.json({ error: "Failed to fetch records" }, { status: 500 })

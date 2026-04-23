@@ -19,13 +19,13 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
   const [categoryFilter, setCategoryFilter] = useState<string>("all")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [projectFilter, setProjectFilter] = useState<string>("all")
-  const [selectedEntry, setSelectedEntry] = useState<EntryData | null>(null)
   const [localEntries, setLocalEntries] = useState<EntryData[]>([])
-  const [projects, setProjects] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const [projects, setProjects] = useState<string[]>([])
+  const [selectedEntry, setSelectedEntry] = useState<EntryData | null>(null)
   const tableContainerRef = useRef<HTMLDivElement>(null)
   const scrollbarRef = useRef<HTMLDivElement>(null)
+  const [totalRecordsInDB, setTotalRecordsInDB] = useState(0)
 
   useEffect(() => {
     const loadData = async () => {
@@ -46,7 +46,10 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
         })
         if (entriesResponse.ok) {
           const data = await entriesResponse.json()
+          console.log("[v0] API Response - Total records received:", data.records?.length || 0)
+          console.log("[v0] Total records in database:", data.total || "not specified")
           setLocalEntries(data.records || [])
+          setTotalRecordsInDB(data.total || data.records?.length || 0)
         } else {
           console.error("Failed to fetch entries:", entriesResponse.status)
           setLocalEntries([])
@@ -513,7 +516,7 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
 
       <div className="flex justify-between items-center text-sm text-slate-600 bg-white/50 p-4 rounded-lg">
         <span>
-          Showing {filteredEntries.length} of {allEntries.length} records
+          Showing {filteredEntries.length} of {totalRecordsInDB || allEntries.length} records
         </span>
         <span>Last updated: {new Date().toLocaleString()}</span>
       </div>
