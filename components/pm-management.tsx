@@ -89,13 +89,23 @@ export function PMManagement({ adminToken }: PMManagementProps) {
 
   const fetchProjects = async () => {
     try {
-      const response = await fetch('/api/projects', {
+      console.log('[v0] Fetching available projects...')
+      const response = await fetch('/api/admin/available-projects', {
         credentials: 'include',
       })
 
       if (!response.ok) {
-        throw new Error('Failed to fetch projects')
+        console.warn('[v0] Failed to fetch projects:', response.status)
+        return
       }
+
+      const data = await response.json()
+      console.log('[v0] Fetched available projects:', data.projects)
+      setProjects(data.projects || [])
+    } catch (err) {
+      console.error('[v0] Error fetching projects:', err)
+    }
+  }
 
       const data = await response.json()
       setProjects(data.projects?.map((p: any) => p.name) || [])
@@ -169,17 +179,11 @@ export function PMManagement({ adminToken }: PMManagementProps) {
   return (
     <div className="space-y-4">
       {/* Error Alert */}
-      {error && (
-        <Card className="border-red-200 bg-red-50">
+      {error && !error.includes('Unauthorized') && (
+        <Card className="border-red-200 bg-red-50 mb-4">
           <CardContent className="p-4 flex items-center gap-2 text-red-700">
             <AlertCircle className="h-5 w-5 flex-shrink-0" />
             <span>{error}</span>
-            <button 
-              onClick={() => setError('')}
-              className="ml-auto text-red-600 hover:text-red-800"
-            >
-              ×
-            </button>
           </CardContent>
         </Card>
       )}

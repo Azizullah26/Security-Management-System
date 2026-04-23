@@ -36,12 +36,21 @@ export async function GET(request: NextRequest) {
 
     console.log('[v0] PM session verified:', session.project_managers.email)
 
+    // Get PM's assigned projects
+    const { data: assignments } = await supabase
+      .from('pm_project_assignments')
+      .select('project_name')
+      .eq('pm_id', session.project_managers.id)
+
+    const assignedProjects = assignments?.map(a => a.project_name) || []
+
     return NextResponse.json({
       pm: {
         id: session.project_managers.id,
         email: session.project_managers.email,
         name: session.project_managers.name,
         role: session.project_managers.role,
+        assignedProjects,
       },
     })
   } catch (error) {
