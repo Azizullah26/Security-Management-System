@@ -7,7 +7,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { AlertCircle, Trash2, Edit2, Plus } from 'lucide-react'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   Dialog,
   DialogContent,
@@ -161,10 +160,12 @@ export default function PMManagement({ adminToken }: PMManagementProps) {
   return (
     <div className="space-y-4">
       {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="p-4 flex items-center gap-2 text-red-700">
+            <AlertCircle className="h-5 w-5" />
+            <span>{error}</span>
+          </CardContent>
+        </Card>
       )}
 
       {/* Header with Add Button */}
