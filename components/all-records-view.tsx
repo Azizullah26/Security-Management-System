@@ -457,10 +457,10 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
                             <span className="text-xs text-slate-400">-</span>
                           )}
                         </td>
-                        <td className="p-1 align-middle whitespace-nowrap text-slate-700 max-w-[140px] overflow-hidden">
+                        <td className="p-1 align-middle whitespace-nowrap text-slate-700 max-w-[140px] overflow-hidden" title={entry.createdBy || "Unknown"}>
                           {entry.createdBy ? (
                             <div className="overflow-hidden">
-                              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs truncate inline-block">
+                              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs truncate inline-block cursor-help">
                                 {entry.createdBy}
                               </Badge>
                             </div>
@@ -468,10 +468,10 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
                             <span className="text-slate-400 text-xs">Unknown</span>
                           )}
                         </td>
-                        <td className="p-1 align-middle whitespace-nowrap text-slate-700 max-w-[150px] overflow-hidden">
+                        <td className="p-1 align-middle whitespace-nowrap text-slate-700 max-w-[150px] overflow-hidden" title={entry.projectName || "No project"}>
                           {entry.projectName ? (
                             <div className="overflow-hidden">
-                              <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 text-xs truncate inline-block">
+                              <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 text-xs truncate inline-block cursor-help">
                                 {entry.projectName}
                               </Badge>
                             </div>
