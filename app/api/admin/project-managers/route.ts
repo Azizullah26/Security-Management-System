@@ -14,6 +14,16 @@ function hashPassword(password: string): string {
 // GET - List all Project Managers
 export async function GET(request: NextRequest) {
   try {
+    console.log('[v0] PM GET endpoint called')
+    
+    // Get admin token from cookies
+    const token = request.cookies.get('admin_session_token')?.value
+    console.log('[v0] Admin token present:', !!token)
+    
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const { data: projectManagers, error } = await supabase
       .from('project_managers')
       .select('*')
