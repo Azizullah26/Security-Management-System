@@ -20,34 +20,34 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Fetch all unique project_name values from assignments table
-    const { data: assignments, error, count } = await supabase
+    // Fetch all project_name values from assignments table
+    const { data: assignments, error } = await supabase
       .from('assignments')
-      .select('project_name', { count: 'exact' })
-      .not('project_name', 'is', null)
+      .select('project_name')
 
-    console.log('[v0] Assignments query - count:', count, 'error:', error)
+    console.log('[v0] Assignments query result - rows:', assignments?.length, 'error:', error)
 
     if (error) {
       console.error('[v0] Error fetching projects from assignments:', error)
       throw error
     }
 
-    console.log('[v0] Raw assignments data:', assignments?.slice(0, 5))
-
-    // Get unique project names and sort them
+    // Get unique project names, filter out nulls/empty, and sort them
     const uniqueProjectNames = Array.from(
-      new Set(assignments?.map(a => a.project_name).filter(Boolean))
+      new Set(
+        (assignments || [])
+          .map(a => a.project_name)
+          .filter(name => name && name.trim().length > 0)
+      )
     ).sort() as string[]
     
-    console.log('[v0] Found available projects from assignments:', uniqueProjectNames.length)
-    console.log('[v0] Unique projects:', uniqueProjectNames)
+    console.log('[v0] Found available projects:', uniqueProjectNames.length)
+    console.log('[v0] Unique projects list:', uniqueProjectNames.slice(0, 3))
 
     // Return as array of strings (project names only)
     return NextResponse.json({ 
       projects: uniqueProjectNames,
-      total: uniqueProjectNames.length,
-      rawCount: count
+      total: uniqueProjectNames.length
     })
   } catch (error) {
     console.error('[v0] Available projects error:', error)

@@ -100,20 +100,26 @@ export function PMManagement({ adminToken }: PMManagementProps) {
         const errorData = await response.json().catch(() => ({}))
         console.warn('[v0] Failed to fetch projects:', response.status, errorData)
         setError(`Failed to fetch projects: ${response.status}`)
+        setProjects([])
         return
       }
 
       const data = await response.json()
-      console.log('[v0] Fetched available projects:', data)
-      setProjects(data.projects || [])
-      if (data.projects && data.projects.length > 0) {
-        console.log('[v0] Projects loaded successfully:', data.projects.length, 'projects')
+      console.log('[v0] Fetched available projects response:', data)
+      const projectsList = data.projects || []
+      console.log('[v0] Projects array:', projectsList)
+      setProjects(projectsList)
+      
+      if (projectsList.length > 0) {
+        console.log('[v0] Projects loaded successfully:', projectsList.length, 'projects')
+        setError('') // Clear any previous project-related errors
       } else {
         console.warn('[v0] No projects found in assignments table')
       }
     } catch (err) {
       console.error('[v0] Error fetching projects:', err)
       setError(`Error loading projects: ${err instanceof Error ? err.message : 'Unknown error'}`)
+      setProjects([])
     }
   }
 
