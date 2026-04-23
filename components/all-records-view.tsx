@@ -386,40 +386,40 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
               <table className="w-full caption-bottom text-sm">
                 <thead className="sticky top-0 z-10 bg-gradient-to-r from-blue-50 to-purple-50 shadow-sm">
                   <tr className="border-blue-100 border-b">
-                    <th className="h-10 px-2 text-left align-middle font-semibold text-slate-700 whitespace-nowrap sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50">
+                    <th className="h-9 px-1 py-1 text-left align-middle font-semibold text-xs text-slate-700 whitespace-nowrap sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50">
                       Actions
                     </th>
-                    <th className="h-10 px-2 text-left align-middle font-semibold text-slate-700 whitespace-nowrap min-w-[140px] sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50">
+                    <th className="h-9 px-1 py-1 text-left align-middle font-semibold text-xs text-slate-700 whitespace-nowrap min-w-[110px] sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50">
                       Entry Time
                     </th>
-                    <th className="h-10 px-2 text-left align-middle font-semibold text-slate-700 whitespace-nowrap min-w-[140px] sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50">
+                    <th className="h-9 px-1 py-1 text-left align-middle font-semibold text-xs text-slate-700 whitespace-nowrap min-w-[110px] sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50">
                       Exit Time
                     </th>
-                    <th className="h-10 px-2 text-left align-middle font-semibold text-slate-700 whitespace-nowrap min-w-[140px] sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50">
+                    <th className="h-9 px-1 py-1 text-left align-middle font-semibold text-xs text-slate-700 whitespace-nowrap min-w-[100px] sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50">
                       Staff
                     </th>
-                    <th className="h-10 px-2 text-left align-middle font-semibold text-slate-700 whitespace-nowrap min-w-[150px] sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50">
+                    <th className="h-9 px-1 py-1 text-left align-middle font-semibold text-xs text-slate-700 whitespace-nowrap min-w-[110px] sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50">
                       Project
                     </th>
-                    <th className="h-10 px-2 text-left align-middle font-semibold text-slate-700 whitespace-nowrap min-w-[140px] sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50">
+                    <th className="h-9 px-1 py-1 text-left align-middle font-semibold text-xs text-slate-700 whitespace-nowrap min-w-[100px] sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50">
                       Status/Duration
                     </th>
-                    <th className="h-10 px-2 text-left align-middle font-semibold text-slate-700 whitespace-nowrap w-16 sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50">
+                    <th className="h-9 px-1 py-1 text-left align-middle font-semibold text-xs text-slate-700 whitespace-nowrap w-14 sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50">
                       Photo
                     </th>
-                    <th className="h-10 px-2 text-left align-middle font-semibold text-slate-700 whitespace-nowrap min-w-[150px] sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50">
+                    <th className="h-9 px-1 py-1 text-left align-middle font-semibold text-xs text-slate-700 whitespace-nowrap min-w-[100px] sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50">
                       Name
                     </th>
-                    <th className="h-10 px-2 text-left align-middle font-semibold text-slate-700 whitespace-nowrap min-w-[120px] sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50">
+                    <th className="h-9 px-1 py-1 text-left align-middle font-semibold text-xs text-slate-700 whitespace-nowrap min-w-[90px] sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50">
                       Category
                     </th>
-                    <th className="h-10 px-2 text-left align-middle font-semibold text-slate-700 whitespace-nowrap min-w-[150px] sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50">
+                    <th className="h-9 px-1 py-1 text-left align-middle font-semibold text-xs text-slate-700 whitespace-nowrap min-w-[100px] sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50">
                       Company
                     </th>
-                    <th className="h-10 px-2 text-left align-middle font-semibold text-slate-700 whitespace-nowrap min-w-[120px] sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50">
+                    <th className="h-9 px-1 py-1 text-left align-middle font-semibold text-xs text-slate-700 whitespace-nowrap min-w-[90px] sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50">
                       Purpose
                     </th>
-                    <th className="h-10 px-2 text-left align-middle font-semibold text-slate-700 whitespace-nowrap min-w-[140px] sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50">
+                    <th className="h-9 px-1 py-1 text-left align-middle font-semibold text-xs text-slate-700 whitespace-nowrap min-w-[100px] sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50">
                       Contact
                     </th>
                   </tr>
@@ -437,51 +437,55 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
                         key={entry.id}
                         className={`border-b transition-colors hover:bg-muted/50 ${index % 2 === 0 ? "bg-white/40" : "bg-slate-50/40"}`}
                       >
-                        <td className="p-2 align-middle whitespace-nowrap">
+                        <td className="p-1 align-middle whitespace-nowrap">
                           <Button
                             variant="outline"
                             size="icon"
                             onClick={() => setSelectedEntry(entry)}
-                            className="h-9 w-9 border-blue-200 hover:bg-blue-50 hover:border-blue-300"
+                            className="h-8 w-8 border-blue-200 hover:bg-blue-50 hover:border-blue-300"
                           >
-                            <Eye className="h-4 w-4 text-blue-600" />
+                            <Eye className="h-3 w-3 text-blue-600" />
                           </Button>
                         </td>
-                        <td className="p-2 align-middle whitespace-nowrap text-slate-700">
+                        <td className="p-1 align-middle whitespace-nowrap text-xs text-slate-700">
                           {formatTime(entry.entryTime)}
                         </td>
-                        <td className="p-2 align-middle whitespace-nowrap">
+                        <td className="p-1 align-middle whitespace-nowrap">
                           {entry.exitTime ? (
-                            <span className="text-slate-600">{formatTime(entry.exitTime)}</span>
+                            <span className="text-xs text-slate-600">{formatTime(entry.exitTime)}</span>
                           ) : (
-                            <span className="text-slate-400">-</span>
+                            <span className="text-xs text-slate-400">-</span>
                           )}
                         </td>
-                        <td className="p-2 align-middle whitespace-nowrap text-slate-700">
+                        <td className="p-1 align-middle whitespace-nowrap text-slate-700 max-w-[140px] overflow-hidden">
                           {entry.createdBy ? (
-                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                              {entry.createdBy}
-                            </Badge>
+                            <div className="overflow-hidden">
+                              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs truncate inline-block">
+                                {entry.createdBy}
+                              </Badge>
+                            </div>
                           ) : (
-                            <span className="text-slate-400">Unknown</span>
+                            <span className="text-slate-400 text-xs">Unknown</span>
                           )}
                         </td>
-                        <td className="p-2 align-middle whitespace-nowrap text-slate-700">
+                        <td className="p-1 align-middle whitespace-nowrap text-slate-700 max-w-[150px] overflow-hidden">
                           {entry.projectName ? (
-                            <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
-                              {entry.projectName}
-                            </Badge>
+                            <div className="overflow-hidden">
+                              <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 text-xs truncate inline-block">
+                                {entry.projectName}
+                              </Badge>
+                            </div>
                           ) : (
-                            <span className="text-slate-400">No project</span>
+                            <span className="text-slate-400 text-xs">No project</span>
                           )}
                         </td>
-                        <td className="p-2 align-middle whitespace-nowrap">
+                        <td className="p-1 align-middle whitespace-nowrap">
                           {getStatusBadge(entry.status, entry.entryTime)}
                         </td>
-                        <td className="p-2 align-middle whitespace-nowrap">
-                          <Avatar className="h-10 w-10 border-2 border-blue-200">
+                        <td className="p-1 align-middle whitespace-nowrap">
+                          <Avatar className="h-9 w-9 border-2 border-blue-200">
                             <AvatarImage
-                              src={entry.photo || "/placeholder.svg?height=40&width=40"}
+                              src={entry.photo || "/placeholder.svg?height=36&width=36"}
                               alt={entry.name}
                               className="object-cover"
                             />
@@ -490,11 +494,11 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
                             </AvatarFallback>
                           </Avatar>
                         </td>
-                        <td className="p-2 align-middle whitespace-nowrap font-medium text-slate-800">{entry.name}</td>
-                        <td className="p-2 align-middle whitespace-nowrap">{getCategoryBadge(entry.category)}</td>
-                        <td className="p-2 align-middle whitespace-nowrap text-slate-700">{entry.company || "N/A"}</td>
-                        <td className="p-2 align-middle whitespace-nowrap text-slate-700">{entry.purpose || "N/A"}</td>
-                        <td className="p-2 align-middle whitespace-nowrap text-slate-700">
+                        <td className="p-1 align-middle whitespace-nowrap font-medium text-xs text-slate-800">{entry.name}</td>
+                        <td className="p-1 align-middle whitespace-nowrap text-xs">{getCategoryBadge(entry.category)}</td>
+                        <td className="p-1 align-middle whitespace-nowrap text-xs text-slate-700">{entry.company || "N/A"}</td>
+                        <td className="p-1 align-middle whitespace-nowrap text-xs text-slate-700">{entry.purpose || "N/A"}</td>
+                        <td className="p-1 align-middle whitespace-nowrap text-xs text-slate-700">
                           {entry.contactNumber || "N/A"}
                         </td>
                       </tr>
