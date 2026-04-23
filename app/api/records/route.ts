@@ -148,18 +148,44 @@ export async function GET(request: NextRequest) {
       query = query.gte("created_at", todayISO)
     }
 
-    // Fetch ALL records without the default 1000 limit
-    const { data: records, error, count } = await query.range(0, 999999)
+    // First, get the count without fetching data
+    const { count } = await query
 
-    if (error) {
-      console.error("[v0] Supabase fetch error:", error)
-      return NextResponse.json({ error: "Failed to fetch records" }, { status: 500 })
+    console.log("[v0] Total records available:", count)
+
+    // Fetch ALL records in chunks to bypass Supabase 1000-row limit
+    const pageSize = 1000
+    const pageCount = Math.ceil((count || 0) / pageSize)
+    let allRecords: any[] = []
+
+    for (let page = 0; page < pageCount; page++) {
+      const from = page * pageSize
+      const to = from + pageSize - 1
+
+      console.log(`[v0] Fetching page ${page + 1}/${pageCount} (rows ${from}-${to})`)
+
+      const { data: pageRecords, error: pageError } = await query.range(from, to)
+
+      if (pageError) {
+        console.error(`[v0] Error fetching page ${page + 1}:`, pageError)
+        continue
+      }
+
+      if (pageRecords && pageRecords.length > 0) {
+        allRecords = allRecords.concat(pageRecords)
+        console.log(`[v0] Page ${page + 1} fetched: ${pageRecords.length} records (total so far: ${allRecords.length})`)
+      }
+
+      if (!pageRecords || pageRecords.length < pageSize) {
+        console.log("[v0] Reached end of records")
+        break
+      }
     }
 
-    console.log("[v0] Successfully fetched", records?.length || 0, "records (total in database:", count || 0, ")")
+    console.log("[v0] Successfully fetched", allRecords.length, "total records (database total:", count || 0, ")")
     console.log("[v0] Records include entries from all staff members:", isAdmin ? "YES (admin)" : "NO (staff filtered)")
 
-    const transformedRecords = records?.map(transformRecordToFrontend) || []
+    const transformedRecords = allRecords?.map(transformRecordToFrontend) || []
     console.log(
       "[v0] Sample transformed record:",
       transformedRecords[0] ? JSON.stringify(transformedRecords[0], null, 2) : "No records",
@@ -170,6 +196,7 @@ export async function GET(request: NextRequest) {
     console.error("[v0] Records fetch error:", error)
     return NextResponse.json({ error: "Failed to fetch records" }, { status: 500 })
   }
+}
 }
 
 export async function POST(request: NextRequest) {
