@@ -107,13 +107,6 @@ export function PMManagement({ adminToken }: PMManagementProps) {
     }
   }
 
-      const data = await response.json()
-      setProjects(data.projects?.map((p: any) => p.name) || [])
-    } catch (err) {
-      console.error('[v0] Failed to fetch projects:', err)
-    }
-  }
-
   const handleAddPM = async () => {
     if (!newPMData.email || !newPMData.name || !newPMData.password) {
       setError('Please fill in all fields')
