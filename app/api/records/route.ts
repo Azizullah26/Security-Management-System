@@ -129,7 +129,7 @@ export async function GET(request: NextRequest) {
     console.log("[v0] Cleaning up old records before:", oneMonthAgo.toISOString())
     await supabase.from("entries").delete().lt("entry_time", oneMonthAgo.toISOString())
 
-    let query = supabase.from("entries").select("*").order("entry_time", { ascending: false })
+    let query = supabase.from("entries").select("*", { count: "exact" }).order("entry_time", { ascending: false })
 
     if (isAdmin || adminOverride) {
       console.log("[v0] Admin access - fetching ALL records from database (no filtering)")
@@ -148,14 +148,15 @@ export async function GET(request: NextRequest) {
       query = query.gte("created_at", todayISO)
     }
 
-    const { data: records, error } = await query
+    // Fetch ALL records without the default 1000 limit
+    const { data: records, error, count } = await query.range(0, 999999)
 
     if (error) {
       console.error("[v0] Supabase fetch error:", error)
       return NextResponse.json({ error: "Failed to fetch records" }, { status: 500 })
     }
 
-    console.log("[v0] Successfully fetched", records?.length || 0, "records")
+    console.log("[v0] Successfully fetched", records?.length || 0, "records (total in database:", count || 0, ")")
     console.log("[v0] Records include entries from all staff members:", isAdmin ? "YES (admin)" : "NO (staff filtered)")
 
     const transformedRecords = records?.map(transformRecordToFrontend) || []
