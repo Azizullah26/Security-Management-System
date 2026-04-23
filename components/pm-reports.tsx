@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { AlertCircle, Download } from 'lucide-react'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 
 interface ProjectStats {
   project_name: string
@@ -90,10 +89,12 @@ export default function PMReports({ pmId }: PMReportsProps) {
 
   if (error) {
     return (
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>{error}</AlertDescription>
-      </Alert>
+      <Card className="border-red-200 bg-red-50">
+        <CardContent className="p-4 flex items-center gap-2 text-red-700">
+          <AlertCircle className="h-5 w-5 flex-shrink-0" />
+          <span>{error}</span>
+        </CardContent>
+      </Card>
     )
   }
 
