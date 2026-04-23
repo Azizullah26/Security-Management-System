@@ -13,6 +13,7 @@ import {
   LogOut,
   FileText,
   AlertCircle,
+  Users,
 } from "lucide-react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
@@ -58,6 +59,12 @@ const sidebarItems = [
     id: "staff",
     label: "Security Staff",
     icon: Shield,
+    category: "MANAGEMENT",
+  },
+  {
+    id: "project-managers",
+    label: "Project Managers",
+    icon: Users,
     category: "MANAGEMENT",
   },
   {

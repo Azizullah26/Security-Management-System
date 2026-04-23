@@ -13,6 +13,7 @@ import { AdminLogin } from "@/components/admin-login"
 import { StaffAssignmentManagement } from "@/components/staff-assignment-management"
 import { StaffManagement } from "@/components/staff-management"
 import { SecurityReportsView } from "@/components/security-reports-view"
+import { PMManagement } from "@/components/pm-management"
 import {
   BarChart,
   Bar,
@@ -551,6 +552,8 @@ export default function AdminDashboard() {
 
   const renderAssignments = () => <StaffAssignmentManagement />
 
+  const renderProjectManagers = () => <PMManagement />
+
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <AdminSidebar activeSection={activeSection} onSectionChange={setActiveSection} onLogout={handleLogout} />
@@ -561,6 +564,7 @@ export default function AdminDashboard() {
         {activeSection === "projects" && renderProjects()}
         {activeSection === "staff" && renderStaff()}
         {activeSection === "assignments" && renderAssignments()}
+        {activeSection === "project-managers" && renderProjectManagers()}
       </main>
 
       {assignmentDialog.isOpen && (
