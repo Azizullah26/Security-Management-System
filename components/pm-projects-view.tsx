@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { BarChart3, Users, FileText, AlertCircle } from 'lucide-react'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 
 interface Project {
   id: string
@@ -16,9 +15,10 @@ interface Project {
 
 interface PMProjectsViewProps {
   pmId: string
+  token: string
 }
 
-export default function PMProjectsView({ pmId }: PMProjectsViewProps) {
+export default function PMProjectsView({ pmId, token }: PMProjectsViewProps) {
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -26,31 +26,37 @@ export default function PMProjectsView({ pmId }: PMProjectsViewProps) {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const token = localStorage.getItem('pm_token')
-        if (!token) return
-
+        console.log('[v0] Fetching PM projects for PM ID:', pmId)
+        
         const response = await fetch(`/api/pm/projects?pm_id=${pmId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         })
 
+        console.log('[v0] PM projects response status:', response.status)
+
         if (!response.ok) {
-          throw new Error('Failed to fetch projects')
+          const errorData = await response.json().catch(() => ({}))
+          console.error('[v0] Failed to fetch projects:', response.status, errorData)
+          throw new Error(`Failed to fetch projects: ${response.status}`)
         }
 
         const data = await response.json()
+        console.log('[v0] PM projects fetched:', data.projects?.length)
         setProjects(data.projects || [])
       } catch (err) {
         console.error('[v0] Failed to fetch PM projects:', err)
-        setError('Failed to load projects')
+        setError(err instanceof Error ? err.message : 'Failed to load projects')
       } finally {
         setLoading(false)
       }
     }
 
-    fetchProjects()
-  }, [pmId])
+    if (pmId && token) {
+      fetchProjects()
+    }
+  }, [pmId, token])
 
   if (loading) {
     return (
@@ -63,10 +69,12 @@ export default function PMProjectsView({ pmId }: PMProjectsViewProps) {
 
   if (error) {
     return (
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>{error}</AlertDescription>
-      </Alert>
+      <Card className="border-red-200 bg-red-50">
+        <CardContent className="p-4 flex items-center gap-2 text-red-700">
+          <AlertCircle className="h-5 w-5 flex-shrink-0" />
+          <span>{error}</span>
+        </CardContent>
+      </Card>
     )
   }
 

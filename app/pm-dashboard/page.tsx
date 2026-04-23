@@ -14,32 +14,39 @@ interface PMData {
   email: string
   name: string
   role: string
+  assignedProjects?: string[]
 }
 
 export default function PMDashboard() {
   const [pmData, setPMData] = useState<PMData | null>(null)
+  const [token, setToken] = useState<string>('')
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('projects')
 
   useEffect(() => {
     const verifyPMSession = async () => {
       try {
-        const token = localStorage.getItem('pm_token')
+        const storedToken = localStorage.getItem('pm_token')
         const email = localStorage.getItem('pm_email')
 
-        if (!token || !email) {
+        if (!storedToken || !email) {
           window.location.href = '/pm-login'
           return
         }
 
+        console.log('[v0] Verifying PM session with token')
+
         // Verify token and get PM data
         const response = await fetch('/api/pm/verify', {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${storedToken}`,
           },
         })
 
+        console.log('[v0] PM verify response status:', response.status)
+
         if (!response.ok) {
+          console.error('[v0] Session verification failed:', response.status)
           localStorage.removeItem('pm_token')
           localStorage.removeItem('pm_email')
           window.location.href = '/pm-login'
@@ -47,7 +54,9 @@ export default function PMDashboard() {
         }
 
         const data = await response.json()
+        console.log('[v0] PM data received:', data.pm)
         setPMData(data.pm)
+        setToken(storedToken)
       } catch (error) {
         console.error('[v0] Session verification failed:', error)
         window.location.href = '/pm-login'
@@ -119,7 +128,7 @@ export default function PMDashboard() {
           </TabsList>
 
           <TabsContent value="projects">
-            <PMProjectsView pmId={pmData.id} />
+            <PMProjectsView pmId={pmData.id} token={token} />
           </TabsContent>
 
           <TabsContent value="staff">
