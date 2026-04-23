@@ -240,22 +240,22 @@ export function PMManagement({ adminToken }: PMManagementProps) {
                   {projects.length === 0 ? (
                     <p className="text-sm text-slate-500">No projects available</p>
                   ) : (
-                    projects.map((project: any) => (
-                      <label key={project.id} className="flex items-center gap-2 cursor-pointer">
+                    projects.map((projectName: string) => (
+                      <label key={projectName} className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"
-                          checked={selectedProjects.includes(project.id)}
+                          checked={selectedProjects.includes(projectName)}
                           onChange={(e) => {
                             if (e.target.checked) {
-                              setSelectedProjects([...selectedProjects, project.id])
+                              setSelectedProjects([...selectedProjects, projectName])
                             } else {
-                              setSelectedProjects(selectedProjects.filter((p) => p !== project.id))
+                              setSelectedProjects(selectedProjects.filter((p) => p !== projectName))
                             }
                           }}
                           disabled={isSubmitting}
                           className="rounded"
                         />
-                        <span className="text-sm">{project.name}</span>
+                        <span className="text-sm">{projectName}</span>
                       </label>
                     ))
                   )}

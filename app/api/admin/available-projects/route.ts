@@ -7,7 +7,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || '',
 )
 
-// GET - List all available projects (from projects table)
+// GET - List all available projects from assignments table
 export async function GET(request: NextRequest) {
   try {
     console.log('[v0] Available projects endpoint called')
@@ -20,29 +20,28 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Fetch all projects from projects table
-    const { data: projects, error } = await supabase
-      .from('projects')
-      .select('id, name')
-      .eq('status', 'active')
-      .order('name', { ascending: true })
+    // Fetch all unique project_name values from assignments table
+    const { data: assignments, error } = await supabase
+      .from('assignments')
+      .select('project_name')
+      .not('project_name', 'is', null)
 
     if (error) {
-      console.error('[v0] Error fetching projects:', error)
+      console.error('[v0] Error fetching projects from assignments:', error)
       throw error
     }
 
-    console.log('[v0] Found available projects:', projects?.length)
+    // Get unique project names and sort them
+    const uniqueProjectNames = Array.from(
+      new Set(assignments?.map(a => a.project_name).filter(Boolean))
+    ).sort() as string[]
     
-    // Return projects in the format needed by the component
-    const projectList = projects?.map(p => ({
-      id: p.id,
-      name: p.name
-    })) || []
+    console.log('[v0] Found available projects from assignments:', uniqueProjectNames.length, uniqueProjectNames)
 
+    // Return as array of strings (project names only)
     return NextResponse.json({ 
-      projects: projectList,
-      total: projectList.length
+      projects: uniqueProjectNames,
+      total: uniqueProjectNames.length
     })
   } catch (error) {
     console.error('[v0] Available projects error:', error)

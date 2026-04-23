@@ -101,12 +101,12 @@ export async function POST(request: NextRequest) {
 
     // Assign projects if provided
     if (projects && projects.length > 0) {
-      console.log('[v0] Assigning project IDs to PM:', projects)
+      console.log('[v0] Assigning projects to PM:', projects)
       
-      // Projects come as IDs from the frontend, directly create assignments
-      const assignments = projects.map((projectId: string) => ({
+      // Projects come as project_name strings, create assignments in pm_project_assignments table
+      const assignments = projects.map((projectName: string) => ({
         pm_id: newPM.id,
-        project_id: projectId,
+        project_name: projectName,
         assigned_date: new Date().toISOString(),
       }))
 
