@@ -381,7 +381,7 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
             <div
               ref={tableContainerRef}
               className="overflow-x-auto overflow-y-auto scrollbar-thin scrollbar-thumb-purple-400 scrollbar-track-purple-100"
-              style={{ maxHeight: "600px" }}
+              style={{ maxHeight: "calc(100vh - 400px)" }}
             >
               <table className="w-full caption-bottom text-sm">
                 <thead className="sticky top-0 z-10 bg-gradient-to-r from-blue-50 to-purple-50 shadow-sm">
@@ -394,6 +394,12 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
                     </th>
                     <th className="h-10 px-2 text-left align-middle font-semibold text-slate-700 whitespace-nowrap min-w-[140px] sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50">
                       Exit Time
+                    </th>
+                    <th className="h-10 px-2 text-left align-middle font-semibold text-slate-700 whitespace-nowrap min-w-[140px] sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50">
+                      Staff
+                    </th>
+                    <th className="h-10 px-2 text-left align-middle font-semibold text-slate-700 whitespace-nowrap min-w-[150px] sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50">
+                      Project
                     </th>
                     <th className="h-10 px-2 text-left align-middle font-semibold text-slate-700 whitespace-nowrap min-w-[140px] sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50">
                       Status/Duration
@@ -415,12 +421,6 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
                     </th>
                     <th className="h-10 px-2 text-left align-middle font-semibold text-slate-700 whitespace-nowrap min-w-[140px] sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50">
                       Contact
-                    </th>
-                    <th className="h-10 px-2 text-left align-middle font-semibold text-slate-700 whitespace-nowrap min-w-[150px] sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50">
-                      Project
-                    </th>
-                    <th className="h-10 px-2 text-left align-middle font-semibold text-slate-700 whitespace-nowrap min-w-[140px] sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50">
-                      Staff
                     </th>
                   </tr>
                 </thead>
@@ -457,6 +457,24 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
                             <span className="text-slate-400">-</span>
                           )}
                         </td>
+                        <td className="p-2 align-middle whitespace-nowrap text-slate-700">
+                          {entry.createdBy ? (
+                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                              {entry.createdBy}
+                            </Badge>
+                          ) : (
+                            <span className="text-slate-400">Unknown</span>
+                          )}
+                        </td>
+                        <td className="p-2 align-middle whitespace-nowrap text-slate-700">
+                          {entry.projectName ? (
+                            <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+                              {entry.projectName}
+                            </Badge>
+                          ) : (
+                            <span className="text-slate-400">No project</span>
+                          )}
+                        </td>
                         <td className="p-2 align-middle whitespace-nowrap">
                           {getStatusBadge(entry.status, entry.entryTime)}
                         </td>
@@ -478,24 +496,6 @@ export function AllRecordsView({ entries }: AllRecordsViewProps) {
                         <td className="p-2 align-middle whitespace-nowrap text-slate-700">{entry.purpose || "N/A"}</td>
                         <td className="p-2 align-middle whitespace-nowrap text-slate-700">
                           {entry.contactNumber || "N/A"}
-                        </td>
-                        <td className="p-2 align-middle whitespace-nowrap text-slate-700">
-                          {entry.projectName ? (
-                            <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
-                              {entry.projectName}
-                            </Badge>
-                          ) : (
-                            <span className="text-slate-400">No project</span>
-                          )}
-                        </td>
-                        <td className="p-2 align-middle whitespace-nowrap text-slate-700">
-                          {entry.createdBy ? (
-                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                              {entry.createdBy}
-                            </Badge>
-                          ) : (
-                            <span className="text-slate-400">Unknown</span>
-                          )}
                         </td>
                       </tr>
                     ))
