@@ -12,99 +12,90 @@ function hashPassword(password: string): string {
   return crypto.createHash('sha256').update(password).digest('hex')
 }
 
-// GET - List all Project Managers
+// GET - List all Project Managers with their assigned projects
 export async function GET(request: NextRequest) {
   try {
-    console.log('[v0] PM GET endpoint called')
-    
-    // Verify admin session using proper auth-utils function
     const isAdmin = await verifyAdminSession(request)
-    console.log('[v0] Admin verified:', isAdmin)
-    
     if (!isAdmin) {
-      console.log('[v0] Admin authentication failed')
-      return NextResponse.json({ error: 'Unauthorized - Admin authentication required' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: projectManagers, error } = await supabase
+    const { data: pms, error } = await supabase
       .from('project_managers')
-      .select('*')
+      .select('id, full_name, email, username, is_active, created_at')
       .order('created_at', { ascending: false })
 
-    if (error) {
-      console.error('[v0] Error fetching PMs:', error)
-      throw error
-    }
+    if (error) throw error
 
-    console.log('[v0] Admin retrieved Project Managers:', projectManagers?.length)
+    // Fetch assigned projects for each PM
+    const pmsWithProjects = await Promise.all(
+      (pms || []).map(async (pm: any) => {
+        const { data: assignments } = await supabase
+          .from('pm_project_assignments')
+          .select('project_name')
+          .eq('pm_id', pm.id)
 
-    return NextResponse.json({ projectManagers: projectManagers || [] })
+        return {
+          ...pm,
+          name: pm.full_name,
+          assigned_projects: assignments?.map((a: any) => a.project_name).filter(Boolean) || [],
+        }
+      }),
+    )
+
+    return NextResponse.json({ projectManagers: pmsWithProjects })
   } catch (error) {
-    console.error('[v0] Admin get PMs error:', error)
-    return NextResponse.json({ error: 'Failed to fetch Project Managers', details: String(error) }, { status: 500 })
+    console.error('[v0] GET PMs error:', error)
+    return NextResponse.json({ error: 'Failed to fetch Project Managers' }, { status: 500 })
   }
 }
 
 // POST - Create new Project Manager
 export async function POST(request: NextRequest) {
   try {
-    console.log('[v0] PM POST endpoint called')
-    
-    // Verify admin session
     const isAdmin = await verifyAdminSession(request)
-    console.log('[v0] Admin verified:', isAdmin)
-    
     if (!isAdmin) {
-      return NextResponse.json({ error: 'Unauthorized - Admin authentication required' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { email, name, password, projects } = await request.json()
+    const { username, full_name, password, projects } = await request.json()
 
-    if (!email || !name || !password) {
-      return NextResponse.json({ error: 'Missing required fields: email, name, password' }, { status: 400 })
+    if (!username || !full_name || !password) {
+      return NextResponse.json({ error: 'username, full_name, and password are required' }, { status: 400 })
     }
 
-    console.log('[v0] Creating PM:', { email, name, projectCount: projects?.length })
-
-    // Check if email already exists
-    const { data: existingPM } = await supabase
+    // Check duplicate username
+    const { data: existing } = await supabase
       .from('project_managers')
       .select('id')
-      .eq('email', email.toLowerCase())
+      .eq('username', username.toLowerCase())
       .maybeSingle()
 
-    if (existingPM) {
-      return NextResponse.json({ error: 'Email already exists' }, { status: 400 })
+    if (existing) {
+      return NextResponse.json({ error: 'Username already exists' }, { status: 400 })
     }
 
-    // Create PM account
-    const hashedPassword = hashPassword(password)
+    // Create PM — using correct schema columns: full_name, username, password_hash
     const { data: newPM, error: createError } = await supabase
       .from('project_managers')
       .insert({
-        email: email.toLowerCase(),
-        name,
-        password_hash: hashedPassword,
-        role: 'project_manager',
+        full_name,
+        username: username.toLowerCase(),
+        email: `${username.toLowerCase()}@pm.local`,
+        password_hash: hashPassword(password),
         is_active: true,
-        created_at: new Date().toISOString(),
       })
       .select()
       .single()
 
     if (createError) {
-      console.error('[v0] Error creating PM:', createError)
+      console.error('[v0] PM create error:', createError)
       throw createError
     }
 
-    console.log('[v0] PM created:', newPM?.id)
-
-    // Assign projects if provided
+    // Assign projects if provided — store project_name strings
     if (projects && projects.length > 0) {
-      console.log('[v0] Assigning projects to PM:', projects)
-      
-      // Projects come as project_name strings, create assignments in pm_project_assignments table
-      const assignments = projects.map((projectName: string) => ({
+      const rows = projects.map((projectName: string) => ({
         pm_id: newPM.id,
         project_name: projectName,
         assigned_date: new Date().toISOString(),
@@ -112,28 +103,26 @@ export async function POST(request: NextRequest) {
 
       const { error: assignError } = await supabase
         .from('pm_project_assignments')
-        .insert(assignments)
+        .insert(rows)
 
       if (assignError) {
-        console.error('[v0] Error assigning projects:', assignError)
-      } else {
-        console.log('[v0] Projects assigned to PM:', assignments.length)
+        console.error('[v0] Project assignment error:', assignError)
       }
     }
 
-    // Log audit event
-    await supabase.from('pm_audit_logs').insert({
-      pm_id: newPM.id,
-      action: 'created_by_admin',
-      details: { email, name, projects },
-      created_at: new Date().toISOString(),
-    }).catch(e => console.error('[v0] Audit log error:', e))
-
-    console.log('[v0] Admin created Project Manager:', email)
-
-    return NextResponse.json({ projectManager: newPM, success: true })
+    return NextResponse.json({
+      success: true,
+      projectManager: {
+        id: newPM.id,
+        name: newPM.full_name,
+        username: newPM.username,
+        is_active: newPM.is_active,
+        created_at: newPM.created_at,
+        assigned_projects: projects || [],
+      },
+    })
   } catch (error) {
-    console.error('[v0] Admin create PM error:', error)
-    return NextResponse.json({ error: 'Failed to create Project Manager', details: String(error) }, { status: 500 })
+    console.error('[v0] POST PM error:', error)
+    return NextResponse.json({ error: 'Failed to create Project Manager' }, { status: 500 })
   }
 }

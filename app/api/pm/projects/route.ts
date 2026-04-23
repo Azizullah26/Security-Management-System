@@ -1,71 +1,59 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { verifyPMSession } from '@/app/api/pm/verify/route'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
   process.env.SUPABASE_SERVICE_ROLE_KEY || '',
 )
 
-async function verifyPMToken(authHeader: string | null) {
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return null
-  }
-
-  const token = authHeader.substring(7)
-  const { data: session } = await supabase
-    .from('pm_sessions')
-    .select('*, project_managers(*)')
-    .eq('token', token)
-    .gt('expires_at', new Date().toISOString())
-    .single()
-
-  return session?.project_managers || null
-}
-
 export async function GET(request: NextRequest) {
   try {
-    const pm = await verifyPMToken(request.headers.get('authorization'))
+    const pm = await verifyPMSession(request.headers.get('authorization'))
     if (!pm) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { searchParams } = new URL(request.url)
-    const pmId = searchParams.get('pm_id')
-
-    if (pmId !== pm.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
-    // Fetch projects assigned to this PM
-    const { data: assignments, error } = await supabase
+    // Get PM's assigned project names from pm_project_assignments
+    const { data: assignments, error: assignError } = await supabase
       .from('pm_project_assignments')
-      .select('*, entries(count)')
-      .eq('pm_id', pmId)
+      .select('id, project_name, assigned_date')
+      .eq('pm_id', pm.id)
 
-    if (error) {
-      throw error
+    if (assignError) throw assignError
+
+    const assignedProjectNames = assignments?.map((a: any) => a.project_name).filter(Boolean) || []
+
+    if (assignedProjectNames.length === 0) {
+      return NextResponse.json({ projects: [] })
     }
 
-    // Get project details and staff count
+    // For each assigned project, get counts from assignments and entries tables
     const projects = await Promise.all(
-      (assignments || []).map(async (assignment) => {
-        const { data: staffData } = await supabase
+      (assignments || []).map(async (assignment: any) => {
+        const projectName = assignment.project_name
+
+        // Count staff assigned to this project (from assignments table)
+        const { count: staffCount } = await supabase
+          .from('assignments')
+          .select('*', { count: 'exact', head: true })
+          .eq('project_name', projectName)
+
+        // Count entry records for this project
+        const { count: entryCount } = await supabase
           .from('entries')
-          .select('created_by', { count: 'exact' })
-          .eq('project_name', assignment.project_name)
-          .distinct()
+          .select('*', { count: 'exact', head: true })
+          .eq('project_name', projectName)
 
         return {
           id: assignment.id,
-          name: assignment.project_name,
-          staff_count: staffData?.length || 0,
-          entry_count: assignment.entries?.[0]?.count || 0,
-          assigned_at: assignment.assigned_at,
+          name: projectName,
+          staff_count: staffCount || 0,
+          entry_count: entryCount || 0,
+          assigned_at: assignment.assigned_date,
         }
       }),
     )
-
-    console.log('[v0] PM projects fetched:', pmId, projects.length)
 
     return NextResponse.json({ projects })
   } catch (error) {

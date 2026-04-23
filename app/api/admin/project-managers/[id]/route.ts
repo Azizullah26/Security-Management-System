@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { verifyAdminSession } from '@/lib/auth-utils'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -11,33 +12,26 @@ export async function DELETE(
   { params }: { params: { id: string } },
 ) {
   try {
-    const pmId = params.id
+    const isAdmin = await verifyAdminSession(request)
+    if (!isAdmin) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
-    if (!pmId) {
+    const { id } = params
+    if (!id) {
       return NextResponse.json({ error: 'PM ID is required' }, { status: 400 })
     }
 
-    // Delete PM sessions
-    await supabase.from('pm_sessions').delete().eq('pm_id', pmId)
+    // Delete in order: sessions, assignments, then account
+    await supabase.from('pm_sessions').delete().eq('pm_id', id)
+    await supabase.from('pm_project_assignments').delete().eq('pm_id', id)
 
-    // Delete PM project assignments
-    await supabase.from('pm_project_assignments').delete().eq('pm_id', pmId)
-
-    // Delete PM account
-    const { error } = await supabase
-      .from('project_managers')
-      .delete()
-      .eq('id', pmId)
-
-    if (error) {
-      throw error
-    }
-
-    console.log('[v0] Admin deleted Project Manager:', pmId)
+    const { error } = await supabase.from('project_managers').delete().eq('id', id)
+    if (error) throw error
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('[v0] Admin delete PM error:', error)
+    console.error('[v0] PM delete error:', error)
     return NextResponse.json({ error: 'Failed to delete Project Manager' }, { status: 500 })
   }
 }

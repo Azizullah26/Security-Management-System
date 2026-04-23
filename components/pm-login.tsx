@@ -3,16 +3,11 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { AlertCircle, Loader2 } from 'lucide-react'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { AlertCircle, Loader2, Shield } from 'lucide-react'
 
-interface PMLoginProps {
-  onLoginSuccess?: () => void
-}
-
-export default function PMLogin({ onLoginSuccess }: PMLoginProps) {
-  const [email, setEmail] = useState('')
+export default function PMLogin() {
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -26,74 +21,76 @@ export default function PMLogin({ onLoginSuccess }: PMLoginProps) {
       const response = await fetch('/api/pm/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ username: username.trim(), password }),
       })
 
       const data = await response.json()
 
       if (!response.ok) {
-        setError(data.error || 'Login failed')
+        setError(data.error || 'Invalid credentials. Please try again.')
         return
       }
 
-      // Store PM session token
       localStorage.setItem('pm_token', data.token)
-      localStorage.setItem('pm_email', email)
-
-      // Redirect to PM dashboard
+      localStorage.setItem('pm_username', data.pm.username)
       window.location.href = '/pm-dashboard'
-    } catch (err) {
-      setError('An error occurred. Please try again.')
-      console.error('[v0] PM login error:', err)
+    } catch {
+      setError('Connection error. Please try again.')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-lg">
-        <CardHeader className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-          <CardTitle>Project Manager Login</CardTitle>
-          <CardDescription className="text-blue-100">Sign in to manage your projects</CardDescription>
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md shadow-sm border-slate-200">
+        <CardHeader className="text-center pb-4">
+          <div className="flex justify-center mb-3">
+            <div className="h-12 w-12 bg-blue-600 rounded-xl flex items-center justify-center">
+              <Shield className="h-6 w-6 text-white" />
+            </div>
+          </div>
+          <CardTitle className="text-xl text-slate-900">Project Manager Portal</CardTitle>
+          <p className="text-sm text-slate-500 mt-1">Sign in with your assigned credentials</p>
         </CardHeader>
-        <CardContent className="pt-6">
+        <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
             {error && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
+              <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                {error}
+              </div>
             )}
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Email</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Username</label>
               <Input
-                type="email"
-                placeholder="pm@company.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                type="text"
+                placeholder="Enter your username"
+                value={username}
+                onChange={e => setUsername(e.target.value)}
                 disabled={loading}
-                className="border-slate-200"
+                autoCapitalize="none"
+                autoComplete="username"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Password</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Password</label>
               <Input
                 type="password"
-                placeholder="••••••••"
+                placeholder="Enter your password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={e => setPassword(e.target.value)}
                 disabled={loading}
-                className="border-slate-200"
+                autoComplete="current-password"
               />
             </div>
 
             <Button
               type="submit"
-              disabled={loading || !email || !password}
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+              disabled={loading || !username.trim() || !password}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white mt-2"
             >
               {loading ? (
                 <>
@@ -105,10 +102,6 @@ export default function PMLogin({ onLoginSuccess }: PMLoginProps) {
               )}
             </Button>
           </form>
-
-          <div className="mt-4 pt-4 border-t border-slate-200 text-center text-sm text-slate-600">
-            <p>Project Manager Access Only</p>
-          </div>
         </CardContent>
       </Card>
     </div>

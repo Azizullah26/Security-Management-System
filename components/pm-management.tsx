@@ -6,359 +6,283 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { AlertCircle, Trash2, Plus, Loader2 } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { AlertCircle, Trash2, Plus, Loader2, CheckSquare, Square, RefreshCw, ChevronDown } from 'lucide-react'
 
 interface ProjectManager {
   id: string
-  email: string
   name: string
-  role: string
+  username: string
+  email: string
   is_active: boolean
   created_at: string
-  assigned_projects?: string[]
+  assigned_projects: string[]
 }
 
-interface PMManagementProps {
-  adminToken?: string
-}
-
-export function PMManagement({ adminToken }: PMManagementProps) {
+export function PMManagement() {
   const [pms, setPMs] = useState<ProjectManager[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [successMsg, setSuccessMsg] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [editingPM, setEditingPM] = useState<ProjectManager | null>(null)
-  const [newPMData, setNewPMData] = useState({
-    email: '',
-    name: '',
-    password: '',
-  })
-  const [projects, setProjects] = useState<string[]>([])
+
+  // Form state
+  const [fullName, setFullName] = useState('')
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
   const [selectedProjects, setSelectedProjects] = useState<string[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [formError, setFormError] = useState('')
+
+  // Projects list
+  const [projects, setProjects] = useState<string[]>([])
+  const [projectsLoading, setProjectsLoading] = useState(false)
+  const [projectSearch, setProjectSearch] = useState('')
 
   useEffect(() => {
-    console.log('[v0] PMManagement component mounted')
     fetchPMs()
     fetchProjects()
   }, [])
 
   const fetchPMs = async () => {
+    setLoading(true)
+    setError('')
     try {
-      console.log('[v0] Fetching Project Managers...')
       const response = await fetch('/api/admin/project-managers', {
         credentials: 'include',
       })
-
-      console.log('[v0] PM API response status:', response.status)
-      
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || `HTTP ${response.status}`)
+        const err = await response.json().catch(() => ({}))
+        throw new Error(err.error || `HTTP ${response.status}`)
       }
-
       const data = await response.json()
-      console.log('[v0] Fetched PMs:', data)
       setPMs(data.projectManagers || [])
-      setError('')
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Unknown error'
-      console.error('[v0] Failed to fetch PMs:', errorMsg)
-      setError(`Failed to load Project Managers: ${errorMsg}`)
-      setPMs([])
+      setError(err instanceof Error ? err.message : 'Failed to load Project Managers')
     } finally {
       setLoading(false)
     }
   }
 
   const fetchProjects = async () => {
+    setProjectsLoading(true)
     try {
-      console.log('[v0] Fetching available projects...')
-      const response = await fetch('/api/admin/available-projects', {
-        credentials: 'include',
-      })
-
-      console.log('[v0] Projects API response status:', response.status)
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        console.warn('[v0] Failed to fetch projects:', response.status, errorData)
-        setError(`Failed to fetch projects: ${response.status}`)
-        setProjects([])
-        return
-      }
-
+      // No auth needed — service role fetches from assignments table
+      const response = await fetch('/api/admin/available-projects')
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
       const data = await response.json()
-      console.log('[v0] Fetched available projects response:', data)
-      const projectsList = data.projects || []
-      console.log('[v0] Projects array:', projectsList)
-      setProjects(projectsList)
-      
-      if (projectsList.length > 0) {
-        console.log('[v0] Projects loaded successfully:', projectsList.length, 'projects')
-        setError('') // Clear any previous project-related errors
-      } else {
-        console.warn('[v0] No projects found in assignments table')
-      }
+      setProjects(data.projects || [])
     } catch (err) {
-      console.error('[v0] Error fetching projects:', err)
-      setError(`Error loading projects: ${err instanceof Error ? err.message : 'Unknown error'}`)
-      setProjects([])
+      console.error('Failed to fetch projects:', err)
+    } finally {
+      setProjectsLoading(false)
     }
   }
 
-  const handleAddPM = async () => {
-    if (!newPMData.email || !newPMData.name || !newPMData.password) {
-      setError('Please fill in all fields')
+  const handleOpenDialog = () => {
+    setFullName('')
+    setUsername('')
+    setPassword('')
+    setSelectedProjects([])
+    setFormError('')
+    setProjectSearch('')
+    setDialogOpen(true)
+  }
+
+  const toggleProject = (name: string) => {
+    setSelectedProjects(prev =>
+      prev.includes(name) ? prev.filter(p => p !== name) : [...prev, name]
+    )
+  }
+
+  const handleCreatePM = async () => {
+    if (!fullName.trim() || !username.trim() || !password.trim()) {
+      setFormError('Full name, username, and password are required.')
+      return
+    }
+    if (password.length < 6) {
+      setFormError('Password must be at least 6 characters.')
       return
     }
 
     setIsSubmitting(true)
+    setFormError('')
     try {
       const response = await fetch('/api/admin/project-managers', {
         method: 'POST',
         credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...newPMData,
+          full_name: fullName.trim(),
+          username: username.trim(),
+          password,
           projects: selectedProjects,
         }),
       })
 
+      const data = await response.json()
       if (!response.ok) {
-        throw new Error('Failed to create Project Manager')
+        throw new Error(data.error || 'Failed to create Project Manager')
       }
 
-      setNewPMData({ email: '', name: '', password: '' })
-      setSelectedProjects([])
       setDialogOpen(false)
+      setSuccessMsg(`Project Manager "${fullName}" created successfully.`)
+      setTimeout(() => setSuccessMsg(''), 5000)
       await fetchPMs()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create PM')
+      setFormError(err instanceof Error ? err.message : 'Failed to create Project Manager')
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  const handleDeletePM = async (pmId: string) => {
-    if (!confirm('Are you sure you want to delete this Project Manager?')) {
-      return
-    }
-
+  const handleDelete = async (pmId: string, pmName: string) => {
+    if (!confirm(`Are you sure you want to delete "${pmName}"? This cannot be undone.`)) return
     try {
       const response = await fetch(`/api/admin/project-managers/${pmId}`, {
         method: 'DELETE',
         credentials: 'include',
       })
-
-      if (!response.ok) {
-        throw new Error('Failed to delete Project Manager')
-      }
-
+      if (!response.ok) throw new Error('Failed to delete')
+      setSuccessMsg(`Project Manager "${pmName}" deleted.`)
+      setTimeout(() => setSuccessMsg(''), 4000)
       await fetchPMs()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete PM')
+    } catch {
+      setError('Failed to delete Project Manager')
     }
   }
 
   const filteredPMs = pms.filter(
-    (pm) =>
-      pm.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      pm.email.toLowerCase().includes(searchTerm.toLowerCase()),
+    pm =>
+      pm.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      pm.username?.toLowerCase().includes(searchTerm.toLowerCase()),
+  )
+
+  const filteredProjects = projects.filter(p =>
+    p.toLowerCase().includes(projectSearch.toLowerCase()),
   )
 
   return (
     <div className="space-y-4">
-      {/* Error Alert */}
-      {error && !error.includes('Unauthorized') && (
-        <Card className="border-red-200 bg-red-50 mb-4">
-          <CardContent className="p-4 flex items-center gap-2 text-red-700">
-            <AlertCircle className="h-5 w-5 flex-shrink-0" />
-            <span>{error}</span>
-          </CardContent>
-        </Card>
+      {/* Success message */}
+      {successMsg && (
+        <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
+          <CheckSquare className="h-4 w-4 flex-shrink-0" />
+          {successMsg}
+        </div>
       )}
 
-      {/* Header Section */}
-      <div className="flex justify-between items-center gap-4 mb-6">
-        <div className="flex-1">
-          <Input
-            placeholder="Search by name or email..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="border-slate-200"
-          />
+      {/* Error message */}
+      {error && (
+        <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+          <AlertCircle className="h-4 w-4 flex-shrink-0" />
+          {error}
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Project Manager
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Add Project Manager</DialogTitle>
-              <DialogDescription>Create a new Project Manager account</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Name *</label>
-                <Input
-                  value={newPMData.name}
-                  onChange={(e) => setNewPMData({ ...newPMData, name: e.target.value })}
-                  placeholder="John Doe"
-                  disabled={isSubmitting}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Email *</label>
-                <Input
-                  type="email"
-                  value={newPMData.email}
-                  onChange={(e) => setNewPMData({ ...newPMData, email: e.target.value })}
-                  placeholder="john@company.com"
-                  disabled={isSubmitting}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Password *</label>
-                <Input
-                  type="password"
-                  value={newPMData.password}
-                  onChange={(e) => setNewPMData({ ...newPMData, password: e.target.value })}
-                  placeholder="••••••••"
-                  disabled={isSubmitting}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Assign Projects</label>
-                {error && error.includes('projects') && (
-                  <p className="text-xs text-red-600 mb-2">{error}</p>
-                )}
-                <div className="space-y-2 max-h-40 overflow-y-auto border rounded p-2 bg-slate-50">
-                  {projects.length === 0 ? (
-                    <div className="text-sm text-slate-500 py-3 text-center">
-                      <p>No projects available</p>
-                      <p className="text-xs text-slate-400 mt-1">Projects are fetched from the assignments table</p>
-                    </div>
-                  ) : (
-                    projects.map((projectName: string) => (
-                      <label key={projectName} className="flex items-center gap-2 cursor-pointer hover:bg-white p-1 rounded">
-                        <input
-                          type="checkbox"
-                          checked={selectedProjects.includes(projectName)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedProjects([...selectedProjects, projectName])
-                            } else {
-                              setSelectedProjects(selectedProjects.filter((p) => p !== projectName))
-                            }
-                          }}
-                          disabled={isSubmitting}
-                          className="rounded"
-                        />
-                        <span className="text-sm">{projectName}</span>
-                      </label>
-                    ))
-                  )}
-                </div>
-              </div>
-              <Button
-                onClick={handleAddPM}
-                disabled={isSubmitting || !newPMData.email || !newPMData.name || !newPMData.password}
-                className="w-full bg-blue-600 hover:bg-blue-700"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Creating...
-                  </>
-                ) : (
-                  'Create Project Manager'
-                )}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+      )}
+
+      {/* Toolbar */}
+      <div className="flex items-center gap-3">
+        <Input
+          placeholder="Search by name or username..."
+          value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)}
+          className="max-w-sm"
+        />
+        <Button variant="outline" size="sm" onClick={fetchPMs} disabled={loading}>
+          <RefreshCw className={`h-4 w-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
+        <div className="ml-auto">
+          <Button onClick={handleOpenDialog} className="bg-blue-600 hover:bg-blue-700 text-white">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Project Manager
+          </Button>
+        </div>
       </div>
 
-      {/* Main Content Card */}
-      <Card className="bg-white/50 border-slate-200">
-        <CardHeader>
-          <CardTitle>Project Managers</CardTitle>
-          <CardDescription>Manage Project Manager accounts and assignments</CardDescription>
+      {/* Table */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Project Managers</CardTitle>
+          <CardDescription>Manage Project Manager accounts and their assigned projects.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-2" />
-                <p className="text-slate-600">Loading Project Managers...</p>
-              </div>
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="h-7 w-7 animate-spin text-blue-600 mr-3" />
+              <span className="text-slate-500">Loading...</span>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="border-slate-200">
-                    <TableHead className="font-semibold">Name</TableHead>
-                    <TableHead className="font-semibold">Email</TableHead>
-                    <TableHead className="font-semibold">Role</TableHead>
-                    <TableHead className="font-semibold">Status</TableHead>
-                    <TableHead className="font-semibold">Created</TableHead>
-                    <TableHead className="font-semibold text-right">Actions</TableHead>
+                  <TableRow className="bg-slate-50">
+                    <TableHead className="font-semibold text-slate-700">Full Name</TableHead>
+                    <TableHead className="font-semibold text-slate-700">Username</TableHead>
+                    <TableHead className="font-semibold text-slate-700">Status</TableHead>
+                    <TableHead className="font-semibold text-slate-700">Assigned Projects</TableHead>
+                    <TableHead className="font-semibold text-slate-700">Created</TableHead>
+                    <TableHead className="font-semibold text-slate-700 text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredPMs.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-slate-500">
-                        {pms.length === 0 ? 'No Project Managers yet. Create one to get started.' : 'No matches found.'}
+                      <TableCell colSpan={6} className="text-center py-12 text-slate-400">
+                        {pms.length === 0
+                          ? 'No Project Managers yet. Click "Add Project Manager" to create one.'
+                          : 'No results match your search.'}
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredPMs.map((pm) => (
-                      <TableRow key={pm.id} className="border-slate-100 hover:bg-slate-50/50">
+                    filteredPMs.map(pm => (
+                      <TableRow key={pm.id} className="hover:bg-slate-50/60 border-slate-100">
                         <TableCell className="font-medium text-slate-900">{pm.name}</TableCell>
-                        <TableCell className="text-slate-600">{pm.email}</TableCell>
+                        <TableCell className="text-slate-600 font-mono text-sm">{pm.username}</TableCell>
                         <TableCell>
-                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                            {pm.role || 'Project Manager'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={pm.is_active ? 'default' : 'secondary'} className={pm.is_active ? 'bg-green-100 text-green-800 border-green-200' : 'bg-slate-100 text-slate-800'}>
+                          <Badge
+                            variant="outline"
+                            className={pm.is_active
+                              ? 'bg-green-50 text-green-700 border-green-200'
+                              : 'bg-slate-100 text-slate-500 border-slate-200'}
+                          >
                             {pm.is_active ? 'Active' : 'Inactive'}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-slate-600 text-sm">
+                        <TableCell>
+                          {pm.assigned_projects && pm.assigned_projects.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {pm.assigned_projects.slice(0, 2).map(p => (
+                                <Badge key={p} variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs max-w-[180px] truncate">
+                                  {p}
+                                </Badge>
+                              ))}
+                              {pm.assigned_projects.length > 2 && (
+                                <Badge variant="outline" className="bg-slate-50 text-slate-500 border-slate-200 text-xs">
+                                  +{pm.assigned_projects.length - 2} more
+                                </Badge>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 text-sm">No projects assigned</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-slate-500 text-sm">
                           {new Date(pm.created_at).toLocaleDateString()}
                         </TableCell>
                         <TableCell className="text-right">
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleDeletePM(pm.id)}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => handleDelete(pm.id, pm.name)}
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -372,6 +296,155 @@ export function PMManagement({ adminToken }: PMManagementProps) {
           )}
         </CardContent>
       </Card>
+
+      {/* Create PM Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Add Project Manager</DialogTitle>
+            <DialogDescription>Create a new PM account and assign projects.</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 pt-2">
+            {formError && (
+              <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                {formError}
+              </div>
+            )}
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Full Name <span className="text-red-500">*</span>
+              </label>
+              <Input
+                value={fullName}
+                onChange={e => setFullName(e.target.value)}
+                placeholder="e.g. John Smith"
+                disabled={isSubmitting}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Username <span className="text-red-500">*</span>
+              </label>
+              <Input
+                value={username}
+                onChange={e => setUsername(e.target.value)}
+                placeholder="e.g. john.smith"
+                disabled={isSubmitting}
+                autoCapitalize="none"
+              />
+              <p className="text-xs text-slate-400 mt-1">PM will log in with this username.</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Password <span className="text-red-500">*</span>
+              </label>
+              <Input
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="Min. 6 characters"
+                disabled={isSubmitting}
+              />
+            </div>
+
+            {/* Project assignment */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-sm font-medium text-slate-700">
+                  Assign Projects
+                  {selectedProjects.length > 0 && (
+                    <span className="ml-2 text-blue-600 font-normal">({selectedProjects.length} selected)</span>
+                  )}
+                </label>
+                <button
+                  type="button"
+                  onClick={fetchProjects}
+                  className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                  disabled={projectsLoading}
+                >
+                  <RefreshCw className={`h-3 w-3 ${projectsLoading ? 'animate-spin' : ''}`} />
+                  Reload
+                </button>
+              </div>
+
+              <Input
+                value={projectSearch}
+                onChange={e => setProjectSearch(e.target.value)}
+                placeholder="Search projects..."
+                className="mb-2 h-8 text-sm"
+              />
+
+              <div className="border rounded-lg overflow-hidden">
+                {projectsLoading ? (
+                  <div className="flex items-center justify-center py-6 gap-2 text-slate-400 text-sm">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Loading projects...
+                  </div>
+                ) : filteredProjects.length === 0 ? (
+                  <div className="py-6 text-center text-slate-400 text-sm">
+                    {projects.length === 0 ? 'No projects found in assignments table.' : 'No matches for your search.'}
+                  </div>
+                ) : (
+                  <div className="max-h-48 overflow-y-auto divide-y divide-slate-100">
+                    {filteredProjects.map(projectName => {
+                      const checked = selectedProjects.includes(projectName)
+                      return (
+                        <button
+                          key={projectName}
+                          type="button"
+                          onClick={() => toggleProject(projectName)}
+                          disabled={isSubmitting}
+                          className={`w-full flex items-center gap-3 px-3 py-2.5 text-left text-sm transition-colors
+                            ${checked
+                              ? 'bg-blue-50 text-blue-900'
+                              : 'bg-white text-slate-700 hover:bg-slate-50'
+                            }`}
+                        >
+                          {checked
+                            ? <CheckSquare className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                            : <Square className="h-4 w-4 text-slate-300 flex-shrink-0" />
+                          }
+                          <span className="leading-snug">{projectName}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <Button
+                variant="outline"
+                onClick={() => setDialogOpen(false)}
+                disabled={isSubmitting}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCreatePM}
+                disabled={isSubmitting || !fullName.trim() || !username.trim() || !password.trim()}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  'Create Project Manager'
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
