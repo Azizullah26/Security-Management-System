@@ -94,17 +94,26 @@ export function PMManagement({ adminToken }: PMManagementProps) {
         credentials: 'include',
       })
 
+      console.log('[v0] Projects API response status:', response.status)
+
       if (!response.ok) {
-        console.warn('[v0] Failed to fetch projects:', response.status)
+        const errorData = await response.json().catch(() => ({}))
+        console.warn('[v0] Failed to fetch projects:', response.status, errorData)
+        setError(`Failed to fetch projects: ${response.status}`)
         return
       }
 
       const data = await response.json()
-      console.log('[v0] Fetched available projects:', data.projects)
-      // Projects come back as objects with id and name
+      console.log('[v0] Fetched available projects:', data)
       setProjects(data.projects || [])
+      if (data.projects && data.projects.length > 0) {
+        console.log('[v0] Projects loaded successfully:', data.projects.length, 'projects')
+      } else {
+        console.warn('[v0] No projects found in assignments table')
+      }
     } catch (err) {
       console.error('[v0] Error fetching projects:', err)
+      setError(`Error loading projects: ${err instanceof Error ? err.message : 'Unknown error'}`)
     }
   }
 
@@ -236,12 +245,18 @@ export function PMManagement({ adminToken }: PMManagementProps) {
               </div>
               <div>
                 <label className="block text-sm font-medium mb-2">Assign Projects</label>
-                <div className="space-y-2 max-h-40 overflow-y-auto border rounded p-2">
+                {error && error.includes('projects') && (
+                  <p className="text-xs text-red-600 mb-2">{error}</p>
+                )}
+                <div className="space-y-2 max-h-40 overflow-y-auto border rounded p-2 bg-slate-50">
                   {projects.length === 0 ? (
-                    <p className="text-sm text-slate-500">No projects available</p>
+                    <div className="text-sm text-slate-500 py-3 text-center">
+                      <p>No projects available</p>
+                      <p className="text-xs text-slate-400 mt-1">Projects are fetched from the assignments table</p>
+                    </div>
                   ) : (
                     projects.map((projectName: string) => (
-                      <label key={projectName} className="flex items-center gap-2 cursor-pointer">
+                      <label key={projectName} className="flex items-center gap-2 cursor-pointer hover:bg-white p-1 rounded">
                         <input
                           type="checkbox"
                           checked={selectedProjects.includes(projectName)}

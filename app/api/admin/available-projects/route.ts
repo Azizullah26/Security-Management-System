@@ -21,27 +21,33 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch all unique project_name values from assignments table
-    const { data: assignments, error } = await supabase
+    const { data: assignments, error, count } = await supabase
       .from('assignments')
-      .select('project_name')
+      .select('project_name', { count: 'exact' })
       .not('project_name', 'is', null)
+
+    console.log('[v0] Assignments query - count:', count, 'error:', error)
 
     if (error) {
       console.error('[v0] Error fetching projects from assignments:', error)
       throw error
     }
 
+    console.log('[v0] Raw assignments data:', assignments?.slice(0, 5))
+
     // Get unique project names and sort them
     const uniqueProjectNames = Array.from(
       new Set(assignments?.map(a => a.project_name).filter(Boolean))
     ).sort() as string[]
     
-    console.log('[v0] Found available projects from assignments:', uniqueProjectNames.length, uniqueProjectNames)
+    console.log('[v0] Found available projects from assignments:', uniqueProjectNames.length)
+    console.log('[v0] Unique projects:', uniqueProjectNames)
 
     // Return as array of strings (project names only)
     return NextResponse.json({ 
       projects: uniqueProjectNames,
-      total: uniqueProjectNames.length
+      total: uniqueProjectNames.length,
+      rawCount: count
     })
   } catch (error) {
     console.error('[v0] Available projects error:', error)
