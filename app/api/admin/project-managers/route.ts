@@ -76,15 +76,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Create PM — using correct schema columns: full_name, username, password_hash, created_by
-    // For created_by, use a default admin UUID or get from admin config
-    // Since we don't have a specific admin user ID, use the admin config ID or a system admin ID
-    const { data: adminConfig } = await supabase
-      .from('admin_config')
-      .select('id')
-      .limit(1)
-      .single()
-
-    const createdBy = adminConfig?.id || '00000000-0000-0000-0000-000000000000' // Fallback to nil UUID
+    // created_by is a UUID field; use system admin UUID (nil UUID as placeholder for system-created accounts)
+    const SYSTEM_ADMIN_UUID = '00000000-0000-0000-0000-000000000000'
 
     const { data: newPM, error: createError } = await supabase
       .from('project_managers')
@@ -94,7 +87,7 @@ export async function POST(request: NextRequest) {
         email: `${username.toLowerCase()}@pm.local`,
         password_hash: hashPassword(password),
         is_active: true,
-        created_by: createdBy,
+        created_by: SYSTEM_ADMIN_UUID,
       })
       .select()
       .single()
