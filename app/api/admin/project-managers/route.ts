@@ -111,19 +111,28 @@ export async function POST(request: NextRequest) {
 
     // Assign projects if provided — store project_name strings
     if (projects && projects.length > 0) {
+      console.log('[v0] Assigning projects to PM:', { pmId: newPM.id, projects })
       const rows = projects.map((projectName: string) => ({
         pm_id: newPM.id,
         project_name: projectName,
         assigned_date: new Date().toISOString(),
       }))
 
-      const { error: assignError } = await supabase
+      console.log('[v0] Project assignment rows to insert:', rows)
+
+      const { error: assignError, data: assignData } = await supabase
         .from('pm_project_assignments')
         .insert(rows)
+        .select()
 
       if (assignError) {
         console.error('[v0] Project assignment error:', assignError)
+        throw new Error(`Failed to assign projects: ${assignError.message}`)
       }
+
+      console.log('[v0] Projects assigned successfully:', assignData)
+    } else {
+      console.log('[v0] No projects provided for assignment')
     }
 
     return NextResponse.json({

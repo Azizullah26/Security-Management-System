@@ -112,9 +112,20 @@ export function PMManagement() {
       return
     }
 
+    if (selectedProjects.length === 0) {
+      setFormError('Please select at least one project for this Project Manager.')
+      return
+    }
+
     setIsSubmitting(true)
     setFormError('')
     try {
+      console.log('[v0] Creating PM with data:', {
+        full_name: fullName.trim(),
+        username: username.trim(),
+        projects: selectedProjects,
+      })
+
       const response = await fetch('/api/admin/project-managers', {
         method: 'POST',
         credentials: 'include',
@@ -128,15 +139,25 @@ export function PMManagement() {
       })
 
       const data = await response.json()
+      console.log('[v0] PM creation response:', { status: response.status, data })
+
       if (!response.ok) {
         throw new Error(data.error || 'Failed to create Project Manager')
       }
 
       setDialogOpen(false)
-      setSuccessMsg(`Project Manager "${fullName}" created successfully.`)
+      setSuccessMsg(`Project Manager "${fullName}" created successfully with ${selectedProjects.length} project(s).`)
       setTimeout(() => setSuccessMsg(''), 5000)
+      
+      // Reset form
+      setFullName('')
+      setUsername('')
+      setPassword('')
+      setSelectedProjects([])
+      
       await fetchPMs()
     } catch (err) {
+      console.error('[v0] PM creation error:', err)
       setFormError(err instanceof Error ? err.message : 'Failed to create Project Manager')
     } finally {
       setIsSubmitting(false)
