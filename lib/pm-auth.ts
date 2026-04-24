@@ -21,10 +21,10 @@ export async function verifyPMSession(authHeader: string | null): Promise<any | 
   if (error || !session) return null
   if (session.expires_at < now) return null
 
-  // Fetch the PM account
+  // Fetch the PM account with assigned_projects
   const { data: pm, error: pmError } = await supabase
     .from('project_managers')
-    .select('id, full_name, email, username, is_active')
+    .select('id, full_name, email, username, is_active, assigned_projects')
     .eq('id', session.pm_id)
     .eq('is_active', true)
     .single()

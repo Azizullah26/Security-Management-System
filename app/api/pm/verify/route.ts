@@ -15,13 +15,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid or expired session' }, { status: 401 })
     }
 
-    // Get PM's assigned projects from pm_project_assignments
-    const { data: assignments } = await supabase
-      .from('pm_project_assignments')
-      .select('project_name')
-      .eq('pm_id', pm.id)
-
-    const assignedProjects = assignments?.map((a: any) => a.project_name).filter(Boolean) || []
+    // Get PM's assigned projects directly from PM object (comma-separated string)
+    const assignedProjectsStr = pm.assigned_projects || ''
+    const assignedProjects = assignedProjectsStr
+      .split(',')
+      .map((p: string) => p.trim())
+      .filter(Boolean)
 
     return NextResponse.json({
       pm: {
