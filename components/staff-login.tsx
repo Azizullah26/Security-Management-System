@@ -2,6 +2,7 @@
 
 import type React from "react"
 import Image from "next/image"
+import Link from "next/link"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -165,6 +166,19 @@ export function StaffLogin({ onLogin }: StaffLoginProps) {
                 "Login to Dashboard"
               )}
             </Button>
+
+            <div className="pt-2 text-center">
+              <Link href="/pm-login">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="text-sm border-blue-300 text-blue-600 hover:bg-blue-50"
+                >
+                  Project Manager Login
+                </Button>
+              </Link>
+            </div>
           </form>
         </CardContent>
       </Card>
