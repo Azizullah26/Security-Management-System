@@ -22,26 +22,19 @@ export async function GET(request: NextRequest) {
 
     const { data: pms, error } = await supabase
       .from('project_managers')
-      .select('id, full_name, email, username, is_active, created_at')
+      .select('id, full_name, email, username, is_active, created_at, assigned_projects')
       .order('created_at', { ascending: false })
 
     if (error) throw error
 
-    // Fetch assigned projects for each PM
-    const pmsWithProjects = await Promise.all(
-      (pms || []).map(async (pm: any) => {
-        const { data: assignments } = await supabase
-          .from('pm_project_assignments')
-          .select('project_name')
-          .eq('pm_id', pm.id)
-
-        return {
-          ...pm,
-          name: pm.full_name,
-          assigned_projects: assignments?.map((a: any) => a.project_name).filter(Boolean) || [],
-        }
-      }),
-    )
+    // Parse assigned_projects (comma-separated string to array)
+    const pmsWithProjects = (pms || []).map((pm: any) => ({
+      ...pm,
+      name: pm.full_name,
+      assigned_projects: pm.assigned_projects
+        ? pm.assigned_projects.split(',').map((p: string) => p.trim()).filter(Boolean)
+        : [],
+    }))
 
     return NextResponse.json({ projectManagers: pmsWithProjects })
   } catch (error) {
@@ -100,6 +93,7 @@ export async function POST(request: NextRequest) {
         password_hash: hashPassword(password),
         is_active: true,
         created_by: adminUsers.id,
+        assigned_projects: projects && projects.length > 0 ? projects.join(',') : null,
       })
       .select()
       .single()
@@ -107,32 +101,6 @@ export async function POST(request: NextRequest) {
     if (createError) {
       console.error('[v0] PM create error:', createError)
       throw createError
-    }
-
-    // Assign projects if provided — store project_name strings
-    if (projects && projects.length > 0) {
-      console.log('[v0] Assigning projects to PM:', { pmId: newPM.id, projects })
-      const rows = projects.map((projectName: string) => ({
-        pm_id: newPM.id,
-        project_name: projectName,
-        assigned_date: new Date().toISOString(),
-      }))
-
-      console.log('[v0] Project assignment rows to insert:', rows)
-
-      const { error: assignError, data: assignData } = await supabase
-        .from('pm_project_assignments')
-        .insert(rows)
-        .select()
-
-      if (assignError) {
-        console.error('[v0] Project assignment error:', assignError)
-        throw new Error(`Failed to assign projects: ${assignError.message}`)
-      }
-
-      console.log('[v0] Projects assigned successfully:', assignData)
-    } else {
-      console.log('[v0] No projects provided for assignment')
     }
 
     return NextResponse.json({
