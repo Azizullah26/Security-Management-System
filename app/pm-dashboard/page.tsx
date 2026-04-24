@@ -3,10 +3,11 @@
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { LogOut, BarChart3, Users, FileText, Shield, Loader2 } from 'lucide-react'
+import { LogOut, BarChart3, Users, FileText, Shield, Loader2, BookOpen } from 'lucide-react'
 import PMProjectsView from '@/components/pm-projects-view'
 import PMStaffView from '@/components/pm-staff-view'
 import PMReportsView from '@/components/pm-reports-view'
+import PMEntriesView from '@/components/pm-entries-view'
 
 interface PMData {
   id: string
@@ -17,7 +18,7 @@ interface PMData {
   assignedProjects: string[]
 }
 
-type TabKey = 'projects' | 'staff' | 'reports'
+type TabKey = 'projects' | 'staff' | 'entries' | 'reports'
 
 export default function PMDashboard() {
   const [pmData, setPMData] = useState<PMData | null>(null)
@@ -75,6 +76,7 @@ export default function PMDashboard() {
 
   const tabs: { key: TabKey; label: string; icon: React.ReactNode }[] = [
     { key: 'projects', label: 'My Projects', icon: <BarChart3 className="h-4 w-4" /> },
+    { key: 'entries', label: 'Entries', icon: <BookOpen className="h-4 w-4" /> },
     { key: 'staff', label: 'Staff Records', icon: <Users className="h-4 w-4" /> },
     { key: 'reports', label: 'Reports', icon: <FileText className="h-4 w-4" /> },
   ]
@@ -136,6 +138,9 @@ export default function PMDashboard() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
         {activeTab === 'projects' && (
           <PMProjectsView pmId={pmData.id} token={token} />
+        )}
+        {activeTab === 'entries' && (
+          <PMEntriesView pmId={pmData.id} token={token} assignedProjects={pmData.assignedProjects} />
         )}
         {activeTab === 'staff' && (
           <PMStaffView pmId={pmData.id} token={token} assignedProjects={pmData.assignedProjects} />
