@@ -3,49 +3,56 @@ import { type NextRequest, NextResponse } from "next/server"
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Skip auth check for public routes
-  if (pathname === "/api/admin/auth" || pathname === "/api/admin/verify") {
+  // Skip middleware auth checks for public auth endpoints
+  if (pathname === "/api/admin/auth" || pathname === "/api/admin/verify" || pathname === "/api/admin/sso-login") {
     return NextResponse.next()
   }
 
-  // Allow GET requests to projects (admin page handles auth client-side)
-  if (pathname.startsWith("/api/projects") && request.method === "GET") {
+  // Allow all GET requests from admin page (it handles auth client-side)
+  if (pathname.startsWith("/api/admin/") && request.method === "GET") {
     return NextResponse.next()
   }
 
-  // Protect admin API routes and sensitive endpoints
+  // Allow unauthenticated access to fetch available projects (used during PM creation)
+  if (pathname === "/api/admin/available-projects" && request.method === "GET") {
+    return NextResponse.next()
+  }
+
+  // Allow public project fetch (GET only)
+  if (pathname === "/api/projects" && request.method === "GET") {
+    return NextResponse.next()
+  }
+
+  // Protect POST/DELETE/PUT requests to admin and projects APIs
   if (
-    pathname.startsWith("/api/projects") ||
-    pathname.startsWith("/api/security-staff") ||
-    pathname.startsWith("/api/assignments") ||
-    pathname.startsWith("/api/admin/")
+    (pathname.startsWith("/api/admin/") && (request.method === "POST" || request.method === "DELETE" || request.method === "PUT")) ||
+    (pathname.startsWith("/api/projects") && request.method !== "GET") ||
+    (pathname.startsWith("/api/security-staff") && request.method !== "GET") ||
+    (pathname.startsWith("/api/assignments") && request.method !== "GET")
   ) {
-    // Check for Authorization header first (for token-based auth)
+    // Check for Authorization header (token-based auth)
     const authHeader = request.headers.get("authorization")
     if (authHeader && authHeader.startsWith("Bearer ")) {
       const token = authHeader.substring(7)
       if (token) {
-        // Token is present, allow the request through
-        // Full validation happens in individual route handlers
         return NextResponse.next()
       }
     }
 
-    // Fallback to cookie-based auth
-    const authCookie = request.cookies.get("admin-session")
-
-    if (!authCookie || !authCookie.value) {
-      return NextResponse.json({ error: "Unauthorized - Authentication required" }, { status: 401 })
+    // Check for admin-session cookie
+    const adminCookie = request.cookies.get("admin-session")
+    if (adminCookie && adminCookie.value) {
+      return NextResponse.next()
     }
 
-    // Note: Full session validation would require importing sessionStore
-    // For middleware, we do basic cookie/token presence check
-    // Full validation happens in individual route handlers
+    // No auth found
+    console.log("[v0] Middleware: No auth found for protected route:", pathname)
+    return NextResponse.json({ error: "Unauthorized - Authentication required" }, { status: 401 })
   }
 
   return NextResponse.next()
 }
 
 export const config = {
-  matcher: ["/api/admin/:path*", "/api/projects", "/api/security-staff", "/api/assignments"],
+  matcher: ["/api/:path*"],
 }

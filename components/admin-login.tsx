@@ -29,6 +29,7 @@ export function AdminLogin({ onLogin }: AdminLoginProps) {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include", // Send and receive cookies
         body: JSON.stringify({ password }),
       })
 
