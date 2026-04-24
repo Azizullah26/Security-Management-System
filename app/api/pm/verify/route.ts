@@ -6,7 +6,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || '',
 )
 
-export async function verifyPMSession(authHeader: string | null): Promise<any | null> {
+async function verifyPMSession(authHeader: string | null): Promise<any | null> {
   if (!authHeader || !authHeader.startsWith('Bearer ')) return null
 
   const token = authHeader.substring(7)
