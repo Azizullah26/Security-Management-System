@@ -76,8 +76,20 @@ export async function POST(request: NextRequest) {
     }
 
     // Create PM — using correct schema columns: full_name, username, password_hash, created_by
-    // created_by is a UUID field; use system admin UUID (nil UUID as placeholder for system-created accounts)
-    const SYSTEM_ADMIN_UUID = '00000000-0000-0000-0000-000000000000'
+    // created_by must reference an existing admin_user (foreign key constraint)
+    // Fetch the first admin user ID from admin_users table
+    const { data: adminUsers } = await supabase
+      .from('admin_users')
+      .select('id')
+      .limit(1)
+      .single()
+
+    if (!adminUsers) {
+      return NextResponse.json(
+        { error: 'No admin user found. Cannot create Project Manager without an admin user.' },
+        { status: 400 }
+      )
+    }
 
     const { data: newPM, error: createError } = await supabase
       .from('project_managers')
@@ -87,7 +99,7 @@ export async function POST(request: NextRequest) {
         email: `${username.toLowerCase()}@pm.local`,
         password_hash: hashPassword(password),
         is_active: true,
-        created_by: SYSTEM_ADMIN_UUID,
+        created_by: adminUsers.id,
       })
       .select()
       .single()
